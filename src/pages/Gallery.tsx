@@ -16,10 +16,10 @@ export default function Gallery() {
     <section className="page section">
       <div className="container page__inner">
         <div className="page__head">
-          <div className="eyebrow">Gallery</div>
-          <h1>Our Work</h1>
+          <div className="eyebrow">Galeri</div>
+          <h1>Hasil Kerja Kami</h1>
           <div className="divider" />
-          <p>Gambaran sebenar setup majlis kami — tema rustic &amp; minimalist floral.</p>
+          <p>Gambaran sebenar setup majlis kami — tema rustic, minimalist &amp; floral.</p>
         </div>
 
         {loading ? (

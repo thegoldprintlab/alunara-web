@@ -1,11 +1,11 @@
 import { Link, NavLink } from 'react-router-dom'
 
 const links = [
-  { to: '/', label: 'Home' },
-  { to: '/book', label: 'Book' },
-  { to: '/gallery', label: 'Gallery' },
-  { to: '/payment', label: 'Payment' },
-  { to: '/contact', label: 'Contact' },
+  { to: '/', label: 'Utama' },
+  { to: '/book', label: 'Tempah' },
+  { to: '/gallery', label: 'Galeri' },
+  { to: '/payment', label: 'Bayaran' },
+  { to: '/contact', label: 'Hubungi' },
 ]
 
 export default function Nav() {

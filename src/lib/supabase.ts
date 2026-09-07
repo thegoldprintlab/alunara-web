@@ -92,3 +92,54 @@ export async function submitBooking(input: {
   }
   return { ok: true, id: data.id }
 }
+
+// ---------- Admin (secret-gated via RPC) ----------
+
+export async function adminVerify(code: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('alunara_verify_admin', { p_code: code })
+  if (error) return false
+  return data === true
+}
+
+export async function adminBlockDate(input: {
+  code: string
+  date: string
+  name: string
+  pkg: string
+  phone: string
+  notes: string
+}): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.rpc('alunara_admin_block_date', {
+    p_code: input.code,
+    p_date: input.date,
+    p_customer_name: input.name || 'Tempahan Manual',
+    p_package: input.pkg || 'bayu',
+    p_phone: input.phone,
+    p_notes: input.notes,
+  })
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
+export async function adminListBookings(code: string): Promise<Booking[]> {
+  const { data, error } = await supabase.rpc('alunara_admin_list_bookings', { p_code: code })
+  if (error) {
+    console.error('adminListBookings', error)
+    return []
+  }
+  return (data ?? []) as Booking[]
+}
+
+export async function adminSetStatus(
+  code: string,
+  id: string,
+  status: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.rpc('alunara_admin_set_status', {
+    p_code: code,
+    p_id: id,
+    p_status: status,
+  })
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}

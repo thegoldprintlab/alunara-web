@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { getBookedDates, submitBooking } from '../lib/supabase'
 
 const PACKAGES = [
-  { id: 'champagne', label: 'Champagne — RM 99' },
-  { id: 'signature', label: 'Signature — RM 149' },
-  { id: 'luxury', label: 'Luxury — RM 199' },
+  { id: 'sari', label: 'Sari — RM 109' },
+  { id: 'bayu', label: 'Bayu — RM 149' },
+  { id: 'anggun', label: 'Anggun — RM 199' },
 ]
 
-const EVENT_TYPES = ['Birthday', 'Wedding / Engagement', 'Aqiqah / Cukur Jambul', 'Corporate', 'Other']
+const EVENT_TYPES = ['Hari Jadi', 'Kahwin / Tunang', 'Aqiqah / Cukur Jambul', 'Korporat', 'Lain-lain']
+
+const THEMES = ['Rustic', 'Minimalist', 'Floral']
 
 export default function Booking() {
   const navigate = useNavigate()
@@ -17,7 +19,8 @@ export default function Booking() {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [eventType, setEventType] = useState(EVENT_TYPES[0])
-  const [pkg, setPkg] = useState('signature')
+  const [pkg, setPkg] = useState('bayu')
+  const [theme, setTheme] = useState(THEMES[0])
   const [location, setLocation] = useState('Melaka')
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'error' | 'success'>('idle')
@@ -51,7 +54,7 @@ export default function Booking() {
       event_type: eventType,
       package_tier: pkg,
       location,
-      notes,
+      notes: theme ? `Tema: ${theme}${notes ? ' — ' + notes : ''}` : notes,
     })
     if (res.ok) {
       setStatus('success')
@@ -66,8 +69,8 @@ export default function Booking() {
     <section className="page section">
       <div className="container page__inner">
         <div className="page__head">
-          <div className="eyebrow">Reservation</div>
-          <h1>Book Your Date</h1>
+          <div className="eyebrow">Tempahan</div>
+          <h1>Tempah Tarikh Anda</h1>
           <div className="divider" />
           <p>
             Pilih tarikh majlis anda. Setiap tarikh hanya untuk satu majlis — tempahan
@@ -102,7 +105,7 @@ export default function Booking() {
                 id="phone"
                 type="tel"
                 required
-                placeholder="e.g. 012-3456789"
+                placeholder="cth. 012-3456789"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
               />
@@ -129,6 +132,15 @@ export default function Booking() {
           </div>
 
           <div className="field">
+            <label htmlFor="theme">Tema</label>
+            <select id="theme" value={theme} onChange={(e) => setTheme(e.target.value)}>
+              {THEMES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="field">
             <label htmlFor="location">Lokasi (dalam Melaka)</label>
             <input id="location" value={location} onChange={(e) => setLocation(e.target.value)} />
           </div>
@@ -140,7 +152,7 @@ export default function Booking() {
               rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Tema pilihan, jumlah tetamu, atau sebarang permintaan khas…"
+              placeholder="Jumlah tetamu, atau sebarang permintaan khas…"
             />
           </div>
 

@@ -11,7 +11,7 @@ export default function Contact({ settings }: { settings: Settings }) {
     <section className="page section">
       <div className="container page__inner">
         <div className="page__head">
-          <div className="eyebrow">Contact</div>
+          <div className="eyebrow">Hubungi</div>
           <h1>Hubungi Kami</h1>
           <div className="divider" />
           <p>Sebarang pertanyaan tentang pakej, tarikh, atau tema — kami sedia bantu.</p>
@@ -28,19 +28,19 @@ export default function Contact({ settings }: { settings: Settings }) {
                 target="_blank"
                 rel="noreferrer"
               >
-                Chat on WhatsApp
+                Chat di WhatsApp
               </a>
             )}
           </div>
 
           <div className="contact-card">
-            <h3>Location</h3>
+            <h3>Lokasi</h3>
             <p>{settings.location || 'Melaka, Malaysia'}</p>
             <p className="contact-card__note">Servis tertumpu di sekitar Melaka.</p>
           </div>
 
           <div className="contact-card">
-            <h3>Follow Us</h3>
+            <h3>Ikuti Kami</h3>
             <div className="contact-card__socials">
               {socials.map((s) => (
                 <a key={s.name} href={s.url} target="_blank" rel="noreferrer">

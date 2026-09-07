@@ -50,7 +50,7 @@ main { flex: 1; }
 .hero {
   background:
     linear-gradient(180deg, rgba(74,31,31,0.82), rgba(51,20,20,0.88)),
-    url('https://gtblmwijohoetczqngpr.supabase.co/storage/v1/object/public/alunara-media/gallery/gallery-1.webp')
+    url('https://sdzjlekydkwtxjjtrwrh.supabase.co/storage/v1/object/public/alunara-media/gallery/gallery-1.webp')
     center/cover;
   color: var(--cream);
   text-align: center;
@@ -187,12 +187,26 @@ main { flex: 1; }
 
 /* ---------- Gallery ---------- */
 .gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
+  columns: 3 260px;
+  column-gap: 20px;
 }
-.gallery-item { margin: 0; border-radius: 3px; overflow: hidden; box-shadow: 0 6px 24px rgba(74,31,31,0.08); }
-.gallery-item img { width: 100%; height: 340px; object-fit: cover; display: block; }
+.gallery-item {
+  margin: 0 0 20px;
+  break-inside: avoid;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 6px 24px rgba(74,31,31,0.10);
+  position: relative;
+  background: var(--white);
+  transition: box-shadow 0.3s ease;
+}
+.gallery-item:hover { box-shadow: 0 12px 36px rgba(74,31,31,0.18); }
+.gallery-item img {
+  width: 100%;
+  display: block;
+  transition: transform 0.5s ease;
+}
+.gallery-item:hover img { transform: scale(1.05); }
 .gallery-item figcaption {
   padding: 12px 16px;
   font-size: 0.85rem;
@@ -200,6 +214,40 @@ main { flex: 1; }
   background: var(--white);
 }
 .gallery__empty { text-align: center; color: var(--ink-soft); padding: 40px 0; }
+
+/* ---------- Admin ---------- */
+.admin-panel {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 28px;
+  margin-bottom: 28px;
+}
+.admin-panel h2 { font-size: 1.3rem; margin-bottom: 18px; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.admin-table th, .admin-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.admin-table th {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+.admin-table__actions { display: flex; gap: 8px; }
+.btn--tiny {
+  padding: 6px 14px;
+  font-size: 0.78rem;
+}
+.btn--danger {
+  background: transparent;
+  color: #a33;
+  border: 1px solid #a33;
+}
+.btn--danger:hover { background: #a33; color: #fff; }
 
 /* ---------- Contact ---------- */
 .contact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }

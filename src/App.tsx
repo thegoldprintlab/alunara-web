@@ -8,6 +8,7 @@ import Booking from './pages/Booking'
 import Payment from './pages/Payment'
 import Gallery from './pages/Gallery'
 import Contact from './pages/Contact'
+import Admin from './pages/Admin'
 import './App.css'
 
 export default function App() {
@@ -28,6 +29,7 @@ export default function App() {
             <Route path="/payment" element={<Payment settings={settings} />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/contact" element={<Contact settings={settings} />} />
+            <Route path="/admin" element={<Admin />} />
           </Routes>
         </main>
         <Footer settings={settings} />

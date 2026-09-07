@@ -11,7 +11,7 @@ export default function Payment({ settings }: { settings: Settings }) {
     <section className="page section">
       <div className="container page__inner">
         <div className="page__head">
-          <div className="eyebrow">Payment</div>
+          <div className="eyebrow">Bayaran</div>
           <h1>Bayaran Tempahan</h1>
           <div className="divider" />
           {justBooked && (
@@ -27,7 +27,7 @@ export default function Payment({ settings }: { settings: Settings }) {
 
         <div className="pay-card">
           {qr ? (
-            <img className="pay-card__qr" src={qr} alt="Payment QR code" />
+            <img className="pay-card__qr" src={qr} alt="Kod QR bayaran" />
           ) : (
             <div className="pay-card__placeholder">
               <p>Kod QR bayaran akan dipaparkan di sini tidak lama lagi.</p>
@@ -39,7 +39,7 @@ export default function Payment({ settings }: { settings: Settings }) {
           <div className="pay-card__steps">
             <div className="step">
               <div className="step__num">1</div>
-              <h3>Scan QR</h3>
+              <h3>Imbas QR</h3>
               <p>Guna DuitNow atau TnG eWallet anda.</p>
             </div>
             <div className="step">

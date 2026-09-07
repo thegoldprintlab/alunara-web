@@ -16,14 +16,14 @@ export default function Footer({ settings }: { settings: Settings }) {
           <div className="footer__tag">1 Tarikh, 1 Majlis</div>
         </div>
         <div className="footer__col">
-          <div className="footer__heading">Explore</div>
-          <Link to="/book">Book Your Date</Link>
-          <Link to="/gallery">Gallery</Link>
-          <Link to="/payment">Payment</Link>
-          <Link to="/contact">Contact</Link>
+          <div className="footer__heading">Terokai</div>
+          <Link to="/book">Tempah Tarikh Anda</Link>
+          <Link to="/gallery">Galeri</Link>
+          <Link to="/payment">Bayaran</Link>
+          <Link to="/contact">Hubungi</Link>
         </div>
         <div className="footer__col">
-          <div className="footer__heading">Follow</div>
+          <div className="footer__heading">Ikuti</div>
           {socials.map((s) => (
             <a key={s.name} href={s.url} target="_blank" rel="noreferrer">
               {s.name}
@@ -31,13 +31,13 @@ export default function Footer({ settings }: { settings: Settings }) {
           ))}
         </div>
         <div className="footer__col">
-          <div className="footer__heading">Location</div>
+          <div className="footer__heading">Lokasi</div>
           <div>{settings.location || 'Melaka, Malaysia'}</div>
           {settings.phone && <a href={`tel:${settings.phone}`}>{settings.phone}</a>}
         </div>
       </div>
       <div className="container footer__bottom">
-        © {new Date().getFullYear()} ALUNARA · All rights reserved
+        © {new Date().getFullYear()} ALUNARA · Hak cipta terpelihara
       </div>
     </footer>
   )
