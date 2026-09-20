@@ -120,8 +120,18 @@ a:hover { color: var(--champagne); }
   font-weight: 500;
 }
 
+/*
+ * min-width:0 WAJIB pada input/select.
+ * Sebab: item grid/flex default `min-width:auto`, jadi medan dengan lebar
+ * intrinsik besar (terutama input[type=date] — ikon kalendar + teks tarikh)
+ * boleh MELEBAR melebihi kolum dan menolak keluar tepi borang. Nampak pada
+ * sesetengah enjin/browser (Safari iOS) sedangkan Chromium muat.
+ * Jangan buang baris ini.
+ */
 input, select, textarea {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   font-family: var(--sans);
   font-size: 0.97rem;
   padding: 13px 14px;
@@ -131,6 +141,8 @@ input, select, textarea {
   color: var(--ink);
   transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
+/* Input tarikh: jangan benarkan lebar intrinsik enjin menolak layout. */
+input[type='date'] { min-width: 0; width: 100%; }
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--champagne);

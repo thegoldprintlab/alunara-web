@@ -1269,6 +1269,9 @@ main { flex: 1; }
   padding: 30px;
 }
 .book-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+/* min-width:0 — elak input tarikh melebar keluar kolum (puncak sama macam gate). */
+.book-grid > .field { min-width: 0; }
+.book-grid input, .book-grid select { min-width: 0; }
 
 .form-msg { padding: 12px 16px; border-radius: var(--radius); font-size: 0.89rem; margin: 0 0 18px; }
 .form-msg--error { background: #fbeae9; color: #a03a37; }

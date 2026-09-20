@@ -70,6 +70,11 @@
 
 .gate__form { margin-top: 6px; }
 .gate__row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+/* Item grid default min-width:auto — input tarikh boleh melebar keluar kotak.
+   min-width:0 pada anak grid membenarkan ia mengecil ikut kolum. */
+.gate__row > .field { min-width: 0; }
+.gate__row input, .gate__row select { min-width: 0; }
+.gate__box { overflow-x: hidden; }
 
 .gate__ralat {
   margin: 0 0 14px;
