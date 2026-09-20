@@ -1,38 +1,54 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { useEffect, useState } from 'react'
-import { getSettings, type Settings } from './lib/supabase'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import Nav from './components/Nav'
 import Footer from './components/Footer'
+import StickyWa from './components/StickyWa'
 import Home from './pages/Home'
-import Booking from './pages/Booking'
-import Payment from './pages/Payment'
-import Gallery from './pages/Gallery'
-import Contact from './pages/Contact'
+import { TemaIndex, TemaDetail } from './pages/Tema'
+import Pakej from './pages/Pakej'
+import Galeri from './pages/Galeri'
+import HargaHantar from './pages/HargaHantar'
+import Hubungi from './pages/Hubungi'
+import Tempah from './pages/Tempah'
 import Admin from './pages/Admin'
 import './App.css'
 
-export default function App() {
-  const [settings, setSettings] = useState<Settings>({})
-
+/** Scroll ke atas setiap kali tukar halaman. */
+function ScrollTop() {
+  const { pathname } = useLocation()
   useEffect(() => {
-    getSettings().then(setSettings)
-  }, [])
+    window.scrollTo(0, 0)
+  }, [pathname])
+  return null
+}
 
+export default function App() {
   return (
     <BrowserRouter>
+      <ScrollTop />
       <div className="site">
         <Nav />
-        <main>
+        <main id="kandungan">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/book" element={<Booking />} />
-            <Route path="/payment" element={<Payment settings={settings} />} />
-            <Route path="/gallery" element={<Gallery />} />
-            <Route path="/contact" element={<Contact settings={settings} />} />
+            <Route path="/tema" element={<TemaIndex />} />
+            <Route path="/tema/:id" element={<TemaDetail />} />
+            <Route path="/pakej" element={<Pakej />} />
+            <Route path="/galeri" element={<Galeri />} />
+            <Route path="/harga-hantar" element={<HargaHantar />} />
+            <Route path="/hubungi" element={<Hubungi />} />
+            <Route path="/tempah" element={<Tempah />} />
             <Route path="/admin" element={<Admin />} />
+            {/* Route lama — redirect supaya link/bio yang dah diedar tak mati */}
+            <Route path="/book" element={<Navigate to="/tempah" replace />} />
+            <Route path="/gallery" element={<Navigate to="/galeri" replace />} />
+            <Route path="/contact" element={<Navigate to="/hubungi" replace />} />
+            <Route path="/payment" element={<Navigate to="/hubungi" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
-        <Footer settings={settings} />
+        <Footer />
+        <StickyWa />
       </div>
     </BrowserRouter>
   )
