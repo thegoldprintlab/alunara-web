@@ -263,33 +263,44 @@ export const FAQ = [
 ]
 
 /* --------------------------- PENGHANTARAN ------------------------------- */
-// Jarak jalan (km) diukur dari pusat operasi Alunara: Taman Rambai Jaya, Melaka.
-// Anggaran — bos boleh betulkan nombor ni bila ada ukuran sebenar.
+/*
+ * Jarak jalan (km) dari pusat operasi Alunara: Taman Rambai Jaya, 2.2637103, 102.1867127.
+ *
+ * SUMBER: diukur 2026-09-20 guna OSM (Nominatim) + OSRM jarak pemanduan,
+ * pusat kawasan ke pusat kawasan — BUKAN jarak ke rumah pelanggan.
+ * Jalankan semula: scripts/ukur-jarak-penghantaran.py
+ *
+ * POLISI BUNDAR: dibundarkan KE ATAS ke km penuh. Buffer kecil supaya caj tak
+ * tersasar ke bawah untuk rumah di pinggir kawasan yang lebih jauh dari pusat.
+ * Kalau rumah pelanggan lebih jauh, confirm semula dalam WhatsApp dulu.
+ *
+ * 'Melaka Tengah' DIBUANG — itu daerah pentadbiran (25+ km lebar), bukan lokasi
+ * majlis, jadi mustahil diberi satu nombor jarak yang adil.
+ */
 export const LOKASI: { nama: string; km: number }[] = [
-  { nama: 'Klebang', km: 4 },
-  { nama: 'Cheng', km: 5 },
-  { nama: 'Pantai Kundor', km: 5 },
-  { nama: 'Batu Berendam', km: 7 },
-  { nama: 'Sungai Udang', km: 8 },
-  { nama: 'Pokok Mangga', km: 9 },
-  { nama: 'Bachang', km: 11 },
-  { nama: 'Bukit Baru', km: 13 },
-  { nama: 'Bandar Hilir', km: 14 },
-  { nama: 'Durian Tunggal', km: 14 },
-  { nama: 'Melaka Tengah', km: 15 },
+  { nama: 'Cheng', km: 6 },
+  { nama: 'Pantai Kundor', km: 8 },
+  { nama: 'Klebang', km: 8 },
+  { nama: 'Batu Berendam', km: 9 },
+  { nama: 'Bachang', km: 10 },
+  { nama: 'Sungai Udang', km: 10 },
+  { nama: 'Pokok Mangga', km: 11 },
+  { nama: 'Bukit Baru', km: 14 },
   { nama: 'Semabok', km: 15 },
   { nama: 'Ayer Keroh', km: 15 },
-  { nama: 'Ujong Pasir', km: 17 },
-  { nama: 'Masjid Tanah', km: 18 },
+  { nama: 'Bandar Hilir', km: 16 },
+  { nama: 'Durian Tunggal', km: 17 },
+  { nama: 'Ujong Pasir', km: 18 },
   { nama: 'Alor Gajah', km: 19 },
-  { nama: 'Umbai', km: 21 },
-  { nama: 'Kuala Sungai Baru', km: 22 },
-  { nama: 'Telok Mas', km: 24 },
+  { nama: 'Masjid Tanah', km: 20 },
+  { nama: 'Telok Mas', km: 22 },
+  { nama: 'Umbai', km: 25 },
   { nama: 'Bemban', km: 26 },
-  { nama: 'Tampin', km: 32 },
-  { nama: 'Merlimau', km: 34 },
-  { nama: 'Jasin', km: 37 },
-  { nama: 'Nyalas', km: 44 },
+  { nama: 'Kuala Sungai Baru', km: 30 },
+  { nama: 'Tampin', km: 31 },
+  { nama: 'Jasin', km: 33 },
+  { nama: 'Merlimau', km: 38 },
+  { nama: 'Nyalas', km: 46 },
 ]
 
 export const JARAK_PERCUMA_KM = 10

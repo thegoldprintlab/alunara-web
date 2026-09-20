@@ -44,8 +44,9 @@ export default function HargaHantar() {
                 ))}
               </select>
               <p className="calc__hint">
-                Jarak adalah anggaran dari pusat operasi kami di Taman Rambai Jaya. Tak jumpa kawasan awak? Pilih yang
-                paling dekat, atau tanya kami terus.
+                Jarak jalan sebenar dari pusat operasi kami di Taman Rambai Jaya ke pusat kawasan.
+                Tak jumpa kawasan awak? Pilih yang paling dekat, atau tanya kami terus — rumah
+                di pinggir kawasan mungkin lebih jauh sedikit.
               </p>
             </div>
 
@@ -84,7 +85,7 @@ export default function HargaHantar() {
               <thead>
                 <tr>
                   <th scope="col">Kawasan</th>
-                  <th scope="col">Anggaran jarak</th>
+                  <th scope="col">Jarak jalan</th>
                   <th scope="col">Caj penghantaran</th>
                 </tr>
               </thead>
@@ -111,9 +112,9 @@ export default function HargaHantar() {
               </tbody>
             </table>
             <p className="muted tbl__foot">
-              * Jarak dikira dari pusat operasi kami di Taman Rambai Jaya. Kalau rumah awak lebih jauh sedikit
-              daripada anggaran ini, kami akan confirm semula melalui WhatsApp sebelum apa-apa
-              bayaran.
+              * Jarak diukur dari pusat operasi kami di Taman Rambai Jaya ke pusat kawasan, bukan ke
+              rumah awak. Kalau rumah awak lebih jauh, kami confirm semula melalui WhatsApp sebelum
+              apa-apa bayaran.
             </p>
           </div>
 
