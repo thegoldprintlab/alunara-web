@@ -44,7 +44,7 @@ export default function HargaHantar() {
                 ))}
               </select>
               <p className="calc__hint">
-                Jarak adalah anggaran dari pusat bandar Melaka. Tak jumpa kawasan awak? Pilih yang
+                Jarak adalah anggaran dari pusat operasi kami di Taman Rambai Jaya. Tak jumpa kawasan awak? Pilih yang
                 paling dekat, atau tanya kami terus.
               </p>
             </div>
@@ -111,7 +111,7 @@ export default function HargaHantar() {
               </tbody>
             </table>
             <p className="muted tbl__foot">
-              * Jarak dikira dari pusat bandar Melaka. Kalau rumah awak lebih jauh sedikit
+              * Jarak dikira dari pusat operasi kami di Taman Rambai Jaya. Kalau rumah awak lebih jauh sedikit
               daripada anggaran ini, kami akan confirm semula melalui WhatsApp sebelum apa-apa
               bayaran.
             </p>

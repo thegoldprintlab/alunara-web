@@ -230,7 +230,7 @@ export const PITCH = {
 export const FAQ = [
   {
     q: 'Kawasan mana yang awak cover?',
-    a: 'Melaka sahaja. Penghantaran PERCUMA dalam 10 km dari pusat bandar. Melebihi 10 km, caj bermula RM20 + RM1.00 setiap km berikutnya (15 km = RM25, 25 km = RM35, 40 km = RM50).',
+    a: 'Melaka sahaja. Penghantaran PERCUMA dalam 10 km dari pusat operasi kami (Taman Rambai Jaya). Melebihi 10 km, caj bermula RM20 + RM1.00 setiap km berikutnya (15 km = RM25, 25 km = RM35, 40 km = RM50).',
   },
   {
     q: 'Deposit macam mana?',
@@ -263,32 +263,33 @@ export const FAQ = [
 ]
 
 /* --------------------------- PENGHANTARAN ------------------------------- */
-// Anggaran km dari pusat bandar Melaka. Bos boleh betulkan nombor ni.
+// Jarak jalan (km) diukur dari pusat operasi Alunara: Taman Rambai Jaya, Melaka.
+// Anggaran — bos boleh betulkan nombor ni bila ada ukuran sebenar.
 export const LOKASI: { nama: string; km: number }[] = [
-  { nama: 'Bandar Hilir', km: 3 },
-  { nama: 'Melaka Tengah', km: 3 },
-  { nama: 'Ujong Pasir', km: 4 },
-  { nama: 'Semabok', km: 4 },
-  { nama: 'Bukit Baru', km: 5 },
-  { nama: 'Bachang', km: 5 },
-  { nama: 'Pokok Mangga', km: 6 },
-  { nama: 'Klebang', km: 7 },
-  { nama: 'Batu Berendam', km: 8 },
-  { nama: 'Cheng', km: 9 },
-  { nama: 'Ayer Keroh', km: 13 },
-  { nama: 'Umbai', km: 12 },
-  { nama: 'Telok Mas', km: 12 },
-  { nama: 'Durian Tunggal', km: 16 },
-  { nama: 'Sungai Udang', km: 18 },
-  { nama: 'Bemban', km: 18 },
-  { nama: 'Pantai Kundor', km: 20 },
-  { nama: 'Merlimau', km: 22 },
-  { nama: 'Jasin', km: 24 },
-  { nama: 'Alor Gajah', km: 26 },
-  { nama: 'Masjid Tanah', km: 30 },
-  { nama: 'Kuala Sungai Baru', km: 34 },
-  { nama: 'Tampin', km: 38 },
-  { nama: 'Nyalas', km: 40 },
+  { nama: 'Klebang', km: 4 },
+  { nama: 'Cheng', km: 5 },
+  { nama: 'Pantai Kundor', km: 5 },
+  { nama: 'Batu Berendam', km: 7 },
+  { nama: 'Sungai Udang', km: 8 },
+  { nama: 'Pokok Mangga', km: 9 },
+  { nama: 'Bachang', km: 11 },
+  { nama: 'Bukit Baru', km: 13 },
+  { nama: 'Bandar Hilir', km: 14 },
+  { nama: 'Durian Tunggal', km: 14 },
+  { nama: 'Melaka Tengah', km: 15 },
+  { nama: 'Semabok', km: 15 },
+  { nama: 'Ayer Keroh', km: 15 },
+  { nama: 'Ujong Pasir', km: 17 },
+  { nama: 'Masjid Tanah', km: 18 },
+  { nama: 'Alor Gajah', km: 19 },
+  { nama: 'Umbai', km: 21 },
+  { nama: 'Kuala Sungai Baru', km: 22 },
+  { nama: 'Telok Mas', km: 24 },
+  { nama: 'Bemban', km: 26 },
+  { nama: 'Tampin', km: 32 },
+  { nama: 'Merlimau', km: 34 },
+  { nama: 'Jasin', km: 37 },
+  { nama: 'Nyalas', km: 44 },
 ]
 
 export const JARAK_PERCUMA_KM = 10

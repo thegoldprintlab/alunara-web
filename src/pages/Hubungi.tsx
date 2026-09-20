@@ -102,7 +102,7 @@ export default function Hubungi() {
               <h2>Melaka sahaja</h2>
               <p className="muted">
                 <IconPin className="inline-icon" /> Kami cover seluruh Melaka. Penghantaran
-                percuma dalam 10 km dari pusat bandar.
+                percuma dalam 10 km dari Taman Rambai Jaya.
               </p>
               <ul className="contact-list">
                 <li>Buka tempahan setiap hari, 9 pagi – 9 malam</li>
