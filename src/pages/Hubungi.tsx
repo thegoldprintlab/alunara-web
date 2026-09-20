@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { FAQ, SOSIAL, WA_DISPLAY, MSG, waLink, KATALOG } from '../content'
+import { FAQ, SOSIAL, WA_DISPLAY, MSG, waLink, KATALOG, CHECKLIST } from '../content'
 import CtaBand from '../components/CtaBand'
+import MuatChecklist from '../components/MuatChecklist'
 import {
   IconWhatsApp,
   IconInstagram,
@@ -128,6 +129,10 @@ export default function Hubungi() {
                   </a>
                 ))}
               </div>
+              <p className="katalog__label" style={{ marginTop: 18 }}>
+                Checklist pelan majlis · percuma
+              </p>
+              <MuatChecklist senarai={CHECKLIST} eyebrow="Checklist Percuma" />
             </div>
           </div>
 

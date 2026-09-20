@@ -53,6 +53,7 @@ export const MSG = {
     `Hi ALUNARA! Saya suka tema ${nama}. Boleh tunjuk contoh setup yang dah siap?`,
   tarikh: (t: string) => `Hi ALUNARA! Tarikh majlis saya ${t}. Tarikh tu masih kosong?`,
   katalog: 'Hi ALUNARA! Saya nak katalog penuh 3 tema (PDF) dengan harga sekali.',
+  checklist: 'Hi ALUNARA! Saya nak checklist pelan majlis (PDF percuma). Saya tengah plan majlis jenis: ',
   lokasi: (k: string, caj: string) =>
     `Hi ALUNARA! Majlis saya di ${k}. Caj penghantaran ${caj} — boleh confirm?`,
   deposit: 'Hi ALUNARA! Saya nak bayar deposit RM50 untuk lock tarikh majlis saya.',
@@ -316,4 +317,11 @@ export const KATALOG = [
   { nama: 'Rustic', fail: '/katalog/Alunara-Katalog-Rustic.pdf' },
   { nama: 'Minimalist', fail: '/katalog/Alunara-Katalog-Minimalist.pdf' },
   { nama: 'Semua Tema', fail: '/katalog/Alunara-Katalog.pdf' },
+]
+
+/* Checklist lead magnet — 4 muka setiap satu, percuma */
+export const CHECKLIST = [
+  { nama: 'Birthday', fail: '/katalog/Alunara-Checklist-Birthday.pdf', tema: 'Tema Floral' },
+  { nama: 'Tunang', fail: '/katalog/Alunara-Checklist-Tunang.pdf', tema: 'Tema Minimalist' },
+  { nama: 'Kenduri', fail: '/katalog/Alunara-Checklist-Kenduri.pdf', tema: 'Tema Rustic' },
 ]

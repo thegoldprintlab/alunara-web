@@ -713,6 +713,14 @@ main { flex: 1; }
 .katalog h2 { margin-bottom: 4px; }
 .katalog__text p { font-size: 0.93rem; color: var(--ink-soft); }
 .katalog__files { display: flex; flex-direction: column; gap: 10px; }
+.katalog__col { display: flex; flex-direction: column; gap: 22px; }
+.katalog__label {
+  font-size: 0.7rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+}
 .katalog__files--stack { margin-top: 16px; }
 .katalog__file {
   display: flex;

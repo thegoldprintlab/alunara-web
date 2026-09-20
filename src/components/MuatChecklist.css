@@ -1,0 +1,113 @@
+/* ---------------------------------------------------------------------------
+ * GATE CHECKLIST — borang kecil sebelum checklist PDF boleh dimuat turun.
+ * Lead (nama + no. WhatsApp + tarikh majlis) disimpan dalam localStorage
+ * pelawat dan dihantar ke VITE_LEAD_ENDPOINT kalau endpoint diset.
+ * ------------------------------------------------------------------------- */
+
+.katalog__file--btn {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 5vh 18px 40px;
+  overflow-y: auto;
+  background: rgba(43, 16, 16, 0.72);
+  backdrop-filter: blur(3px);
+  animation: gate-fade 0.18s ease-out;
+}
+@keyframes gate-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.gate__box {
+  position: relative;
+  width: 100%;
+  max-width: 620px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-l);
+  padding: 38px 34px 30px;
+  animation: gate-in 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes gate-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.99); }
+  to { opacity: 1; transform: none; }
+}
+
+.gate__x {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 100px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.18s var(--ease);
+}
+.gate__x:hover { background: rgba(74, 31, 31, 0.07); color: var(--maroon); border-color: var(--line); }
+.gate__x svg { width: 18px; height: 18px; }
+
+.gate__head h2 { margin-bottom: 0; }
+.gate__tema { font-family: var(--sans); font-size: 0.62em; color: var(--ink-soft); letter-spacing: 0.02em; }
+.gate__lead { font-size: 0.94rem; color: var(--ink-soft); margin-bottom: 0; }
+
+.gate__form { margin-top: 6px; }
+.gate__row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+.gate__ralat {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  font-size: 0.86rem;
+  color: #7a1f1f;
+  background: rgba(122, 31, 31, 0.07);
+  border-left: 3px solid #7a1f1f;
+  border-radius: var(--radius);
+}
+
+.gate__note {
+  margin: 14px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+/* ------------------------------ SELEPAS HANTAR ---------------------------- */
+.gate__siap { margin-top: 4px; }
+.gate__tick {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 100px;
+  background: rgba(201, 162, 75, 0.16);
+  border: 1px solid rgba(201, 162, 75, 0.45);
+  color: #8a6c1f;
+  margin-bottom: 16px;
+}
+.gate__tick svg { width: 22px; height: 22px; }
+.gate__siap h3 { margin-bottom: 8px; }
+.gate__siap p { font-size: 0.93rem; color: var(--ink-soft); }
+.gate__actions { display: flex; flex-direction: column; gap: 10px; margin: 22px 0 0; }
+
+@media (max-width: 620px) {
+  .gate { padding: 3vh 12px 30px; }
+  .gate__box { padding: 32px 22px 24px; }
+  .gate__row { grid-template-columns: 1fr; gap: 0; }
+}

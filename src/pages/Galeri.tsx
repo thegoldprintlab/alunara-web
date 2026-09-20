@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
-import { TEMA, KATALOG, waLink, MSG } from '../content'
+import { TEMA, KATALOG, CHECKLIST, waLink, MSG } from '../content'
 import CtaBand from '../components/CtaBand'
 import Lightbox from '../components/Lightbox'
+import MuatChecklist from '../components/MuatChecklist'
 import { IconWhatsApp, IconArrow } from '../components/Icons'
 
 export default function Galeri() {
@@ -61,13 +62,22 @@ export default function Galeri() {
                 <IconWhatsApp /> Minta Katalog (PDF)
               </a>
             </div>
-            <div className="katalog__files">
-              {KATALOG.map((k) => (
-                <a key={k.fail} className="katalog__file" href={k.fail} target="_blank" rel="noreferrer">
-                  <span className="katalog__file-name">Katalog {k.nama}</span>
-                  <span className="katalog__file-meta">PDF · buka</span>
-                </a>
-              ))}
+            <div className="katalog__col">
+              <div>
+                <p className="katalog__label">Katalog tema · 7 muka</p>
+                <div className="katalog__files">
+                  {KATALOG.map((k) => (
+                    <a key={k.fail} className="katalog__file" href={k.fail} target="_blank" rel="noreferrer">
+                      <span className="katalog__file-name">Katalog {k.nama}</span>
+                      <span className="katalog__file-meta">PDF · buka</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="katalog__label">Checklist pelan majlis · 4 muka · percuma</p>
+                <MuatChecklist senarai={CHECKLIST} />
+              </div>
             </div>
           </section>
         </div>
