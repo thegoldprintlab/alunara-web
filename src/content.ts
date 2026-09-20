@@ -26,7 +26,11 @@ export const WA_DISPLAY = '018-956 4604'
  * Lepas edit, save fail ni. Kalau laman dah deploy dari GitHub, commit + push.
  * Kalau deploy terus dari PC ni, jalankan: npm run build && npx vercel --prod
  * ------------------------------------------------------------------------- */
-export const TARIKH_LOCK: string[] = []
+export const TARIKH_LOCK: string[] = [
+  '2026-09-20', // 20/9
+  '2026-09-26', // 26/9
+  '2026-10-10', // 10/10
+]
 
 /** Tarikh dinyatakan sebagai YYYY-MM-DD. */
 export function tarikhLockSet(): Set<string> {
