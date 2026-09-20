@@ -146,7 +146,9 @@ input[type='date'] { min-width: 0; width: 100%; }
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--champagne);
-  box-shadow: 0 0 0 3px rgba(201, 162, 75, 0.16);
+  /* inset — supaya halo fokus tak melimpah keluar tepi medan/borang.
+     Kalau guna box-shadow luar, ia nampak 'lari' pada skrin kecil. */
+  box-shadow: inset 0 0 0 3px rgba(201, 162, 75, 0.22);
 }
 label {
   display: block;
