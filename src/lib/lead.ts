@@ -1,17 +1,15 @@
 /**
- * Lead capture ringan untuk checklist percuma.
+ * Lead capture untuk checklist & katalog percuma di laman ALUNARA.
  *
- * Cara ia berfungsi (tiada backend baru):
- *  1. Setiap lead disimpan dalam localStorage browser pelawat (key: `alunara_lead_v1`),
- *     jadi kalau API mati, data masih ada dan boleh dihantar semula nanti.
- *  2. Kalau `VITE_LEAD_ENDPOINT` diset (contoh: endpoint Apps Script / serverless sendiri),
- *     lead dihantar ke sana guna `navigator.sendBeacon` — tak disekat oleh ad-blocker
- *     macam request fetch biasa.
- *  3. Kalau endpoint tak diset, lead DIKELUARKAN dari localStorage oleh Hermes
- *     (Chrome profil ~/.hermes-screenshots lewat Playwright) — jadi bos tetap nampak
- *     senarai lead tanpa perlu setup server.
+ * Aliran sekarang:
+ *  1. Pelawat isi borang (nama + no. WhatsApp + tarikh majlis + jenis majlis).
+ *  2. Lead dihantar ke `/api/lead` (fungsi serverless dalam repo ini) yang
+ *     terus hantar mesej ke Telegram bot @Jojobotobot → bos dapat notifikasi.
+ *  3. Lead SALINAN disimpan dalam localStorage browser pelawat (key
+ *     `alunara_lead_v1`) supaya kalau Telegram/hantar gagal, data tak hilang.
  *
- * PENTING: data pelanggan (nama + telefon) tak pernah dihantar ke pihak ketiga.
+ * Token bot TIDAK pernah ada di sini — ia duduk dalam env Vercel dan hanya
+ * dibaca oleh `/api/lead`. Frontend cuma tahu URL relatif.
  */
 export type Lead = {
   nama: string
@@ -19,13 +17,18 @@ export type Lead = {
   tarikh: string
   jenis: string
   lokasi?: string
+  /** Pakej (katalog) atau nama checklist yang dimuat turun. */
   checklist: string
+  /** 'checklist' | 'katalog' */
+  sumber?: string
   asal: string
   masa: string
 }
 
 const KEY = 'alunara_lead_v1'
-const ENDPOINT = (import.meta.env.VITE_LEAD_ENDPOINT as string | undefined) ?? ''
+
+/** Endpoint serverless sendiri. Boleh ganti guna VITE_LEAD_ENDPOINT kalau perlu. */
+const ENDPOINT = (import.meta.env.VITE_LEAD_ENDPOINT as string | undefined) || '/api/lead'
 
 /** Baca semua lead yang tersimpan dalam browser ini. */
 export function bacaLead(): Lead[] {
@@ -39,7 +42,14 @@ export function bacaLead(): Lead[] {
   }
 }
 
-/** Simpan lead: localStorage dahulu, kemudian hantar ke endpoint kalau ada. */
+/**
+ * Simpan lead: localStorage dahulu (supaya tak hilang walau rangkaian gagal),
+ * kemudian hantar ke `/api/lead` untuk notifikasi Telegram.
+ *
+ * `navigator.sendBeacon` dipilih sebab ia tak disekat ad-blocker macam fetch
+ * biasa dan tak menghalang pelawat. Kalau browser tak sokong, jatuh balik ke
+ * fetch + keepalive.
+ */
 export function hantarLead(lead: Omit<Lead, 'masa'>): void {
   const penuh: Lead = { ...lead, masa: new Date().toISOString() }
 
@@ -51,13 +61,25 @@ export function hantarLead(lead: Omit<Lead, 'masa'>): void {
     /* mode private / storage penuh — jangan halang pelawat dapat PDF */
   }
 
-  if (ENDPOINT && typeof navigator !== 'undefined' && 'sendBeacon' in navigator) {
-    try {
-      const blob = new Blob([JSON.stringify(penuh)], { type: 'application/json' })
-      navigator.sendBeacon(ENDPOINT, blob)
-    } catch {
-      /* senyap — lead tetap ada dalam localStorage */
+  if (!ENDPOINT || typeof navigator === 'undefined') return
+
+  const body = JSON.stringify(penuh)
+  try {
+    if ('sendBeacon' in navigator) {
+      const blob = new Blob([body], { type: 'application/json' })
+      const ok = navigator.sendBeacon(ENDPOINT, blob)
+      if (ok) return
     }
+    void fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body,
+      keepalive: true,
+    }).catch(() => {
+      /* senyap — lead tetap ada dalam localStorage */
+    })
+  } catch {
+    /* senyap — lead tetap ada dalam localStorage */
   }
 }
 

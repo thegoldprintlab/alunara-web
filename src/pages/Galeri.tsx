@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { TEMA, KATALOG, CHECKLIST, waLink, MSG } from '../content'
 import CtaBand from '../components/CtaBand'
 import Lightbox from '../components/Lightbox'
-import MuatChecklist from '../components/MuatChecklist'
+import MuatGate from '../components/MuatGate'
 import { IconWhatsApp, IconArrow } from '../components/Icons'
 
 export default function Galeri() {
@@ -50,7 +50,7 @@ export default function Galeri() {
               <h2>Nak simpan &amp; tunjuk pada orang rumah?</h2>
               <hr className="divider" />
               <p>
-                Kami ada katalog PDF 7 muka surat untuk setiap tema — sesuai dihantar ke
+                Kami ada katalog PDF 9 muka surat untuk setiap tema — sesuai dihantar ke
                 WhatsApp, senang tunjuk pada keluarga atau pasangan.
               </p>
               <a
@@ -64,19 +64,16 @@ export default function Galeri() {
             </div>
             <div className="katalog__col">
               <div>
-                <p className="katalog__label">Katalog tema · 7 muka</p>
-                <div className="katalog__files">
-                  {KATALOG.map((k) => (
-                    <a key={k.fail} className="katalog__file" href={k.fail} target="_blank" rel="noreferrer">
-                      <span className="katalog__file-name">Katalog {k.nama}</span>
-                      <span className="katalog__file-meta">PDF · buka</span>
-                    </a>
-                  ))}
-                </div>
+                <p className="katalog__label">Katalog tema · 9 muka</p>
+                <MuatGate
+                  senarai={KATALOG}
+                  jenis="katalog"
+                  meta={() => 'PDF · 9 muka'}
+                />
               </div>
               <div>
                 <p className="katalog__label">Checklist pelan majlis · 4 muka · percuma</p>
-                <MuatChecklist senarai={CHECKLIST} />
+                <MuatGate senarai={CHECKLIST} jenis="checklist" />
               </div>
             </div>
           </section>

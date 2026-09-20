@@ -2,32 +2,41 @@ import { useEffect, useState } from 'react'
 import { IconWhatsApp, IconX, IconCheck } from './Icons'
 import { hantarLead, telefonSah, hariIni, tarikhMesra } from '../lib/lead'
 import { waLink } from '../content'
-import './MuatChecklist.css'
+import './MuatGate.css'
 
-export type ChecklistItem = { nama: string; fail: string; tema?: string }
+export type GateItem = { nama: string; fail: string; tema?: string }
 
 type Props = {
-  /** Senarai checklist yang boleh dimuat turun. */
-  senarai: ChecklistItem[]
+  /** Senarai fail yang boleh dimuat turun (checklist atau katalog). */
+  senarai: GateItem[]
+  /** Apa yang di-gate — menentukan perkataan pada butang & notifikasi Telegram. */
+  jenis: 'checklist' | 'katalog'
   /** Tajuk kecil di atas borang. */
   eyebrow?: string
+  /** Teks kecil di sebelah kanan setiap butang. */
+  meta?: (item: GateItem) => string
 }
 
 /**
- * Gate muat turun checklist percuma.
+ * Gate muat turun fail percuma (checklist & katalog).
  *
  * Alasan gate: bos nak no. telefon + tarikh majlis supaya boleh follow-up jadi
- * pelanggan. PDF hanya diberi SELEPAS borang diisi; butang continue-to-WhatsApp
+ * pelanggan. PDF hanya diberi SELEPAS borang diisi; butang WhatsApp susulan
  * disediakan supaya lead yang tak sabar pun tetap boleh hubungi kami.
+ *
+ * Lead dihantar ke `/api/lead` → terus jadi mesej Telegram ke bos.
  */
-export default function MuatChecklist({ senarai, eyebrow = 'Checklist Percuma' }: Props) {
-  const [aktif, setAktif] = useState<ChecklistItem | null>(null)
+export default function MuatGate({ senarai, jenis, eyebrow, meta }: Props) {
+  const [aktif, setAktif] = useState<GateItem | null>(null)
   const [nama, setNama] = useState('')
   const [telefon, setTelefon] = useState('')
   const [tarikh, setTarikh] = useState('')
-  const [jenis, setJenis] = useState('Belum pasti')
+  const [jenisMajlis, setJenisMajlis] = useState('Belum pasti')
   const [siap, setSiap] = useState(false)
   const [ralat, setRalat] = useState('')
+
+  const kata = jenis === 'katalog' ? 'Katalog' : 'Checklist'
+  const cap = kata.toLowerCase()
 
   // Esc untuk tutup + kunci scroll belakang
   useEffect(() => {
@@ -48,7 +57,7 @@ export default function MuatChecklist({ senarai, eyebrow = 'Checklist Percuma' }
     setNama('')
     setTelefon('')
     setTarikh('')
-    setJenis('Belum pasti')
+    setJenisMajlis('Belum pasti')
   }
 
   function hantar(e: React.FormEvent) {
@@ -61,8 +70,9 @@ export default function MuatChecklist({ senarai, eyebrow = 'Checklist Percuma' }
       nama: nama.trim(),
       telefon: telefon.trim(),
       tarikh,
-      jenis,
-      checklist: aktif ? `${aktif.nama} (${aktif.tema ?? '-'})` : '-',
+      jenis: jenisMajlis,
+      checklist: aktif ? `${kata} ${aktif.nama}${aktif.tema ? ` (${aktif.tema})` : ''}` : '-',
+      sumber: jenis,
       asal: typeof window !== 'undefined' ? window.location.pathname : '/',
     })
     // Terus buka PDF (masih dalam gesture klik user, jadi popup blocker tak halang).
@@ -73,7 +83,7 @@ export default function MuatChecklist({ senarai, eyebrow = 'Checklist Percuma' }
 
   const waSusul = aktif
     ? waLink(
-        `Hi ALUNARA! Saya ${nama || '(nama)'} — baru muat turun checklist ${aktif.nama}. ` +
+        `Hi ALUNARA! Saya ${nama || '(nama)'} — baru muat turun ${cap} ${aktif.nama}. ` +
           `Tarikh majlis saya ${tarikh ? tarikhMesra(tarikh) : '(belum pasti)'}. Boleh bagi quote pakej?`,
       )
     : '#'
@@ -94,8 +104,12 @@ export default function MuatChecklist({ senarai, eyebrow = 'Checklist Percuma' }
               setRalat('')
             }}
           >
-            <span className="katalog__file-name">Checklist {c.nama}</span>
-            <span className="katalog__file-meta">{c.tema ?? 'PDF'} · muat turun</span>
+            <span className="katalog__file-name">
+              {kata} {c.nama}
+            </span>
+            <span className="katalog__file-meta">
+              {meta ? meta(c) : `${c.tema ?? 'PDF'} · muat turun`}
+            </span>
           </button>
         ))}
       </div>
@@ -116,9 +130,9 @@ export default function MuatChecklist({ senarai, eyebrow = 'Checklist Percuma' }
             </button>
 
             <div className="gate__head">
-              <div className="eyebrow">{eyebrow}</div>
+              <div className="eyebrow">{eyebrow ?? `${kata} Percuma`}</div>
               <h2 id="gate-tajuk">
-                Checklist {aktif.nama}
+                {kata} {aktif.nama}
                 {aktif.tema ? <span className="gate__tema"> · {aktif.tema}</span> : null}
               </h2>
               <hr className="divider" />
@@ -145,7 +159,7 @@ export default function MuatChecklist({ senarai, eyebrow = 'Checklist Percuma' }
                     rel="noreferrer"
                     onClick={() => window.setTimeout(tutup, 800)}
                   >
-                    Buka Checklist {aktif.nama}
+                    Buka {kata} {aktif.nama}
                   </a>
                   <a
                     className="btn btn--wa btn--sm"
@@ -204,7 +218,11 @@ export default function MuatChecklist({ senarai, eyebrow = 'Checklist Percuma' }
                   </div>
                   <div className="field">
                     <label htmlFor="g-jenis">Jenis majlis</label>
-                    <select id="g-jenis" value={jenis} onChange={(e) => setJenis(e.target.value)}>
+                    <select
+                      id="g-jenis"
+                      value={jenisMajlis}
+                      onChange={(e) => setJenisMajlis(e.target.value)}
+                    >
                       {['Belum pasti', 'Hari Jadi', 'Tunang', 'Kenduri / Doa Selamat', 'Lain-lain'].map(
                         (j) => (
                           <option key={j} value={j}>
@@ -219,7 +237,7 @@ export default function MuatChecklist({ senarai, eyebrow = 'Checklist Percuma' }
                 {ralat && <p className="gate__ralat">{ralat}</p>}
 
                 <button type="submit" className="btn btn--solid btn--block">
-                  Buka Checklist {aktif.nama} · Percuma
+                  Buka {kata} {aktif.nama} · Percuma
                 </button>
 
                 <p className="gate__note">

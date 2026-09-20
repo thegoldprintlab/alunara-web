@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { FAQ, SOSIAL, WA_DISPLAY, MSG, waLink, KATALOG, CHECKLIST } from '../content'
 import CtaBand from '../components/CtaBand'
-import MuatChecklist from '../components/MuatChecklist'
+import MuatGate from '../components/MuatGate'
 import {
   IconWhatsApp,
   IconInstagram,
@@ -119,20 +119,15 @@ export default function Hubungi() {
               <div className="eyebrow">Katalog</div>
               <h2>PDF 3 tema</h2>
               <p className="muted">
-                7 muka surat untuk setiap tema. Senang tunjuk pada pasangan atau orang rumah.
+                9 muka surat untuk setiap tema. Senang tunjuk pada pasangan atau orang rumah.
               </p>
               <div className="katalog__files katalog__files--stack">
-                {KATALOG.map((k) => (
-                  <a key={k.fail} className="katalog__file" href={k.fail} target="_blank" rel="noreferrer">
-                    <span className="katalog__file-name">Katalog {k.nama}</span>
-                    <span className="katalog__file-meta">PDF</span>
-                  </a>
-                ))}
+                <MuatGate senarai={KATALOG} jenis="katalog" eyebrow="Katalog Percuma" meta={() => 'PDF · 9 muka'} />
               </div>
               <p className="katalog__label" style={{ marginTop: 18 }}>
                 Checklist pelan majlis · percuma
               </p>
-              <MuatChecklist senarai={CHECKLIST} eyebrow="Checklist Percuma" />
+              <MuatGate senarai={CHECKLIST} jenis="checklist" eyebrow="Checklist Percuma" />
             </div>
           </div>
 
