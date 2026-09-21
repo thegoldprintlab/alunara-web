@@ -102,13 +102,19 @@ async function buka(url) {
   await tidur(300)
   hasil.ralatNomborPendek = await nilai('document.querySelector(".kunci__ralat")?.textContent')
 
-  // nombor sah
+  // nombor sah + tarikh majlis (kini WAJIB)
   await nilai(`
     (() => {
-      const el = document.querySelector('#k-tel')
-      const s = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
-      s.call(el, '0123456789')
-      el.dispatchEvent(new Event('input', { bubbles: true }))
+      const set = (id, v, tag) => {
+        const el = document.querySelector(id)
+        const proto = tag === 'SELECT' ? window.HTMLSelectElement : window.HTMLInputElement
+        const s = Object.getOwnPropertyDescriptor(proto.prototype, 'value').set
+        s.call(el, v)
+        el.dispatchEvent(new Event('input', { bubbles: true }))
+        el.dispatchEvent(new Event('change', { bubbles: true }))
+      }
+      set('#k-tel', '0123456789')
+      set('#k-tarikh', '2026-12-05')
     })()
   `)
   await tidur(250)

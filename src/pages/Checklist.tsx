@@ -119,8 +119,9 @@ export default function Checklist() {
             <hr className="divider" />
             <p className="lead">
               Tiga senarai semak siap susun ikut urutan — birthday, tunang dan kenduri. Tiga
-              langkah pertama terbuka terus; isi nama &amp; no. WhatsApp untuk buka semua.
-              Boleh tanda satu-satu dalam browser (auto simpan), atau muat turun versi PDF.
+              langkah pertama terbuka terus; isi nama, no. WhatsApp &amp; tarikh majlis untuk
+              buka semua. Boleh tanda satu-satu dalam browser (auto simpan), atau muat turun
+              versi PDF.
             </p>
           </div>
 
