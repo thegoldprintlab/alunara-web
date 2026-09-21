@@ -9,6 +9,7 @@ import {
 } from '../content'
 import CtaBand from '../components/CtaBand'
 import MuatGate from '../components/MuatGate'
+import KunciKandungan from '../components/KunciKandungan'
 import { IconCheck, IconArrow, IconWhatsApp, IconSparkle, IconPlus, IconMinus } from '../components/Icons'
 
 /**
@@ -19,12 +20,24 @@ import { IconCheck, IconArrow, IconWhatsApp, IconSparkle, IconPlus, IconMinus } 
  * plus butang muat turun PDF (via MuatGate → lead ke Telegram bos).
  *
  * Kandungan datang dari CHECKLIST_META / CHECKLIST_COUNTDOWN dalam content.ts.
+ *
+ * KANDUNGAN BERGATE: hanya 3 langkah pertama dipapar percuma. Selebihnya
+ * dikunci di sebalik borang 2 medan (KunciKandungan). Kalau senarai penuh
+ * terpampang, orang baca je dan tak perlu bagi nombor — lead magnet bocor.
  */
 
 /** Kunci localStorage supaya tanda awak kekal bila balik semula. */
 function kunciTanda(id: string) {
   return `alunara:checklist:${id}`
 }
+
+/** Kunci localStorage — sudah buka kandungan checklist ni. */
+function kunciBuka(id: string) {
+  return `alunara:checklist:buka:${id}`
+}
+
+/** Berapa langkah dipapar sebelum kunci. */
+const LANGKAH_PERCUMA = 3
 
 function bacaTanda(id: string): string[] {
   try {
@@ -35,19 +48,29 @@ function bacaTanda(id: string): string[] {
   }
 }
 
+function sudahBuka(id: string): boolean {
+  try {
+    return localStorage.getItem(kunciBuka(id)) !== null
+  } catch {
+    return false
+  }
+}
+
 export default function Checklist() {
   const [aktifId, setAktifId] = useState(CHECKLIST_META[0].id)
   const [tanda, setTanda] = useState<string[]>(() => bacaTanda(CHECKLIST_META[0].id))
   const [bukaCountdown, setBukaCountdown] = useState(false)
+  const [terbuka, setTerbuka] = useState<boolean>(() => sudahBuka(CHECKLIST_META[0].id))
 
   const aktif = useMemo(
     () => CHECKLIST_META.find((c) => c.id === aktifId) ?? CHECKLIST_META[0],
     [aktifId],
   )
 
-  // Bila tukar jenis majlis, muat semula tanda dari simpanan.
+  // Bila tukar jenis majlis, muat semula tanda + status buka dari simpanan.
   useEffect(() => {
     setTanda(bacaTanda(aktif.id))
+    setTerbuka(sudahBuka(aktif.id))
   }, [aktif.id])
 
   function simpan(id: string, senarai: string[]) {
@@ -71,8 +94,18 @@ export default function Checklist() {
     simpan(aktif.id, [])
   }
 
-  const siap = tanda.length
+  function bukaKunci() {
+    try {
+      localStorage.setItem(kunciBuka(aktif.id), new Date().toISOString())
+    } catch {
+      /* gagal simpan pun tak apa — kandungan tetap terbuka sesi ini */
+    }
+    setTerbuka(true)
+  }
+
   const jumlah = aktif.langkah.length
+  const dilihat = terbuka ? aktif.langkah : aktif.langkah.slice(0, LANGKAH_PERCUMA)
+  const siap = tanda.length
   const peratus = jumlah ? Math.round((siap / jumlah) * 100) : 0
   const pdf = CHECKLIST.find((c) => aktif.nama.endsWith(c.nama))
 
@@ -81,13 +114,13 @@ export default function Checklist() {
       <section className="page section">
         <div className="container">
           <div className="page__head">
-            <div className="eyebrow">Percuma · Tanpa daftar</div>
+            <div className="eyebrow">Percuma · 3 langkah pertama terbuka</div>
             <h1>Checklist pelan majlis</h1>
             <hr className="divider" />
             <p className="lead">
-              Tiga senarai semak siap susun ikut urutan — birthday, tunang dan kenduri. Boleh
-              tanda satu-satu terus dalam browser (auto simpan), atau muat turun versi PDF untuk
-              bawa ke WhatsApp.
+              Tiga senarai semak siap susun ikut urutan — birthday, tunang dan kenduri. Tiga
+              langkah pertama terbuka terus; isi nama &amp; no. WhatsApp untuk buka semua.
+              Boleh tanda satu-satu dalam browser (auto simpan), atau muat turun versi PDF.
             </p>
           </div>
 
@@ -127,31 +160,35 @@ export default function Checklist() {
 
               <p className="ck__lede">{aktif.lede}</p>
 
-              <div className="ck__prog-wrap">
-                <div className="ck__prog-top">
-                  <span>
-                    <strong>{siap}</strong> / {jumlah} selesai
-                  </span>
-                  {siap > 0 && (
-                    <button type="button" className="ck__reset" onClick={reset}>
-                      Kosongkan tanda
-                    </button>
-                  )}
+              {/* Progress hanya bermakna bila pelawat dah buka kunci — jangan
+                  dedah jumlah sebenar sebagai tekanan tak perlu pada yang belum isi borang. */}
+              {terbuka && (
+                <div className="ck__prog-wrap">
+                  <div className="ck__prog-top">
+                    <span>
+                      <strong>{siap}</strong> / {jumlah} selesai
+                    </span>
+                    {siap > 0 && (
+                      <button type="button" className="ck__reset" onClick={reset}>
+                        Kosongkan tanda
+                      </button>
+                    )}
+                  </div>
+                  <div
+                    className="ck__prog"
+                    role="progressbar"
+                    aria-valuenow={peratus}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label="Kemajuan checklist"
+                  >
+                    <span className="ck__prog-bar" style={{ width: `${peratus}%` }} />
+                  </div>
                 </div>
-                <div
-                  className="ck__prog"
-                  role="progressbar"
-                  aria-valuenow={peratus}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-label="Kemajuan checklist"
-                >
-                  <span className="ck__prog-bar" style={{ width: `${peratus}%` }} />
-                </div>
-              </div>
+              )}
 
               <ul className="ck__list">
-                {aktif.langkah.map((l, i) => {
+                {dilihat.map((l, i) => {
                   const ok = tanda.includes(l)
                   return (
                     <li key={l}>
@@ -173,12 +210,23 @@ export default function Checklist() {
                 })}
               </ul>
 
-              <div className="ck__tip">
-                <div className="ck__tip-lab">
-                  <IconSparkle /> Tip ALUNARA
+              {!terbuka && (
+                <KunciKandungan
+                  nama={aktif.nama}
+                  percuma={LANGKAH_PERCUMA}
+                  jumlah={jumlah}
+                  onBuka={bukaKunci}
+                />
+              )}
+
+              {terbuka && (
+                <div className="ck__tip">
+                  <div className="ck__tip-lab">
+                    <IconSparkle /> Tip ALUNARA
+                  </div>
+                  <p>{aktif.tip}</p>
                 </div>
-                <p>{aktif.tip}</p>
-              </div>
+              )}
             </div>
 
             {/* ---------------------------- SIDEBAR ---------------------------- */}
@@ -224,16 +272,18 @@ export default function Checklist() {
                 </a>
               </div>
 
-              <div className="ck__card">
-                <div className="eyebrow">Apa ada dalam senarai</div>
-                <p className="muted ck__card-ayat">{aktif.ada}</p>
-                <Link to="/pakej" className="ck__link">
-                  Lihat pakej &amp; harga <IconArrow />
-                </Link>
-                <Link to="/galeri" className="ck__link">
-                  Tengok setup sebenar <IconArrow />
-                </Link>
-              </div>
+              {terbuka && (
+                <div className="ck__card">
+                  <div className="eyebrow">Apa ada dalam senarai</div>
+                  <p className="muted ck__card-ayat">{aktif.ada}</p>
+                  <Link to="/pakej" className="ck__link">
+                    Lihat pakej &amp; harga <IconArrow />
+                  </Link>
+                  <Link to="/galeri" className="ck__link">
+                    Tengok setup sebenar <IconArrow />
+                  </Link>
+                </div>
+              )}
             </aside>
           </div>
 

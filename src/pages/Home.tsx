@@ -332,13 +332,13 @@ export default function Home() {
         <div className="container">
           <div className="ck-promo">
             <div className="ck-promo__text">
-              <div className="eyebrow">Percuma · Tanpa Daftar</div>
+              <div className="eyebrow">Percuma · 3 langkah pertama terbuka</div>
               <h2>Checklist pelan majlis</h2>
               <hr className="divider" />
               <p>
-                Tiga senarai semak siap susun — birthday, tunang dan kenduri. Boleh tanda
-                satu-satu dalam browser, atau muat turun versi PDF. Senang awak tak lupa
-                benda penting sebelum hari majlis.
+                Tiga senarai semak siap susun — birthday, tunang dan kenduri. Isi nama &amp; no.
+                WhatsApp untuk buka semua langkah, kemudian tanda satu-satu dalam browser atau
+                muat turun PDF. Senang awak tak lupa benda penting sebelum hari majlis.
               </p>
             </div>
             <div className="ck-promo__side">

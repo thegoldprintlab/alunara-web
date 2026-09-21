@@ -1579,6 +1579,49 @@ main { flex: 1; }
 }
 .ck-cd__apa { font-size: 0.9rem; }
 
+/* --------------------------- KUNCI KANDUNGAN ---------------------------- */
+/* 3 langkah pertama dipapar; selebihnya di sebalik borang 2 medan. */
+.kunci {
+  margin-top: 18px;
+  background: linear-gradient(180deg, rgba(201, 162, 75, 0.08), var(--cream-warm));
+  border: 1px solid var(--champagne);
+  border-radius: var(--radius);
+  padding: 28px 26px;
+  box-shadow: var(--shadow-s);
+}
+.kunci__box h3 {
+  margin: 4px 0 8px;
+  font-size: 1.4rem;
+  color: var(--maroon);
+}
+.kunci__ayat { font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 20px; }
+.kunci__form { margin: 0; }
+.kunci__row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.kunci__ralat {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: #a5332f;
+}
+.kunci__nota {
+  margin: 16px 0 0;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+.kunci__nota a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #1a7a41;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.kunci__nota a svg { width: 13px; height: 13px; }
+@media (max-width: 700px) {
+  .kunci { padding: 22px 18px; }
+  .kunci__row { grid-template-columns: 1fr; }
+}
+
 /* Promo checklist di halaman utama */
 .ck-promo {
   display: grid;
