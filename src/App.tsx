@@ -9,6 +9,7 @@ import Pakej from './pages/Pakej'
 import Galeri from './pages/Galeri'
 import HargaHantar from './pages/HargaHantar'
 import Hubungi from './pages/Hubungi'
+import Checklist from './pages/Checklist'
 import Tempah from './pages/Tempah'
 import Admin from './pages/Admin'
 import './App.css'
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="/pakej" element={<Pakej />} />
             <Route path="/galeri" element={<Galeri />} />
             <Route path="/harga-hantar" element={<HargaHantar />} />
+            <Route path="/checklist" element={<Checklist />} />
             <Route path="/hubungi" element={<Hubungi />} />
             <Route path="/tempah" element={<Tempah />} />
             <Route path="/admin" element={<Admin />} />

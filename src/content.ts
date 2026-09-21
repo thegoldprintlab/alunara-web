@@ -337,3 +337,145 @@ export const CHECKLIST = [
   { nama: 'Tunang', fail: '/katalog/Alunara-Checklist-Tunang.pdf', tema: 'Tema Minimalist' },
   { nama: 'Kenduri', fail: '/katalog/Alunara-Checklist-Kenduri.pdf', tema: 'Tema Rustic' },
 ]
+
+/* ---------------------------------------------------------------------------
+ * KANDUNGAN CHECKLIST — versi laman web (boleh tanda, boleh share).
+ *
+ * Sumber: ~/vault-web/scripts/build-alunara-checklist.py (PDF 4 muka).
+ * Kalau bos tukar senarai dalam skrip PDF tu, salin juga ke sini supaya
+ * laman web & PDF tak lari.
+ * ------------------------------------------------------------------------- */
+
+export interface ChecklistMeta {
+  /** id anchor untuk tab */
+  id: string
+  /** Nama penuh untuk paparan */
+  nama: string
+  /** Baris kecil bawah tajuk */
+  sub: string
+  /** Tema ALUNARA yang padan */
+  temaId: string
+  temaNama: string
+  /** Untuk siapa checklist ni */
+  sesuai: string
+  /** Ayat pembuka (sama macam PDF muka 2) */
+  lede: string
+  /** Ringkasan apa yang diliputi */
+  ada: string
+  /** Tip ALUNARA di hujung senarai */
+  tip: string
+  /** Langkah-langkah, ikut urutan. */
+  langkah: string[]
+}
+
+export const CHECKLIST_META: ChecklistMeta[] = [
+  {
+    id: 'birthday',
+    nama: 'Checklist Birthday',
+    sub: 'Tema · Kek · Tetamu · Goodie Bag',
+    temaId: 'floral',
+    temaNama: 'Floral',
+    sesuai: 'Hari jadi kecil · Majlis siang · Baby shower · Aqiqah',
+    lede:
+      'Hari jadi kecil pun nak kena teratur. Satu benda lupa, habis kecoh hari tu. Checklist ni susun ikut urutan — dari tetapkan tarikh sampai hari majlis.',
+    ada:
+      'Dari tetapkan tarikh, senarai tetamu, tempah kek, sampai hiasan dan backup plan hujan. Semua dijejak — takde benda tertinggal.',
+    tip:
+      'Meja hidangan tema Floral — letak kek di tengah dan goodie bag beratur. Nampak penuh dan kemas dalam gambar.',
+    langkah: [
+      'Tetapkan tarikh & masa majlis',
+      'Senaraikan tetamu (kira bilangan orang)',
+      'Tentukan lokasi — rumah, dewan atau kafe',
+      'Pilih tema & warna (Rustic / Floral / Minimalist)',
+      'Hantar jemputan (WhatsApp / e-card)',
+      'Tempah kek mengikut tema',
+      'Rancang menu — makanan & minuman',
+      'Tempah meja & kerusi ikut bilangan tetamu',
+      'Sediakan meja hidangan untuk kek & goodie bag',
+      'Hiasan — belon, banner, backdrop',
+      'Goodie bag / door gift untuk tetamu',
+      'Rancang aktiviti atau games',
+      'Lantik siapa ambil gambar / video',
+      'Pakaian tema untuk keluarga terdekat',
+      'Backup plan kalau hujan',
+      'Semak semula butiran majlis dengan tuan rumah',
+    ],
+  },
+  {
+    id: 'tunang',
+    nama: 'Checklist Tunang',
+    sub: 'Hantaran · Pelamin · Katering',
+    temaId: 'minimalist',
+    temaNama: 'Minimalist',
+    sesuai: 'Pertunangan · Merisik · Majlis formal · Doa selamat',
+    lede:
+      'Hari tunang sekali seumur hidup. Jangan biar benda kecil rosakkan mood. Checklist ni cover dari dulang hantaran sampai sesi bergambar.',
+    ada:
+      'Dari tempah lokasi, dulang hantaran, katering, sampai pelamin dan doorgift. Semua teratur dari awal sampai habis majlis.',
+    tip:
+      'Meja hidangan tema Minimalist paling kuat untuk sesi bergambar dulang hantaran — nampak elegan dan tak mengganggu fokus.',
+    langkah: [
+      'Tetapkan tarikh & masa (semak kalendar keluarga)',
+      'Tempah lokasi / dewan',
+      'Senaraikan tetamu',
+      'Sediakan dulang hantaran (bilangan ikut adat)',
+      'Pilih tema & warna dewan',
+      'Tempah katering / makanan',
+      'Tempah meja & kerusi bersarung tema',
+      'Sediakan meja hidangan untuk hantaran & kek',
+      'Pelamin / backdrop untuk sesi bergambar',
+      'Doorgift untuk tetamu',
+      'Tempah jurugambar',
+      'Sediakan cincin tunang',
+      'Susun agenda — merisik → tunang → makan',
+      'Senarai wakil / jurucakap kedua-dua pihak',
+      'Atur pakej solek & pakaian',
+    ],
+  },
+  {
+    id: 'kenduri',
+    nama: 'Checklist Kenduri',
+    sub: 'Menu · Meja Hidangan · Agenda Doa',
+    temaId: 'rustic',
+    temaNama: 'Rustic',
+    sesuai: 'Kenduri · Tahlil · Doa selamat · Syukuran · Makan-makan santai',
+    lede:
+      'Tahlil, doa selamat atau syukuran — tetamu ramai, urusan jangan tunggang. Checklist ni susun dari menu sampai agenda doa.',
+    ada:
+      'Dari tentukan jenis majlis, menu, meja hidangan buffet, sampai tempah dewan dan hubungi ustaz. Semua siap sebelum tetamu sampai.',
+    tip:
+      'Tema Rustic sesuai untuk majlis santai — nampak mesra dan homey. Padan dengan kenduri di halaman rumah.',
+    langkah: [
+      'Tetapkan tarikh & masa',
+      'Tentukan jenis majlis — tahlil, doa selamat, syukuran',
+      'Senaraikan tetamu',
+      'Rancang menu — nasi+lauk, BBQ atau potluck',
+      'Tempah meja & kerusi',
+      'Sediakan meja hidangan (buffet style)',
+      'Sediakan pinggan mangkuk / pakai buang',
+      'Sediakan minuman',
+      'Tempah dewan / khemah jika perlu',
+      'Hubungi tetamu kehormat (ustaz / imam)',
+      'Susun agenda & waktu doa',
+      'Lantik orang ambil gambar',
+      'Atur tempat letak kereta & aliran tetamu',
+      'Sediakan bekas tapau untuk lebihan makanan',
+      'Senarai tugasan keluarga / AJK',
+    ],
+  },
+]
+
+/** Countdown yang sama seperti muka 3 PDF. */
+export const CHECKLIST_COUNTDOWN: { n: string; bila: string; apa: string }[] = [
+  { n: '4', bila: 'minggu sebelum', apa: 'Lock tarikh · senarai tetamu · tempah lokasi · tempah meja & kerusi' },
+  { n: '3', bila: 'minggu sebelum', apa: 'Pilih tema & warna · tempah katering · tempah jurugambar' },
+  { n: '2', bila: 'minggu sebelum', apa: 'Hantar jemputan · susun menu · beli hiasan & doorgift' },
+  { n: '1', bila: 'minggu sebelum', apa: 'Confirm semula semua tempahan · senarai semak barang' },
+  { n: '3', bila: 'hari sebelum', apa: 'Confirm lokasi & masa setup · sediakan pakaian' },
+  { n: 'H', bila: 'hari majlis', apa: 'Setup awal · ambil gambar sebelum tetamu sampai · nikmati majlis' },
+]
+
+/** Cari fail PDF bagi satu checklist (untuk MuatGate). */
+export function checklistFail(nama: string) {
+  return CHECKLIST.find((c) => c.nama === nama)
+}

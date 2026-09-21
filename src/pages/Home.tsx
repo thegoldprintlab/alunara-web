@@ -328,6 +328,29 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="section">
+        <div className="container">
+          <div className="ck-promo">
+            <div className="ck-promo__text">
+              <div className="eyebrow">Percuma · Tanpa Daftar</div>
+              <h2>Checklist pelan majlis</h2>
+              <hr className="divider" />
+              <p>
+                Tiga senarai semak siap susun — birthday, tunang dan kenduri. Boleh tanda
+                satu-satu dalam browser, atau muat turun versi PDF. Senang awak tak lupa
+                benda penting sebelum hari majlis.
+              </p>
+            </div>
+            <div className="ck-promo__side">
+              <Link to="/checklist" className="btn btn--gold btn--block">
+                Buka Checklist <IconArrow />
+              </Link>
+              <span className="ck-promo__nota">3 jenis majlis · 46 langkah semuanya</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <CtaBand />
     </>
   )

@@ -8,6 +8,7 @@ const LINKS = [
   { to: '/tema', label: 'Tema' },
   { to: '/pakej', label: 'Pakej' },
   { to: '/galeri', label: 'Galeri' },
+  { to: '/checklist', label: 'Checklist' },
   { to: '/harga-hantar', label: 'Penghantaran' },
   { to: '/hubungi', label: 'Hubungi' },
 ]

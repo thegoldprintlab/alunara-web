@@ -62,6 +62,7 @@ export default function Footer() {
             <IconPin /> Melaka sahaja
           </span>
           <Link to="/tempah">Semak Tarikh Kosong</Link>
+          <Link to="/checklist">Checklist Pelan Majlis</Link>
           <Link to="/hubungi">Semua Soalan Lazim</Link>
         </div>
       </div>
