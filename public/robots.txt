@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Halaman admin — jangan index
+Disallow: /admin
+Disallow: /tempah
+Disallow: /api/
+
+Sitemap: https://alunara.my/sitemap.xml

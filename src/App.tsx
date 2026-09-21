@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import Nav from './components/Nav'
 import Footer from './components/Footer'
 import StickyWa from './components/StickyWa'
+import Seo from './components/Seo'
 import Home from './pages/Home'
 import { TemaIndex, TemaDetail } from './pages/Tema'
 import Pakej from './pages/Pakej'
@@ -11,7 +12,6 @@ import HargaHantar from './pages/HargaHantar'
 import Hubungi from './pages/Hubungi'
 import Checklist from './pages/Checklist'
 import Tempah from './pages/Tempah'
-import Admin from './pages/Admin'
 import './App.css'
 
 /** Scroll ke atas setiap kali tukar halaman. */
@@ -27,6 +27,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ScrollTop />
+      <Seo />
       <div className="site">
         <Nav />
         <main id="kandungan">
@@ -40,7 +41,6 @@ export default function App() {
             <Route path="/checklist" element={<Checklist />} />
             <Route path="/hubungi" element={<Hubungi />} />
             <Route path="/tempah" element={<Tempah />} />
-            <Route path="/admin" element={<Admin />} />
             {/* Route lama — redirect supaya link/bio yang dah diedar tak mati */}
             <Route path="/book" element={<Navigate to="/tempah" replace />} />
             <Route path="/gallery" element={<Navigate to="/galeri" replace />} />
