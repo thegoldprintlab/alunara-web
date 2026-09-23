@@ -8,11 +8,64 @@ Laman statik sepenuhnya — React + Vite SPA yang **di-prerender** jadi HTML sta
 | Perkara | Di mana |
 |---|---|
 | Semua harga/teks bisnes | `src/content.ts` (satu fail sahaja) |
-| Tarikh yang di-lock | `TARIKH_LOCK` dalam `src/content.ts` |
+| Tarikh yang di-lock (manual) | `TARIKH_LOCK` dalam `src/content.ts` |
+| Tarikh yang di-lock (dari panel) | jadual `alunara_bookings` → dibaca `src/lib/tarikhSibuk.ts` |
 | Nombor WhatsApp | `WA` / `WA_DISPLAY` dalam `src/content.ts` |
 | Title + meta ikut laluan | `src/components/Seo.tsx` |
 | SEO statik + JSON-LD | `index.html` |
-| Lead → Telegram | `api/lead.js` (env Vercel) |
+| Lead → Telegram + DB | `api/lead.js` (env Vercel) |
+| Panel admin | `src/pages/Admin.tsx` · logik data `src/lib/admin.ts` |
+| Skema DB | `supabase/alunara_admin.sql` |
+
+## Panel admin — `/admin`
+
+Tempat bos daftar klien dan tarikh majlis. Tiga tab: **Tempahan · Klien · Lead Web**.
+
+Log masuk guna Supabase Auth (email + password). Akaun admin mesti ada
+`role = 'admin'` dalam jadual `profiles`. Untuk jadikan akaun admin:
+
+```sql
+insert into public.profiles (user_id, role) values ('<uuid>', 'admin')
+on conflict (user_id) do update set role = 'admin';
+```
+
+Cari `<uuid>` di Supabase → Authentication → Users.
+
+### Apa yang berlaku bila bos tambah tempahan
+
+1. Baris masuk `alunara_bookings` (status `pending` atau `confirmed`).
+2. Satu tarikh = satu majlis (unique index pada `event_date`; status
+   `cancelled` tak dikira).
+3. Kalendar awam `/tempah` panggil RPC `alunara_public_booked_dates()` dan
+   tanda tarikh itu **kelabu, tak boleh klik**. **Tiada deploy perlu.**
+
+RPC itu sengaja pulangkan **tarikh sahaja** — nama dan telefon pelanggan
+tidak pernah sampai ke pelayar orang awam.
+
+### Keselamatan
+
+- `alunara_bookings`, `alunara_clients`, `alunara_leads` — RLS, admin sahaja.
+  `anon` tiada grant SELECT langsung.
+- RPC awam: `alunara_public_booked_dates()` (tarikh sahaja) dan
+  `alunara_public_lead()` (berhad: had bilangan + had 5 lead / 24 jam per nombor).
+- **2FA belum dipasang** — Supabase MFA ialah ciri pro berbayar. Kekuatan
+  password admin ialah pertahanan sebenar. Tukar dari password lalai.
+- Sesi disimpan dalam `localStorage`, bukan cookie HttpOnly.
+
+### Ujian
+
+```bash
+npm run preview                                  # port 4173/4188
+ALUNARA_ADMIN_PASS='...' node scripts/uji-admin.cjs
+ALUNARA_BASE=https://alunara.my ALUNARA_ADMIN_PASS='...' node scripts/uji-admin.cjs
+```
+
+Ujian cipta satu tempahan bernama `UJIAN HERMES ADMIN` — **padam selepas ujian**.
+
+```bash
+cd ~/gold-plan-web && node -e "..."   # atau padam ikut event_date di /admin
+```
+
 
 ## Deploy
 
@@ -64,17 +117,32 @@ tapi SEO rosak).
 
 Tanpa langkah ni, Google mungkin ambil minggu/bulan untuk jumpa laman ini.
 
-## Supabase — DAH TAK DIPAKAI
+## Supabase — DIPAKAI SEMULA (2026-09-23)
 
-Project lama (`sdzjlekydkwtxjjtrwrh.supabase.co`) **tak resolve** — dah mati.
-Semua kod Supabase (admin panel, booking DB) dah dibuang.
+Panel `/admin` guna project Supabase **Gold Plan** (`gtblmwijohoetczqngpr`) —
+bukan project ALUNARA lama yang dah mati (`sdzjlekydkwtxjjtrwrh`).
 
-- Lead sekarang → `api/lead.js` → Telegram bot
-- Tarikh lock → `TARIKH_LOCK` dalam `src/content.ts`, bukan DB
-- `/admin` dah tiada (404)
+- Jadual ALUNARA: `alunara_bookings`, `alunara_clients`, `alunara_leads`,
+  `alunara_gallery`, `alunara_settings`
+- Skema penuh: `supabase/alunara_admin.sql` (idempotent, boleh jalankan semula)
+- Admin guna `public.profiles.role = 'admin'` (kongsi dengan Gold Plan)
+- Lead → `api/lead.js` → Telegram **dan** jadual `alunara_leads`
+- Tarikh lock → DB (`alunara_bookings`) + `TARIKH_LOCK` (manual, digabung)
 
-Kalau nak DB semula, buat project baru dan set `VITE_SUPABASE_*` di Vercel.
-Jangan hidupkan balik project lama.
+### GOTCHA — env Vercel vs `.vercel/.env.production.local`
+
+`vercel build` membaca **fail cache** `.vercel/.env.production.local` dan ia
+**menang** atas nilai yang diset di dashboard Vercel. Kalau fail ini basi,
+bundle produksi akan guna project Supabase lama dan `/admin` akan tersangkut
+pada "Menyemak…" (cuba sambung ke host yang dah mati).
+
+Kalau env berubah: **padam `.vercel/.env.production.local` dan `dist/`**,
+barulah `npm run deploy`. Sahkan selepas deploy:
+
+```bash
+curl -s https://alunara.my/admin | grep -o 'assets/index-[^"]*\.js'
+curl -s https://alunara.my/assets/index-XXXX.js | grep -c 'gtblmwijohoetczqngpr'
+```
 
 ## Dev
 
