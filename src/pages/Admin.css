@@ -1,0 +1,283 @@
+/* ---------------------------------------------------------------------------
+ * Panel admin ALUNARA.
+ *
+ * Sengaja berasingan dari App.css: laman awam tak perlu muat gaya jadual
+ * admin, dan panel ini tak patut mewarisi gaya kad/promosi laman.
+ * Semua warna guna token dari index.css supaya jenama kekal sama.
+ * ------------------------------------------------------------------------- */
+
+.adm__kepala {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+.adm__kepala h1 { margin: 0; }
+.adm__kepala-kanan {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.adm__tab {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+.adm__tab-btn {
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 11px 16px;
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: color 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+.adm__tab-btn:hover { color: var(--maroon); }
+.adm__tab-btn--aktif {
+  color: var(--maroon);
+  border-bottom-color: var(--champagne);
+}
+
+/* ------------------------------- STRIP KPI ------------------------------- */
+.adm__strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+@media (max-width: 760px) {
+  .adm__strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.adm__kpi {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-s);
+  min-width: 0;
+}
+.adm__kpi-angka {
+  display: block;
+  font-family: var(--serif);
+  font-size: clamp(1.25rem, 3vw, 1.7rem);
+  color: var(--maroon);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.adm__kpi-label {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-top: 4px;
+}
+
+/* --------------------------------- BAR ---------------------------------- */
+.adm__bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.adm__cari {
+  flex: 1 1 240px;
+  min-width: 0;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+  font-family: var(--sans);
+  font-size: 0.92rem;
+}
+.adm__tapisan {
+  flex: 0 1 200px;
+  min-width: 0;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+  font-family: var(--sans);
+  font-size: 0.9rem;
+}
+
+/* -------------------------------- KAD ----------------------------------- */
+.adm__kad {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow-m);
+  margin-bottom: 22px;
+}
+.adm__kad h3 { margin-top: 0; }
+.adm__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 16px;
+}
+@media (max-width: 900px) {
+  .adm__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .adm__grid { grid-template-columns: minmax(0, 1fr); }
+}
+.adm__grid > .field { min-width: 0; }
+
+.adm__semak {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 4px 0 18px;
+  font-size: 0.88rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+.adm__semak input { width: auto; min-width: 0; }
+
+.adm__aksi {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.adm__hint {
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  background: var(--cream-warm);
+  border-left: 3px solid var(--champagne);
+  padding: 9px 13px;
+  margin: 0 0 18px;
+}
+
+/* ------------------------------- JADUAL --------------------------------- */
+.adm__jadual-bungkus {
+  overflow-x: auto;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-s);
+}
+.adm__jadual {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  min-width: 780px;
+}
+.adm__jadual th {
+  text-align: left;
+  font-family: var(--sans);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding: 12px 13px;
+  border-bottom: 1px solid var(--line);
+  background: var(--cream-warm);
+  white-space: nowrap;
+}
+.adm__jadual td {
+  padding: 12px 13px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.adm__jadual tbody tr:last-child td { border-bottom: 0; }
+.adm__jadual tbody tr:hover { background: rgba(201, 162, 75, 0.05); }
+.adm__baris--mati { opacity: 0.5; }
+.adm__baris--mati .adm__nama { text-decoration: line-through; }
+
+.adm__nama { font-weight: 600; color: var(--maroon); }
+.adm__tarikh { font-weight: 600; }
+.adm__kecil {
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+.adm__baki { color: #a5332f; font-weight: 600; }
+.adm__lunas { color: #2f6b3f; font-weight: 600; }
+
+.adm__status {
+  width: auto;
+  min-width: 150px;
+  padding: 7px 9px;
+  font-size: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+}
+
+.adm__aksi-sel {
+  white-space: nowrap;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.adm__pautan {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--maroon);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.adm__pautan:hover { color: var(--champagne); }
+.adm__pautan svg { width: 15px; height: 15px; }
+.adm__pautan--bahaya { color: #a5332f; }
+.adm__pautan--bahaya:hover { color: #7d2320; }
+
+/* -------------------------------- MESEJ --------------------------------- */
+.adm__pesan,
+.adm__ralat {
+  font-size: 0.87rem;
+  padding: 11px 14px;
+  border-radius: var(--radius);
+  margin: 0 0 16px;
+}
+.adm__pesan {
+  background: rgba(47, 107, 63, 0.09);
+  border-left: 3px solid #2f6b3f;
+  color: #24512f;
+}
+.adm__ralat {
+  background: rgba(165, 51, 47, 0.08);
+  border-left: 3px solid #a5332f;
+  color: #8a2a26;
+}
+.adm__nota {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin-top: 18px;
+  max-width: 68ch;
+}
+.adm__nota code {
+  background: var(--cream-warm);
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-size: 0.95em;
+}

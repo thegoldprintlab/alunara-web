@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PAKEJ, TEMA, WA_DISPLAY, waLink, cajHantarText, LOKASI, TARIKH_LOCK } from '../content'
+import { tarikhSibukDariDb } from '../lib/tarikhSibuk'
 import CtaBand from '../components/CtaBand'
 import { IconWhatsApp, IconCheck, IconArrow } from '../components/Icons'
 
@@ -28,9 +29,28 @@ export default function Tempah() {
   }, [])
 
   const [view, setView] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1))
-  // Tarikh yang bos dah lock datang dari senarai TARIKH_LOCK dalam src/content.ts.
-  // Customer tak boleh pilih tarikh yang sudah di-lock.
-  const booked: string[] = TARIKH_LOCK
+
+  /**
+   * Tarikh yang tak boleh dipilih — dua sumber:
+   *   1. DB (jadual tempahan, status aktif) melalui RPC awam yang pulangkan
+   *      TARIKH sahaja. Ini yang menyegerakkan admin panel dengan kalendar.
+   *   2. TARIKH_LOCK dalam src/content.ts — senarai manual + sandaran kalau
+   *      DB tak dapat dihubungi. Kalau DB hidup, senarai ini tetap digabung
+   *      supaya tarikh yang bos dah set manual tak terbuka semula.
+   */
+  const [booked, setBooked] = useState<string[]>(TARIKH_LOCK)
+
+  useEffect(() => {
+    let hidup = true
+    void (async () => {
+      const dariDb = await tarikhSibukDariDb()
+      if (!hidup || !dariDb) return
+      setBooked([...new Set([...TARIKH_LOCK, ...dariDb])])
+    })()
+    return () => {
+      hidup = false
+    }
+  }, [])
 
   const [tarikh, setTarikh] = useState('')
   const [nama, setNama] = useState('')
@@ -181,6 +201,7 @@ export default function Tempah() {
                       type="button"
                       key={c.d}
                       className={kelas}
+                      data-tarikh={c.d}
                       onClick={() => pilihTarikh(c.d)}
                       disabled={lepas || penuh}
                       aria-label={`${c.num}${penuh ? ' — sudah ditempah' : lepas ? ' — tarikh terlalu dekat' : ''}`}
@@ -196,7 +217,8 @@ export default function Tempah() {
                 kami hanya ada 3 meja &amp; 18 kerusi, jadi satu tarikh satu majlis.
               </p>
               <p className="kal__note">
-                Tarikh yang sudah di-lock (deposit diterima) bertanda kelabu dan tak boleh dipilih.
+                Tarikh yang sudah di-lock (deposit diterima) bertanda kelabu dan tak boleh
+                dipilih. Senarai tarikh ini disegerakkan dari panel admin.
               </p>
             </div>
 

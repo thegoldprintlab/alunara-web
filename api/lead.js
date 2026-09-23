@@ -13,6 +13,15 @@
 // Env yang perlu diset di Vercel (Production):
 //   TELEGRAM_BOT_TOKEN     token bot @Jojobotobot
 //   TELEGRAM_LEAD_CHAT_ID  chat id penerima lead (bos): 346850554
+//   SUPABASE_URL           https://<ref>.supabase.co   (project Gold Plan)
+//   SUPABASE_ANON_KEY      anon key projek yang sama
+//
+// Kenapa lead disimpan ke DB juga (bukan Telegram sahaja):
+//   Mesej Telegram senang tertimbus dalam sembang, dan kalau bos terlepas
+//   satu mesej, lead itu hilang terus. Salinan dalam jadual alunara_leads
+//   boleh dilihat di /admin → tab "Lead Web". Penghantaran ke Telegram
+//   KEKAL jadi keutamaan; simpanan DB bersifat best-effort (kalau DB tak
+//   dapat dihubungi, lead tetap sampai ke Telegram dan kita balas ok).
 
 const HAD = 6;
 const TEMPOH_MS = 10 * 60 * 1000;
@@ -101,16 +110,21 @@ export default async function handler(req, res) {
   ].join('\n');
 
   try {
-    const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: teks,
-        parse_mode: 'HTML',
-        disable_web_page_preview: true,
+    // Simpan salinan ke DB dan hantar ke Telegram serentak. Kegagalan DB tak
+    // menghalang penghantaran Telegram (dan sebaliknya).
+    const [, r] = await Promise.all([
+      simpanLead(b, nama, tele),
+      fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: teks,
+          parse_mode: 'HTML',
+          disable_web_page_preview: true,
+        }),
       }),
-    });
+    ]);
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.ok) {
       console.error('[lead] Telegram tolak:', r.status, j?.description);
@@ -129,5 +143,51 @@ function safeJson(s) {
     return JSON.parse(s);
   } catch {
     return null;
+  }
+}
+
+/**
+ * Simpan salinan lead ke pangkalan data (best-effort).
+ *
+ * Kenapa guna RPC `alunara_public_lead` dan bukan insert terus:
+ *   Jadual `alunara_leads` dikunci RLS (admin sahaja). Fungsi RPC itu
+ *   SECURITY DEFINER — ia menyemak nama dan had 5 lead/24 jam untuk no.
+ *   telefon yang sama, kemudian barulah insert. Jadi anon key yang ada di
+ *   sini TIDAK boleh menyuntik apa-apa ke dalam DB dengan cara lain.
+ *
+ * Kegagalan di sini SENGAJA tidak menggagalkan permintaan: lead sudah
+ * sampai ke Telegram, dan itu yang paling penting.
+ */
+async function simpanLead(b, nama, tele) {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_ANON_KEY;
+  if (!url || !key) return;
+
+  const tarikh = /^\d{4}-\d{2}-\d{2}$/.test(String(b.tarikh ?? '')) ? b.tarikh : null;
+
+  try {
+    const r = await fetch(`${url}/rest/v1/rpc/alunara_public_lead`, {
+      method: 'POST',
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        p_name: nama,
+        p_phone: tele,
+        p_event_date: tarikh,
+        p_event_type: String(b.jenis ?? 'Belum pasti').slice(0, 60),
+        p_interest: String(b.checklist ?? '').slice(0, 120) || null,
+        p_source: String(b.sumber ?? 'web').slice(0, 40),
+        p_source_page: String(b.asal ?? '').slice(0, 200) || null,
+      }),
+    });
+    if (!r.ok) {
+      const t = await r.text().catch(() => '');
+      console.error('[lead] simpan DB gagal:', r.status, t.slice(0, 200));
+    }
+  } catch (e) {
+    console.error('[lead] simpan DB ralat rangkaian:', e?.message);
   }
 }

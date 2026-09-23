@@ -31,6 +31,10 @@ const SPA_ROUTES = [
   '/checklist',
   '/hubungi',
   '/tempah',
+  // Panel dalaman. Wujud (200) tetapi noindex + Disallow dalam robots.txt.
+  // Jangan keluarkan dari senarai ini tanpa sebab — kalau tiada, /admin
+  // jadi 404 dan bos tak boleh log masuk.
+  '/admin',
 ]
 
 /** Route lama — redirect 308 ke laluan baru (link/bio lama tak mati). */
