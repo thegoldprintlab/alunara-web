@@ -11,11 +11,19 @@
 import { Link } from 'react-router-dom'
 import './BukuTamu.css'
 
-/** Harga buku tamu. Sengaja di satu tempat supaya senang tukar. */
+/**
+ * Harga buku tamu — diputuskan bos 29 Sep 2026.
+ *
+ *   bundle   = +RM39 di atas pakej sewa meja (add-on)
+ *   standalone = RM79, buku tamu sahaja
+ *
+ * Produk SAMA untuk kedua-duanya — tiada tier ciri. Bezanya cuma sama ada
+ * client juga menyewa meja. Jangan cipta tier baharu tanpa bos.
+ * Rujuk Dokumentasi/Sedetik/03 - Keputusan & Langkah Seterusnya.md
+ */
 const HARGA = {
-  solo: 79,
-  premium: 149,
-  bundle: 199,
+  bundle: 39,
+  standalone: 79,
 }
 
 export default function BukuTamuMula() {
@@ -71,8 +79,9 @@ export default function BukuTamuMula() {
           <div className="bt-ciri-kad">
             <h3>Filter film stock</h3>
             <p>
-              Enam warna bergaya filem — Portra, Portofino dan lain-lain. Supaya
-              semua gambar nampak satu nada, bukan campur-campur.
+              Lapan warna bergaya filem sebenar — Kodak Portra, Fuji Superia,
+              CineStill dan lain-lain. Supaya semua gambar nampak satu nada,
+              bukan campur-campur.
             </p>
           </div>
           <div className="bt-ciri-kad">
@@ -94,48 +103,38 @@ export default function BukuTamuMula() {
         </p>
 
         <div className="bt-harga">
-          <div className="bt-harga-kad">
-            <p className="bt-harga-nama">Solo</p>
-            <p className="bt-harga-angka">
-              RM{HARGA.solo}
-              <span> sekali</span>
-            </p>
-            <ul className="bt-harga-senarai">
-              <li>1 majlis, 1 kod QR</li>
-              <li>Gambar tanpa had sehingga 20 seorang</li>
-              <li>6 filter film stock</li>
-              <li>Ucapan tetamu</li>
-              <li>Galeri aktif 90 hari</li>
-            </ul>
-          </div>
-
           <div className="bt-harga-kad bt-harga-kad--utama">
-            <p className="bt-harga-tag">Paling popular</p>
-            <p className="bt-harga-nama">Premium</p>
+            <p className="bt-harga-tag">Dengan sewa meja</p>
+            <p className="bt-harga-nama">Bundle Alunara</p>
             <p className="bt-harga-angka">
-              RM{HARGA.premium}
-              <span> sekali</span>
-            </p>
-            <ul className="bt-harga-senarai">
-              <li>Semua dalam Solo</li>
-              <li>Kuota naik jadi 50 gambar seorang</li>
-              <li>Galeri aktif <strong>6 bulan</strong></li>
-              <li>Nama majlis &amp; tarikh pada halaman</li>
-              <li>QR siap cetak (kami hantar fail)</li>
-            </ul>
-          </div>
-
-          <div className="bt-harga-kad">
-            <p className="bt-harga-nama">Bundle Tempahan</p>
-            <p className="bt-harga-angka">
-              RM{HARGA.bundle}
-              <span> dengan sewa</span>
+              +RM{HARGA.bundle}
+              <span> atas pakej</span>
             </p>
             <ul className="bt-harga-senarai">
               <li>Untuk client sewa meja &amp; kerusi ALUNARA</li>
-              <li>Buku tamu Premium</li>
-              <li>Diskaun RM{HARGA.premium + HARGA.bundle - HARGA.bundle} dari harga asing</li>
-              <li>Kod siap sebelum majlis</li>
+              <li>1 majlis, 1 kod QR</li>
+              <li>Gambar tanpa had</li>
+              <li>8 filter film stock</li>
+              <li>Ucapan &amp; doa tetamu</li>
+              <li>Galeri aktif 90 hari</li>
+              <li>Kod &amp; QR siap sebelum majlis</li>
+            </ul>
+          </div>
+
+          <div className="bt-harga-kad">
+            <p className="bt-harga-nama">Buku tamu sahaja</p>
+            <p className="bt-harga-angka">
+              RM{HARGA.standalone}
+              <span> sekali</span>
+            </p>
+            <ul className="bt-harga-senarai">
+              <li>Tanpa sewa meja</li>
+              <li>Produk sama — tiada ciri dikurangkan</li>
+              <li>1 majlis, 1 kod QR</li>
+              <li>Gambar tanpa had</li>
+              <li>8 filter film stock</li>
+              <li>Ucapan &amp; doa tetamu</li>
+              <li>Galeri aktif 90 hari</li>
             </ul>
           </div>
         </div>
@@ -167,6 +166,13 @@ export default function BukuTamuMula() {
           <dd>
             Anda. Kami sediakan butang muat turun di panel ALUNARA supaya anda
             boleh simpan semua gambar sendiri.
+          </dd>
+
+          <dt>Gambar saya disimpan di mana?</dt>
+          <dd>
+            Dalam storan awan peribadi, bukan di laman web awam. Setiap gambar
+            dibuka guna pautan bertandatangan yang luput dalam sejam — jadi
+            tiada sesiapa boleh teka pautan dan tengok gambar majlis anda.
           </dd>
 
           <dt>Boleh guna untuk majlis selain kahwin?</dt>

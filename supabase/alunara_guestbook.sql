@@ -37,7 +37,11 @@ create table if not exists public.alunara_guestbook_events (
   -- Filter film stock yang dibenarkan untuk majlis ni (null = semua).
   -- Kalau bos nak tema tertentu (cth. perkahwinan rustic = Portra sahaja).
   allowed_stocks text[],
-  max_uploads_per_guest integer not null default 20,
+  -- SILING KESELAMATAN, bukan had produk. Tiada pakej yang mengurangkan
+  -- bilangan gambar — had ini hanya untuk menghalang satu sesi daripada
+  -- membanjiri bucket. 100 cukup tinggi sehingga tetamu biasa takkan
+  -- menyentuhnya; jangan turunkan untuk "menjual tier".
+  max_uploads_per_guest integer not null default 100,
   notes        text,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
@@ -50,6 +54,14 @@ alter table public.alunara_guestbook_events
 alter table public.alunara_guestbook_events
   add constraint alunara_guestbook_code_sah
   check (code ~ '^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$');
+
+-- Naikkan siling keselamatan. `create table if not exists` TIDAK mengubah
+-- jadual sedia ada, jadi baris lama masih simpan 20 dan perlu dikemas.
+alter table public.alunara_guestbook_events
+  alter column max_uploads_per_guest set default 100;
+update public.alunara_guestbook_events
+   set max_uploads_per_guest = 100
+ where max_uploads_per_guest < 100;
 
 create index if not exists alunara_guestbook_events_code_idx
   on public.alunara_guestbook_events (code) where active;

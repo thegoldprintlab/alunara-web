@@ -42,6 +42,14 @@ const ROUTES = [
   '/tempah',
 ]
 
+/**
+ * Laluan yang di-prerender tetapi TIDAK boleh diindeks.
+ * robots.txt sudah Disallow, tetapi kalau URL itu dikongsi di tempat lain,
+ * Disallow menghalang crawler membaca arahan noindex — jadi kita letak
+ * meta robots terus dalam HTML.
+ */
+const NOINDEX = new Set(['/tempah'])
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -143,8 +151,16 @@ async function main() {
     }
     const outDir = route === '/' ? DIST : join(DIST, route)
     await mkdir(outDir, { recursive: true })
-    await writeFile(join(outDir, 'index.html'), html, 'utf8')
-    console.log(`[prerender] ok ${route} (${(html.length / 1024).toFixed(1)} kB)`)
+    // Robots per-halaman: /tempah tiada nilai SEO, jadi ia noindex walaupun
+    // di-prerender (deep-link & refresh tetap berfungsi).
+    const htmlKeluar = NOINDEX.has(route)
+      ? html.replace(
+          '</head>',
+          '  <meta name="robots" content="noindex, follow" />\n  </head>',
+        )
+      : html
+    await writeFile(join(outDir, 'index.html'), htmlKeluar, 'utf8')
+    console.log(`[prerender] ok ${route} (${(htmlKeluar.length / 1024).toFixed(1)} kB)`)
     ok++
   }
 
