@@ -12,6 +12,7 @@ import HargaHantar from './pages/HargaHantar'
 import Hubungi from './pages/Hubungi'
 import Checklist from './pages/Checklist'
 import BukuTamu from './pages/BukuTamu'
+import KodTiada from './pages/KodTiada'
 import Tempah from './pages/Tempah'
 import Admin from './pages/Admin'
 import './App.css'
@@ -66,6 +67,9 @@ export default function App() {
           <Route path="/hubungi" element={<Hubungi />} />
           {/* Buku tamu — tetamu buka dari QR. Tiada log masuk. */}
           <Route path="/buku-tamu/:kod" element={<BukuTamu />} />
+          {/* Tanpa kod: tetamu tersalah taip / QR rosak. Tunjuk mesej jelas,
+              bukan 404 mentah — mereka datang dari meja majlis. */}
+          <Route path="/buku-tamu" element={<KodTiada />} />
           <Route path="/tempah" element={<Tempah />} />
           {/* Panel dalaman — log masuk Supabase Auth + RLS admin. */}
           <Route path="/admin" element={<Admin />} />
