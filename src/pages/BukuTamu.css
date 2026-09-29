@@ -255,6 +255,88 @@
   background: #0d0b09;
 }
 
+/* Butang pembalut imej — seluruh gambar boleh ditekan untuk besarkan. */
+.bt-kotak-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  line-height: 0;
+}
+.bt-kotak-btn:focus-visible {
+  outline: 2px solid var(--emas);
+  outline-offset: -2px;
+}
+
+/* ------------------------------- LIGHTBOX ------------------------------- */
+.bt-zoom {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(8, 6, 5, 0.94);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 20px 16px;
+  cursor: zoom-out;
+  animation: bt-masuk 0.18s ease-out;
+}
+
+@keyframes bt-masuk {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.bt-zoom img {
+  max-width: 100%;
+  /* Tolak ruang kapsyen + butang tutup supaya imej tak terkeluar skrin. */
+  max-height: calc(100vh - 190px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.bt-zoom-tutup {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(200, 161, 101, 0.35);
+  background: rgba(20, 17, 14, 0.8);
+  color: var(--teks);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.bt-zoom-kapsyen {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--teks-lembut);
+  line-height: 1.5;
+  max-width: 40ch;
+}
+
+.bt-zoom-kapsyen strong {
+  color: var(--teks);
+  font-weight: 500;
+}
+
+.bt-zoom-kapsyen em {
+  font-style: normal;
+  color: var(--emas);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bt-zoom { animation: none; }
+}
+
 /* Rizab ruang sama tinggi dengan imej supaya grid tak melompat bila
    gambar selesai dimuat. */
 .bt-tunggu {
@@ -311,3 +393,256 @@
   .bt-grid { grid-template-columns: repeat(3, 1fr); }
   .bt-kepala h1 { font-size: 2.1rem; }
 }
+
+/* ---------------------- HALAMAN PENERANGAN PRODUK -----------------------
+ * /buku-tamu tanpa kod. Guna token warna sama seperti halaman tetamu supaya
+ * ia nampak satu keluarga, tetapi susun atur macam halaman jualan.
+ * ---------------------------------------------------------------------- */
+
+.bt-mula {
+  max-width: 760px;
+  padding-top: 8px;
+}
+
+.bt-hero {
+  text-align: center;
+  padding: 40px 0 32px;
+  border-bottom: 1px solid rgba(200, 161, 101, 0.2);
+}
+
+.bt-hero h1 {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  line-height: 1.2;
+  margin: 0 0 16px;
+  font-weight: 500;
+}
+
+.bt-hero-sub {
+  color: var(--teks-lembut);
+  font-size: 1rem;
+  line-height: 1.65;
+  max-width: 56ch;
+  margin: 0 auto 26px;
+}
+
+.bt-hero-aksi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.bt-hero-aksi .bt-btn {
+  width: auto;
+  min-width: 168px;
+  margin-top: 0;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bt-bahagian {
+  padding: 34px 0;
+  border-bottom: 1px solid rgba(200, 161, 101, 0.12);
+}
+
+.bt-bahagian:last-of-type { border-bottom: 0; }
+
+.bt-bahagian h2 {
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: var(--emas-lembut);
+  margin: 0 0 16px;
+}
+
+.bt-bahagian h3 {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--teks);
+  margin: 0 0 6px;
+}
+
+/* Langkah bernombor — jujukan sebenar, jadi senarai bernombor betul. */
+.bt-langkah {
+  counter-reset: langkah;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.bt-langkah li {
+  counter-increment: langkah;
+  position: relative;
+  padding: 0 0 20px 46px;
+  color: var(--teks-lembut);
+  line-height: 1.6;
+  font-size: 0.93rem;
+}
+
+.bt-langkah li::before {
+  content: counter(langkah);
+  position: absolute;
+  left: 0;
+  top: -2px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(200, 161, 101, 0.4);
+  color: var(--emas);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bt-langkah li strong {
+  color: var(--teks);
+  font-weight: 500;
+}
+
+.bt-ciri {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.bt-ciri-kad {
+  background: var(--gelap-2);
+  border: 1px solid rgba(200, 161, 101, 0.18);
+  border-radius: 12px;
+  padding: 18px 16px;
+}
+
+.bt-ciri-kad p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--teks-lembut);
+  line-height: 1.6;
+}
+
+/* --------------------------------- HARGA -------------------------------- */
+.bt-harga {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.bt-harga-kad {
+  position: relative;
+  background: var(--gelap-2);
+  border: 1px solid rgba(200, 161, 101, 0.18);
+  border-radius: 14px;
+  padding: 22px 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.bt-harga-kad--utama {
+  border-color: var(--emas);
+  box-shadow: 0 0 0 1px rgba(200, 161, 101, 0.35);
+}
+
+.bt-harga-tag {
+  position: absolute;
+  top: -11px;
+  left: 18px;
+  margin: 0;
+  background: var(--emas);
+  color: #1a1613;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.bt-harga-nama {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--emas);
+}
+
+.bt-harga-angka {
+  margin: 0 0 16px;
+  font-size: 2rem;
+  font-weight: 500;
+  color: var(--teks);
+  line-height: 1;
+}
+
+.bt-harga-angka span {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--teks-lembut);
+}
+
+.bt-harga-senarai {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--teks-lembut);
+  line-height: 1.55;
+}
+
+.bt-harga-senarai li {
+  padding-left: 20px;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.bt-harga-senarai li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--emas);
+}
+
+.bt-harga-senarai strong { color: var(--teks); }
+
+/* ---------------------------------- FAQ --------------------------------- */
+.bt-faq {
+  margin: 0;
+}
+
+.bt-faq dt {
+  color: var(--teks);
+  font-weight: 500;
+  font-size: 0.95rem;
+  margin-top: 20px;
+}
+
+.bt-faq dt:first-child { margin-top: 0; }
+
+.bt-faq dd {
+  margin: 6px 0 0;
+  color: var(--teks-lembut);
+  font-size: 0.9rem;
+  line-height: 1.65;
+  max-width: 62ch;
+}
+
+.bt-cta {
+  text-align: center;
+}
+
+.bt-cta .bt-info {
+  max-width: 46ch;
+  margin: 0 auto 22px;
+}
+
+.bt-bahagian code {
+  background: #14110e;
+  border: 1px solid rgba(200, 161, 101, 0.2);
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-size: 0.85em;
+  color: var(--emas-lembut);
+}
+
+.bt-bahagian a { color: var(--emas); }

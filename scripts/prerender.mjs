@@ -34,6 +34,9 @@ const ROUTES = [
   '/harga-hantar',
   '/checklist',
   '/hubungi',
+  // Halaman penerangan buku tamu — ini yang orang cari di Google
+  // ("buku tamu digital majlis"), jadi ia mesti di-prerender.
+  '/buku-tamu',
   // /tempah di-prerender supaya deep-link & refresh berfungsi, tapi
   // ia noindex (lihat public/robots.txt) — halaman borang, tiada nilai SEO.
   '/tempah',

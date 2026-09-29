@@ -95,6 +95,8 @@ export default function BukuTamu() {
   const [imej, setImej] = useState<HTMLImageElement | null>(null)
   const [webglSedia, setWebglSedia] = useState(true)
   const [mula, setMula] = useState(true)
+  /** Gambar yang sedang dibesarkan. null = tiada lightbox. */
+  const [zoom, setZoom] = useState<Gambar | null>(null)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const rendererRef = useRef<FilmRenderer | null>(null)
@@ -463,22 +465,52 @@ export default function BukuTamu() {
         <h2>Galeri majlis</h2>
         {!gambar.length && <p className="bt-info">Belum ada gambar. Jadi yang pertama.</p>}
         <div className="bt-grid">
-          {gambar.map((g) => (
-            <figure key={g.id} className="bt-kotak">
-              {urlPeta[g.storage_path] ? (
-                <img src={urlPeta[g.storage_path]} alt={`Gambar dari ${g.nama_awal}`} loading="lazy" />
-              ) : (
-                <div className="bt-tunggu" />
-              )}
-              <figcaption>
-                <strong>{g.nama_awal}</strong>
-                {g.stock !== 'none' && <em> · {cariStock(g.stock).pendek}</em>}
-                {g.wish && <span className="bt-ucapan">{g.wish}</span>}
-              </figcaption>
-            </figure>
-          ))}
+          {gambar.map((g) => {
+            const url = urlPeta[g.storage_path]
+            return (
+              <figure key={g.id} className="bt-kotak">
+                {url ? (
+                  <button
+                    className="bt-kotak-btn"
+                    onClick={() => setZoom(g)}
+                    aria-label={`Besarkan gambar dari ${g.nama_awal}`}
+                  >
+                    <img src={url} alt={`Gambar dari ${g.nama_awal}`} loading="lazy" />
+                  </button>
+                ) : (
+                  <div className="bt-tunggu" />
+                )}
+                <figcaption>
+                  <strong>{g.nama_awal}</strong>
+                  {g.stock !== 'none' && <em> · {cariStock(g.stock).pendek}</em>}
+                  {g.wish && <span className="bt-ucapan">{g.wish}</span>}
+                </figcaption>
+              </figure>
+            )
+          })}
         </div>
       </section>
+
+      {/* Lightbox — tetamu nak tengok gambar orang lain dengan jelas. */}
+      {zoom && urlPeta[zoom.storage_path] && (
+        <div
+          className="bt-zoom"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Gambar besar"
+          onClick={() => setZoom(null)}
+        >
+          <button className="bt-zoom-tutup" aria-label="Tutup" onClick={() => setZoom(null)}>
+            ✕
+          </button>
+          <img src={urlPeta[zoom.storage_path]} alt={`Gambar dari ${zoom.nama_awal}`} />
+          <div className="bt-zoom-kapsyen">
+            <strong>{zoom.nama_awal}</strong>
+            {zoom.stock !== 'none' && <em> · {cariStock(zoom.stock).pendek}</em>}
+            {zoom.wish && <span className="bt-ucapan">{zoom.wish}</span>}
+          </div>
+        </div>
+      )}
 
       <footer className="bt-kaki">
         <p>Buku tamu oleh ALUNARA</p>
