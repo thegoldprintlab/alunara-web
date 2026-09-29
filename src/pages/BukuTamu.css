@@ -655,6 +655,10 @@
 }
 
 .bt-bahagian a { color: var(--emas); }
+/* PENTING: Link (a) yang bergaya butang mesti kekal warna teks sendiri.
+   Tanpa ini, `.bt-bahagian a { color: emas }` atas menenggelamkan teks
+   butang emas — teks emas atas latar emas = tak nampak. */
+a.bt-btn { color: #1a1613; }
 
 /* ------------------------------ SELF-SERVE (buat) ----------------------- */
 .bt-buat { max-width: 620px; margin-left: auto; margin-right: auto; }
