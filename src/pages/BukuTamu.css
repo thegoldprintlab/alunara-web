@@ -1,0 +1,313 @@
+/**
+ * Buku Tamu — gaya.
+ *
+ * Nada: hangat, majlis, tidak seperti app. Warna ikut tema ALUNARA (emas/ivory).
+ * Direka untuk telefon dahulu — hampir semua tetamu buka dari telefon, dan
+ * butang mesti cukup besar untuk ditekan sambil berdiri.
+ */
+
+.bt-kulit {
+  --emas: #c8a165;
+  --emas-lembut: #e8d5b0;
+  --gelap: #1a1613;
+  --gelap-2: #241f1a;
+  --teks: #f0e8dc;
+  --teks-lembut: #a89c8a;
+  --ralat: #e0785f;
+
+  min-height: 100vh;
+  background: var(--gelap);
+  color: var(--teks);
+  padding: 20px 16px 60px;
+  max-width: 720px;
+  margin: 0 auto;
+  font-family: inherit;
+}
+
+.bt-kepala {
+  text-align: center;
+  padding: 28px 0 20px;
+  border-bottom: 1px solid rgba(200, 161, 101, 0.2);
+  margin-bottom: 24px;
+}
+
+.bt-eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--emas);
+  margin: 0 0 8px;
+}
+
+.bt-kepala h1 {
+  font-size: 1.7rem;
+  line-height: 1.25;
+  margin: 0 0 10px;
+  font-weight: 500;
+}
+
+.bt-info {
+  color: var(--teks-lembut);
+  font-size: 0.95rem;
+  margin: 4px 0;
+  line-height: 1.5;
+}
+
+.bt-info--kecil {
+  font-size: 0.82rem;
+}
+
+.bt-kad {
+  background: var(--gelap-2);
+  border: 1px solid rgba(200, 161, 101, 0.18);
+  border-radius: 14px;
+  padding: 20px 18px;
+  margin-bottom: 20px;
+}
+
+.bt-kad h2 {
+  font-size: 1.15rem;
+  margin: 0 0 6px;
+  font-weight: 500;
+  color: var(--emas-lembut);
+}
+
+.bt-medan {
+  display: block;
+  margin: 16px 0;
+}
+
+.bt-medan > span {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--teks-lembut);
+  margin-bottom: 7px;
+}
+
+.bt-medan input[type='text'],
+.bt-medan input:not([type]),
+.bt-medan textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: #14110e;
+  border: 1px solid rgba(200, 161, 101, 0.25);
+  border-radius: 9px;
+  color: var(--teks);
+  padding: 13px 14px;
+  /* 16px minimum: kalau kurang, iOS zum automatik bila fokus. */
+  font-size: 16px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.bt-medan input:focus,
+.bt-medan textarea:focus {
+  outline: none;
+  border-color: var(--emas);
+}
+
+.bt-medan--julat input[type='range'] {
+  width: 100%;
+  accent-color: var(--emas);
+  margin-top: 4px;
+}
+
+.bt-btn {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--emas);
+  color: #1a1613;
+  border: none;
+  border-radius: 10px;
+  /* 52px tinggi: senang tekan sambil berdiri dalam majlis. */
+  padding: 16px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 12px;
+  text-align: center;
+}
+
+.bt-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bt-btn--halus {
+  background: transparent;
+  color: var(--teks-lembut);
+  border: 1px solid rgba(200, 161, 101, 0.3);
+}
+
+.bt-btn--pilih {
+  margin-top: 16px;
+}
+
+/* Input fail asal disembunyikan — label jadi butang (lebih mudah digayakan
+   dan lebih besar daripada input fail lalai pada telefon). */
+.bt-fail {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bt-preview {
+  background: #0d0b09;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  line-height: 0;
+}
+
+.bt-preview canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.bt-label {
+  font-size: 0.82rem;
+  color: var(--teks-lembut);
+  margin: 0 0 8px;
+}
+
+.bt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.bt-chip {
+  background: #14110e;
+  border: 1px solid rgba(200, 161, 101, 0.28);
+  border-radius: 999px;
+  color: var(--teks-lembut);
+  padding: 10px 15px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  /* Sasaran sentuh 44px minimum. */
+  min-height: 44px;
+}
+
+.bt-chip--aktif {
+  background: var(--emas);
+  border-color: var(--emas);
+  color: #1a1613;
+  font-weight: 600;
+}
+
+.bt-nota {
+  font-size: 0.8rem;
+  color: var(--teks-lembut);
+  line-height: 1.5;
+  margin: 0 0 4px;
+  min-height: 2.4em;
+}
+
+.bt-tindakan {
+  margin-top: 8px;
+}
+
+.bt-ralat {
+  color: var(--ralat);
+  font-size: 0.88rem;
+  margin: 12px 0 0;
+  line-height: 1.5;
+}
+
+.bt-galeri {
+  margin-top: 32px;
+}
+
+.bt-galeri h2 {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--emas-lembut);
+  margin: 0 0 14px;
+}
+
+.bt-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.bt-kotak {
+  margin: 0;
+  background: var(--gelap-2);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(200, 161, 101, 0.14);
+}
+
+.bt-kotak img {
+  width: 100%;
+  height: auto;
+  display: block;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: #0d0b09;
+}
+
+/* Rizab ruang sama tinggi dengan imej supaya grid tak melompat bila
+   gambar selesai dimuat. */
+.bt-tunggu {
+  width: 100%;
+  aspect-ratio: 1;
+  background: linear-gradient(110deg, #14110e 30%, #1d1915 50%, #14110e 70%);
+  background-size: 200% 100%;
+  animation: bt-berdenyut 1.4s ease-in-out infinite;
+}
+
+@keyframes bt-berdenyut {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bt-tunggu { animation: none; }
+}
+
+.bt-kotak figcaption {
+  padding: 9px 10px 11px;
+  font-size: 0.78rem;
+  color: var(--teks-lembut);
+  line-height: 1.45;
+}
+
+.bt-kotak figcaption strong {
+  color: var(--teks);
+  font-weight: 500;
+}
+
+.bt-kotak figcaption em {
+  font-style: normal;
+  color: var(--emas);
+}
+
+.bt-ucapan {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.76rem;
+  color: var(--teks-lembut);
+  opacity: 0.85;
+}
+
+.bt-kaki {
+  margin-top: 44px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--teks-lembut);
+  opacity: 0.6;
+}
+
+@media (min-width: 560px) {
+  .bt-grid { grid-template-columns: repeat(3, 1fr); }
+  .bt-kepala h1 { font-size: 2.1rem; }
+}

@@ -26,7 +26,7 @@ const SESI_KEY = 'alunara_admin_sesi_v1'
 
 export const dbSedia = Boolean(URL_BASE && ANON)
 
-type Sesi = {
+export type Sesi = {
   access_token: string
   refresh_token: string
   /** Epoch saat (detik) token luput. */
@@ -54,6 +54,38 @@ export type Booking = {
   paid_amount: number
   client_id: string | null
   created_at: string
+}
+
+export type Entri = {
+  id: string
+  event_id: string
+  guest_id: string | null
+  storage_path: string
+  width: number | null
+  height: number | null
+  bytes: number | null
+  stock: string
+  stock_strength: number
+  hidden: boolean
+  hidden_reason: string | null
+  created_at: string
+  /** Dari join `alunara_guestbook_guests` — bukan lajur jadual photos. */
+  alunara_guestbook_guests?: { name: string | null; wish: string | null } | null
+}
+
+export type Majlis = {
+  id: string
+  code: string
+  title: string
+  host_name: string | null
+  event_date: string | null
+  active: boolean
+  upload_until: string
+  allowed_stocks: string[] | null
+  max_uploads_per_guest: number
+  notes: string | null
+  created_at: string
+  updated_at: string
 }
 
 export type Klien = {
@@ -286,6 +318,59 @@ export const db = {
   },
   async buangLead(s: Sesi, id: string) {
     return minta<void>(s, `alunara_leads?id=eq.${id}`, { method: 'DELETE' })
+  },
+
+  /* ------------------------------ BUKU TAMU ------------------------------
+   * Admin buat `majlis` (satu majlis = satu kod QR). Tetamu upload gambar
+   * melalui halaman /buku-tamu/:kod. Gambar disimpan dalam bucket privat;
+   * admin nampak melalui signed URL (jana di /api/guestbook-sign).
+   */
+  async majlis(s: Sesi) {
+    return minta<Majlis[]>(
+      s,
+      'alunara_guestbook_events?select=*&order=created_at.desc&limit=200',
+    )
+  },
+  /** Jana kod 6 aksara yang tak berlanggar (fungsi SQL, bukan Math.random). */
+  async kodMajlis(s: Sesi) {
+    return minta<string>(s, 'rpc/alunara_guestbook_new_code', {
+      method: 'POST',
+      body: '{}',
+    })
+  },
+  async tambahMajlis(s: Sesi, m: Partial<Majlis>) {
+    return minta<Majlis[]>(s, 'alunara_guestbook_events', {
+      method: 'POST',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify(m),
+    })
+  },
+  async kemasMajlis(s: Sesi, id: string, m: Partial<Majlis>) {
+    return minta<Majlis[]>(s, `alunara_guestbook_events?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify(m),
+    })
+  },
+  async buangMajlis(s: Sesi, id: string) {
+    return minta<void>(s, `alunara_guestbook_events?id=eq.${id}`, { method: 'DELETE' })
+  },
+  /** Gambar satu majlis + nama/ucapan tetamu (join jadual guests). */
+  async entri(s: Sesi, eventId: string) {
+    return minta<Entri[]>(
+      s,
+      `alunara_guestbook_photos?event_id=eq.${eventId}` +
+        `&select=*,alunara_guestbook_guests(name,wish)` +
+        `&order=created_at.desc&limit=500`,
+    )
+  },
+  /** Sembunyi / tunjuk semula entri (moderation, bukan padam). */
+  async kemasEntri(s: Sesi, id: string, e: Partial<Entri>) {
+    return minta<Entri[]>(s, `alunara_guestbook_photos?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify(e),
+    })
   },
 }
 

@@ -37,6 +37,17 @@ const SPA_ROUTES = [
   '/admin',
 ]
 
+/**
+ * Laluan SPA BERCORAK (kod dinamik) — tak boleh masuk SPA_ROUTES sebab ia
+ * padanan tepat. Tanpa ini, /buku-tamu/<kod> jatuh ke 404 betul dan tetamu
+ * tak boleh buka QR langsung.
+ */
+const SPA_PATTERNS = [
+  // Kod majlis: 6 aksara dari abjad tanpa 0/O/1/I/L. Longgar sedikit supaya
+  // kod lama / huruf kecil pun sampai ke React (React yang tolak, bukan 404).
+  '^/buku-tamu/[A-Za-z0-9]{4,12}/?$',
+]
+
 /** Route lama — redirect 308 ke laluan baru (link/bio lama tak mati). */
 const REDIRECTS = [
   { src: '^/book/?$', dest: '/tempah' },
@@ -68,6 +79,7 @@ const tail = fsIdx >= 0 ? routes.slice(fsIdx + 1) : routes
 const ours = [
   ...REDIRECTS.map((r) => ({ ...r, status: 308 })),
   ...SPA_ROUTES.map((p) => ({ src: `^${p === '/' ? '/' : p}/?$`, dest: '/index.html' })),
+  ...SPA_PATTERNS.map((src) => ({ src, dest: '/index.html' })),
   { status: 404, src: '^(?!/api).*$', dest: '/404.html' },
   { handle: 'error' },
 ]
@@ -77,5 +89,5 @@ cfg.routes = [...head, ...ours, ...tail]
 
 await writeFile(CFG, JSON.stringify(cfg, null, 2) + '\n', 'utf8')
 console.log(
-  `[patch-config] routes ditulis semula — ${SPA_ROUTES.length} laluan sah, ${REDIRECTS.length} redirect, 404 betul`,
+  `[patch-config] routes ditulis semula — ${SPA_ROUTES.length} laluan sah, ${SPA_PATTERNS.length} corak, ${REDIRECTS.length} redirect, 404 betul`,
 )

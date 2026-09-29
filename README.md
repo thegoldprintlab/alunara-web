@@ -129,6 +129,34 @@ bukan project ALUNARA lama yang dah mati (`sdzjlekydkwtxjjtrwrh`).
 - Lead → `api/lead.js` → Telegram **dan** jadual `alunara_leads`
 - Tarikh lock → DB (`alunara_bookings`) + `TARIKH_LOCK` (manual, digabung)
 
+## Buku Tamu (QR majlis)
+
+Tetamu scan QR → `/buku-tamu/<KOD>` → isi nama → upload gambar dengan filter
+film stock. Tiada log masuk, tiada app.
+
+- Skema: `supabase/alunara_guestbook.sql` — jalankan dengan
+  `PG_PW=... node scripts/migrate-guestbook.mjs` (guna transaction pooler
+  `aws-0-ap-northeast-2.pooler.supabase.com:6543`, user `postgres.<ref>`;
+  host direct IPv6-only dan tak boleh dicapai dari mesin ini).
+- Jadual: `alunara_guestbook_events` (majlis + kod), `_guests` (sesi tetamu),
+  `_photos` (gambar). Bucket **privat** `alunara-guestbook`, 15 MB/gambar.
+- **anon TIADA hak pada jadual.** Semua tulisan masuk melalui RPC
+  `security definer`: `alunara_guestbook_info/_gallery/_join/_acquire_slot/_add_photo`.
+  Ini yang menghalang tetamu meneroka gambar majlis orang lain.
+- Gambar dibaca melalui signed URL dari `api/guestbook-sign.js`
+  (`action=read`). Panel admin guna `action=download` yang **wajib** token
+  admin (disahkan dengan `is_admin()`).
+- Kod majlis dijana `alunara_guestbook_new_code()` — abjad tanpa 0/O/1/I/L.
+  JANGAN guna `Math.random`; constraint `alunara_guestbook_code_sah` akan tolak.
+
+### GOTCHA — laluan dinamik mesti didaftar dalam `patch-vercel-config.mjs`
+
+`scripts/patch-vercel-config.mjs` menggantikan catch-all SPA Vercel dengan
+senarai laluan tepat supaya URL tak dikenali pulangkan 404 betul. Akibatnya
+laluan **bercorak** (seperti `/buku-tamu/<kod>`) akan jadi 404 walaupun app
+betul, melainkan ia ditambah ke `SPA_PATTERNS`. Tambah di situ bila buat
+laluan dinamik baru.
+
 ### GOTCHA — env Vercel vs `.vercel/.env.production.local`
 
 `vercel build` membaca **fail cache** `.vercel/.env.production.local` dan ia

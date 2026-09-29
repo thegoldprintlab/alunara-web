@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   bacaSesi,
+  type Sesi,
   db,
   dbSedia,
   logKeluar,
@@ -10,7 +11,7 @@ import {
   sesiSah,
   tarikhSibukSet,
 } from '../lib/admin'
-import type { Booking, Klien, Lead } from '../lib/admin'
+import type { Booking, Klien, Lead, Majlis, Entri } from '../lib/admin'
 import { PAKEJ } from '../content'
 import { IconWhatsApp } from '../components/Icons'
 
@@ -1062,7 +1063,305 @@ function TabLead({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
 
 /* ------------------------------ SHELL ------------------------------ */
 
-type Tab = 'tempahan' | 'klien' | 'lead'
+/* ---------------------------- TAB BUKU TAMU ----------------------------
+ * Bos buat satu "majlis" → dapat kod → kod tu jadi QR. Tetamu scan, upload.
+ * Gambar dalam bucket privat; kita papar guna signed URL (jana di server).
+ * ---------------------------------------------------------------------- */
+
+function TabTamu({ sesi }: { sesi: Sesi }) {
+  const [majlis, setMajlis] = useState<Majlis[]>([])
+  const [pilih, setPilih] = useState<string>('')
+  const [entri, setEntri] = useState<Entri[]>([])
+  const [muat, setMuat] = useState(true)
+  const [ralat, setRalat] = useState('')
+  const [baru, setBaru] = useState({ title: '', host_name: '', event_date: '' })
+  const [buat, setBuat] = useState(false)
+  const [urls, setUrls] = useState<Record<string, string>>({})
+
+  const muatMajlis = useCallback(async () => {
+    setMuat(true)
+    setRalat('')
+    try {
+      const r = await db.majlis(sesi)
+      if (!r.ok) {
+        setRalat(r.ralat ?? 'Gagal muat majlis')
+        return
+      }
+      const m = r.data ?? []
+      setMajlis(m)
+      setPilih((kini) => kini || m[0]?.id || '')
+    } catch (e) {
+      setRalat(e instanceof Error ? e.message : 'Gagal muat majlis')
+    } finally {
+      setMuat(false)
+    }
+  }, [sesi])
+
+  useEffect(() => {
+    void muatMajlis()
+  }, [muatMajlis])
+
+  /** Ambil signed URL untuk semua gambar dalam majlis terpilih. */
+  useEffect(() => {
+    if (!pilih) return
+    let batal = false
+    ;(async () => {
+      try {
+        const r = await db.entri(sesi, pilih)
+        if (batal) return
+        if (!r.ok) {
+          setRalat(r.ralat ?? 'Gagal muat entri')
+          return
+        }
+        const e = r.data ?? []
+        setEntri(e)
+        if (!e.length) return
+        const res = await fetch('/api/guestbook-sign', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            authorization: `Bearer ${sesi.access_token}`,
+          },
+          body: JSON.stringify({ action: 'read', laluan: e.map((x) => x.storage_path) }),
+        })
+        const j = (await res.json()) as { urls?: Record<string, string>; ralat?: string }
+        if (batal) return
+        if (j.urls) setUrls(j.urls)
+        else if (j.ralat) setRalat(j.ralat)
+      } catch (err) {
+        if (!batal) setRalat(err instanceof Error ? err.message : 'Gagal muat entri')
+      }
+    })()
+    return () => {
+      batal = true
+    }
+  }, [pilih, sesi])
+
+  const majlisPilih = majlis.find((m) => m.id === pilih)
+
+  const pautan = majlisPilih
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/buku-tamu/${majlisPilih.code}`
+    : ''
+
+  async function ciptaMajlis() {
+    if (baru.title.trim().length < 2) {
+      setRalat('Isi nama majlis dulu (cth. Aina & Haikal).')
+      return
+    }
+    setBuat(true)
+    setRalat('')
+    try {
+      // Kod dijana fungsi SQL (semak langgar) — jangan guna Math.random.
+      const k = await db.kodMajlis(sesi)
+      if (!k.ok || !k.data) {
+        setRalat(k.ralat ?? 'Gagal jana kod')
+        return
+      }
+      const r = await db.tambahMajlis(sesi, {
+        code: k.data,
+        title: baru.title.trim(),
+        host_name: baru.host_name.trim() || null,
+        event_date: baru.event_date || null,
+        active: true,
+      })
+      if (!r.ok) {
+        setRalat(r.ralat ?? 'Gagal cipta majlis')
+        return
+      }
+      setBaru({ title: '', host_name: '', event_date: '' })
+      setPilih(r.data?.[0]?.id ?? '')
+      await muatMajlis()
+    } catch (e) {
+      setRalat(e instanceof Error ? e.message : 'Gagal cipta majlis')
+    } finally {
+      setBuat(false)
+    }
+  }
+
+  async function toggleAktif(m: Majlis) {
+    try {
+      await db.kemasMajlis(sesi, m.id, { active: !m.active })
+      await muatMajlis()
+    } catch (e) {
+      setRalat(e instanceof Error ? e.message : 'Gagal kemas kini')
+    }
+  }
+
+  async function toggleSembunyi(e: Entri) {
+    try {
+      await db.kemasEntri(sesi, e.id, { hidden: !e.hidden })
+      setEntri((sen) => sen.map((x) => (x.id === e.id ? { ...x, hidden: !x.hidden } : x)))
+    } catch (err) {
+      setRalat(err instanceof Error ? err.message : 'Gagal kemas kini')
+    }
+  }
+
+  /**
+   * Tiada ZIP di server (bucket privat + tiada lib zip). Kita buka setiap
+   * signed URL dalam tab baru — bos boleh save dari situ. Kalau bilangan
+   * gambar besar, amaran dulu supaya browser tak tercekik.
+   */
+  async function muatTurunSemua() {
+    const senarai = entri.filter((x) => !x.hidden)
+    if (!senarai.length) return
+    if (senarai.length > 25 && !window.confirm(
+      `${senarai.length} gambar akan dibuka dalam tab baru. Teruskan?`
+    )) {
+      return
+    }
+    try {
+      const res = await fetch('/api/guestbook-sign', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${sesi.access_token}`,
+        },
+        body: JSON.stringify({
+          action: 'download',
+          laluan: senarai.map((x) => x.storage_path),
+        }),
+      })
+      const j = (await res.json()) as { urls?: Record<string, string>; ralat?: string }
+      if (!j.urls) {
+        setRalat(j.ralat ?? 'Gagal jana pautan muat turun')
+        return
+      }
+      for (const u of Object.values(j.urls)) window.open(u, '_blank')
+    } catch (e) {
+      setRalat(e instanceof Error ? e.message : 'Gagal muat turun')
+    }
+  }
+
+  if (muat && !majlis.length) return <p className="adm__kecil">Memuatkan…</p>
+
+  return (
+    <>
+      {ralat && <p className="adm__ralat">{ralat}</p>}
+
+      {/* --- Cipta majlis baru --- */}
+      <div className="adm__kad">
+        <h3 className="adm__sub">Majlis Baru</h3>
+        <div className="adm__baris">
+          <input
+            className="adm__input"
+            placeholder="Nama majlis (cth. Aina & Haikal)"
+            value={baru.title}
+            onChange={(e) => setBaru({ ...baru, title: e.target.value })}
+          />
+          <input
+            className="adm__input"
+            placeholder="Tuan rumah (pilihan)"
+            value={baru.host_name}
+            onChange={(e) => setBaru({ ...baru, host_name: e.target.value })}
+          />
+          <input
+            className="adm__input"
+            type="date"
+            value={baru.event_date}
+            onChange={(e) => setBaru({ ...baru, event_date: e.target.value })}
+          />
+          <button className="btn btn--sm" disabled={buat} onClick={() => void ciptaMajlis()}>
+            {buat ? 'Mencipta…' : 'Cipta Kod'}
+          </button>
+        </div>
+      </div>
+
+      {/* --- Pilih majlis --- */}
+      {majlis.length > 0 && (
+        <div className="adm__kad">
+          <h3 className="adm__sub">Pilih Majlis</h3>
+          <div className="adm__baris">
+            <select
+              className="adm__input"
+              value={pilih}
+              onChange={(e) => {
+                setPilih(e.target.value)
+                setUrls({})
+                setEntri([])
+              }}
+            >
+              {majlis.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.title} — {m.code} {m.active ? '' : '(mati)'}
+                </option>
+              ))}
+            </select>
+            {majlisPilih && (
+              <button className="btn btn--ghost btn--sm" onClick={() => void toggleAktif(majlisPilih)}>
+                {majlisPilih.active ? 'Matikan' : 'Hidupkan'}
+              </button>
+            )}
+          </div>
+
+          {pautan && (
+            <div className="adm__qr">
+              <span className="adm__kecil">Pautan tetamu (jadikan QR):</span>
+              <code>{pautan}</code>
+              <button
+                className="btn btn--ghost btn--sm"
+                onClick={() => void navigator.clipboard?.writeText(pautan)}
+              >
+                Salin
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* --- Entri --- */}
+      {pilih && (
+        <div className="adm__kad">
+          <div className="adm__baris adm__baris--antara">
+            <h3 className="adm__sub">
+              Gambar ({entri.filter((e) => !e.hidden).length} aktif
+              {entri.some((e) => e.hidden) ? `, ${entri.filter((e) => e.hidden).length} disembunyi` : ''})
+            </h3>
+            {entri.length > 0 && (
+              <button className="btn btn--sm" onClick={() => void muatTurunSemua()}>
+                Muat Turun Semua
+              </button>
+            )}
+          </div>
+
+          {!entri.length ? (
+            <p className="adm__kecil">Belum ada tetamu upload. Kongsi pautan di atas.</p>
+          ) : (
+            <div className="adm__tamu-grid">
+              {entri.map((e) => (
+                <figure key={e.id} className={'adm__tamu' + (e.hidden ? ' adm__tamu--sembunyi' : '')}>
+                  {urls[e.storage_path] ? (
+                    <img
+                      src={urls[e.storage_path]}
+                      alt={`Gambar dari ${e.alunara_guestbook_guests?.name ?? 'tetamu'}`}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="adm__tamu-tunggu">…</div>
+                  )}
+                  <figcaption>
+                    <strong>{e.alunara_guestbook_guests?.name ?? 'Tetamu'}</strong>
+                    <span className="adm__kecil">
+                      {e.stock}
+                      {e.width && e.height ? ` · ${e.width}×${e.height}` : ''}
+                    </span>
+                    {e.alunara_guestbook_guests?.wish && (
+                      <p className="adm__tamu-ucap">"{e.alunara_guestbook_guests.wish}"</p>
+                    )}
+                    <button className="btn btn--ghost btn--sm" onClick={() => void toggleSembunyi(e)}>
+                      {e.hidden ? 'Tunjuk' : 'Sembunyi'}
+                    </button>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  )
+}
+
+type Tab = 'tempahan' | 'klien' | 'lead' | 'tamu'
 
 export default function Admin() {
   const [sesi, setSesi] = useState(bacaSesi())
@@ -1140,6 +1439,7 @@ export default function Admin() {
               ['tempahan', 'Tempahan'],
               ['klien', 'Klien'],
               ['lead', 'Lead Web'],
+              ['tamu', 'Buku Tamu'],
             ] as [Tab, string][]
           ).map(([k, label]) => (
             <button
@@ -1155,6 +1455,7 @@ export default function Admin() {
         {tab === 'tempahan' && <TabTempahan sesi={sesi} />}
         {tab === 'klien' && <TabKlien sesi={sesi} />}
         {tab === 'lead' && <TabLead sesi={sesi} />}
+        {tab === 'tamu' && <TabTamu sesi={sesi} />}
       </div>
     </section>
   )
