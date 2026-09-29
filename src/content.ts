@@ -57,6 +57,8 @@ export const MSG = {
   lokasi: (k: string, caj: string) =>
     `Hi ALUNARA! Majlis saya di ${k}. Caj penghantaran ${caj} — boleh confirm?`,
   deposit: 'Hi ALUNARA! Saya nak bayar deposit RM50 untuk lock tarikh majlis saya.',
+  bukuTamu:
+    'Hi ALUNARA! Saya nak tempah buku tamu digital untuk majlis saya. Boleh bagitahu cara nak mula?',
 } as const
 
 /* ------------------------------- PAKEJ ---------------------------------- */

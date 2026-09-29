@@ -9,6 +9,7 @@
  * tak payah tanya WhatsApp hanya untuk tahu berapa.
  */
 import { Link } from 'react-router-dom'
+import { waLink, MSG } from '../content'
 import './BukuTamu.css'
 
 /**
@@ -51,16 +52,22 @@ export default function BukuTamuMula() {
         <h2>Macam mana ia berjalan</h2>
         <ol className="bt-langkah">
           <li>
-            <strong>Kami sediakan kod majlis.</strong> Selepas tempahan disahkan,
-            kami cipta satu kod 6 aksara untuk majlis anda.
+            <strong>Tempah &amp; bayar.</strong> Beritahu kami tarikh majlis.
+            Selepas bayaran, kami hantar satu kod 6 aksara melalui WhatsApp.
           </li>
           <li>
-            <strong>Anda dapat QR.</strong> Kami hantar pautan + QR siap cetak.
-            Letak atas meja majlis atau bagi kepada pengapit.
+            <strong>Anda cipta galeri sendiri.</strong> Masukkan kod, isi
+            butiran majlis (jenis, tajuk, tarikh, venue, ucapan) dalam beberapa
+            minit — tanpa perlu tunggu kami.
           </li>
           <li>
-            <strong>Tetamu scan dan kongsi.</strong> Isi nama sahaja, pilih gambar,
-            pilih warna film, tekan kongsi. Siap dalam beberapa saat.
+            <strong>Anda dapat QR.</strong> Sistem jana pautan peribadi
+            <code> alunara.my/buku-tamu/nama-anda</code> + QR siap cetak. Letak
+            atas meja majlis atau bagi kepada pengapit.
+          </li>
+          <li>
+            <strong>Tetamu scan dan kongsi.</strong> Isi nama sahaja, pilih
+            gambar, pilih warna film, tekan kongsi. Siap dalam beberapa saat.
           </li>
           <li>
             <strong>Gambar masuk galeri anda.</strong> Semua gambar peribadi —
@@ -158,8 +165,8 @@ export default function BukuTamuMula() {
 
           <dt>Berapa lama galeri aktif?</dt>
           <dd>
-            90 hari untuk Solo, 6 bulan untuk Premium, dikira dari tarikh majlis.
-            Selepas itu muat naik ditutup; gambar lama masih ada dengan kami.
+            Galeri aktif 90 hari dari tarikh majlis. Selepas itu muat naik
+            ditutup; gambar lama masih ada dengan kami.
           </dd>
 
           <dt>Siapa yang muat turun gambar?</dt>
@@ -193,18 +200,26 @@ export default function BukuTamuMula() {
           <Link className="bt-btn" to="/tempah">
             Tempah sekarang
           </Link>
-          <Link className="bt-btn bt-btn--halus" to="/hubungi">
+          <a className="bt-btn bt-btn--halus" href={waLink(MSG.bukuTamu)} target="_blank" rel="noreferrer noopener">
             WhatsApp kami
-          </Link>
+          </a>
         </div>
       </section>
 
-      <section className="bt-bahagian">
+      <section className="bt-bahagian bt-cta">
         <h2>Sudah ada kod majlis?</h2>
         <p className="bt-info">
-          Buka pautan pada QR anda — ia nampak macam{' '}
-          <code>alunara.my/buku-tamu/ABC234</code>. Kod ialah 6 aksara di hujung
-          pautan.
+          Kalau kami dah hantar kod (cth. <code>AB23CD45</code>) selepas bayaran,
+          klik di bawah untuk cipta galeri anda dan isi butiran majlis sendiri —
+          dalam masa beberapa minit.
+        </p>
+        <div className="bt-hero-aksi">
+          <Link className="bt-btn" to="/buku-tamu/buat">
+            Cipta galeri saya
+          </Link>
+        </div>
+        <p className="bt-info bt-info--kecil">
+          Tiada kod? <Link to="/tempah" className="bt-pautan">Tempah buku tamu di sini</Link>.
         </p>
       </section>
 

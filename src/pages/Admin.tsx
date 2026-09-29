@@ -11,7 +11,7 @@ import {
   sesiSah,
   tarikhSibukSet,
 } from '../lib/admin'
-import type { Booking, Klien, Lead, Majlis, Entri } from '../lib/admin'
+import type { Booking, Klien, Lead, Majlis, Entri, UnlockCode, Galeri } from '../lib/admin'
 import { PAKEJ } from '../content'
 import { IconWhatsApp } from '../components/Icons'
 
@@ -319,6 +319,24 @@ function TabTempahan({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> 
     // (unique index). Di sini kita cuma laporkan bila pulangan kosong.
     if (!borang.id && (!res.data || res.data.length === 0)) {
       return setPesan('Tarikh itu dah ada tempahan aktif. Batalkan yang lama dulu.')
+    }
+
+    // Auto-cipta klien kalau booking baru tak dikaitkan dengan klien sedia ada.
+    // Ini pastikan klien muncul di tab "Klien" tanpa langkah tambahan.
+    if (!borang.id && !borang.client_id) {
+      try {
+        const k = await db.tambahKlien(sesi, {
+          name: borang.customer_name.trim(),
+          phone: borang.customer_phone.trim() || null,
+          source: 'booking',
+        })
+        // Link booking tadi ke klien baru.
+        if (k.ok && k.data?.[0]?.id && res.data?.[0]?.id) {
+          await db.kemasTempahan(sesi, res.data[0].id, { client_id: k.data[0].id })
+        }
+      } catch {
+        /* best-effort — klien boleh ditambah manual nanti */
+      }
     }
 
     setPesan('Disimpan.')
@@ -1078,6 +1096,106 @@ function TabTamu({ sesi }: { sesi: Sesi }) {
   const [buat, setBuat] = useState(false)
   const [urls, setUrls] = useState<Record<string, string>>({})
 
+  // unlock code (self-serve)
+  const [unlockList, setUnlockList] = useState<UnlockCode[]>([])
+  const [unlockBaru, setUnlockBaru] = useState('')
+  const [unlockBuat, setUnlockBuat] = useState(false)
+
+  // gallery v2 (self-serve) — papar sub-event, tambah sub-event
+  const [galeri, setGaleri] = useState<Galeri[]>([])
+  const [galeriPilih, setGaleriPilih] = useState('')
+  const [subEvents, setSubEvents] = useState<Majlis[]>([])
+  const [subBaru, setSubBaru] = useState({ label: '', event_type: 'wedding', event_date: '' })
+  const [subBuat, setSubBuat] = useState(false)
+
+  const muatUnlock = useCallback(async () => {
+    try {
+      const r = await db.unlockCodes(sesi)
+      if (r.ok) setUnlockList(r.data ?? [])
+    } catch {
+      /* abaikan */
+    }
+  }, [sesi])
+
+  useEffect(() => {
+    void muatUnlock()
+  }, [muatUnlock])
+
+  // --- gallery v2 ---
+  const muatGaleri = useCallback(async () => {
+    try {
+      const r = await db.galeri(sesi)
+      if (r.ok) {
+        const g = r.data ?? []
+        setGaleri(g)
+        setGaleriPilih((kini) => kini || g[0]?.id || '')
+      }
+    } catch {
+      /* abaikan */
+    }
+  }, [sesi])
+
+  useEffect(() => {
+    void muatGaleri()
+  }, [muatGaleri])
+
+  useEffect(() => {
+    if (!galeriPilih) return
+    let batal = false
+    void (async () => {
+      const r = await db.galeriEvent(sesi, galeriPilih)
+      if (!batal && r.ok) setSubEvents(r.data ?? [])
+    })()
+    return () => {
+      batal = true
+    }
+  }, [galeriPilih, sesi])
+
+  async function tambahSubEvent() {
+    if (subBaru.label.trim().length < 2) {
+      setRalat('Isi label sub-event dulu (cth. Resepsi Lelaki).')
+      return
+    }
+    setSubBuat(true)
+    setRalat('')
+    try {
+      const r = await db.tambahSubEvent(sesi, galeriPilih, {
+        label: subBaru.label.trim(),
+        event_type: subBaru.event_type,
+        event_date: subBaru.event_date || undefined,
+      })
+      if (!r.ok) {
+        setRalat(r.ralat ?? 'Gagal tambah sub-event')
+        return
+      }
+      setSubBaru({ label: '', event_type: 'wedding', event_date: '' })
+      const r2 = await db.galeriEvent(sesi, galeriPilih)
+      if (r2.ok) setSubEvents(r2.data ?? [])
+    } catch (e) {
+      setRalat(e instanceof Error ? e.message : 'Gagal tambah sub-event')
+    } finally {
+      setSubBuat(false)
+    }
+  }
+
+  async function janaUnlock(isPro: boolean) {
+    setUnlockBuat(true)
+    setRalat('')
+    try {
+      const r = await db.janaUnlockCode(sesi, isPro, '')
+      if (!r.ok || typeof r.data !== 'string') {
+        setRalat(r.ralat ?? 'Gagal jana kod')
+        return
+      }
+      setUnlockBaru(r.data)
+      await muatUnlock()
+    } catch (e) {
+      setRalat(e instanceof Error ? e.message : 'Gagal jana kod')
+    } finally {
+      setUnlockBuat(false)
+    }
+  }
+
   const muatMajlis = useCallback(async () => {
     setMuat(true)
     setRalat('')
@@ -1197,38 +1315,38 @@ function TabTamu({ sesi }: { sesi: Sesi }) {
   }
 
   /**
-   * Tiada ZIP di server (bucket privat + tiada lib zip). Kita buka setiap
-   * signed URL dalam tab baru — bos boleh save dari situ. Kalau bilangan
-   * gambar besar, amaran dulu supaya browser tak tercekik.
+   * Muat turun pukal sebagai ZIP. Server kumpul semua media, zip, hantar
+   * satu fail. Jauh lebih baik dari buka tab per gambar (cara lama).
    */
   async function muatTurunSemua() {
     const senarai = entri.filter((x) => !x.hidden)
     if (!senarai.length) return
-    if (senarai.length > 25 && !window.confirm(
-      `${senarai.length} gambar akan dibuka dalam tab baru. Teruskan?`
-    )) {
-      return
-    }
+    setRalat('')
     try {
-      const res = await fetch('/api/guestbook-sign', {
+      const res = await fetch('/api/guestbook-zip', {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
           authorization: `Bearer ${sesi.access_token}`,
         },
-        body: JSON.stringify({
-          action: 'download',
-          laluan: senarai.map((x) => x.storage_path),
-        }),
+        body: JSON.stringify({ event_id: pilih }),
       })
-      const j = (await res.json()) as { urls?: Record<string, string>; ralat?: string }
-      if (!j.urls) {
-        setRalat(j.ralat ?? 'Gagal jana pautan muat turun')
-        return
+      if (!res.ok) {
+        const j = (await res.json().catch(() => ({}))) as { ralat?: string }
+        throw new Error(j.ralat || 'Gagal muat turun ZIP')
       }
-      for (const u of Object.values(j.urls)) window.open(u, '_blank')
+      // Terima blob, simpan sebagai fail.
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `buku-tamu-${majlisPilih?.code ?? pilih.slice(0, 8)}.zip`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
     } catch (e) {
-      setRalat(e instanceof Error ? e.message : 'Gagal muat turun')
+      setRalat(e instanceof Error ? e.message : 'Gagal muat turun ZIP')
     }
   }
 
@@ -1265,6 +1383,137 @@ function TabTamu({ sesi }: { sesi: Sesi }) {
           </button>
         </div>
       </div>
+
+      {/* --- Unlock code (self-serve) --- */}
+      <div className="adm__kad">
+        <h3 className="adm__sub">Kod Akses (Self-Serve)</h3>
+        <p className="adm__kecil">
+          Customer bayar via WhatsApp → jana kod → hantar. Customer buka{' '}
+          <code>/buku-tamu/buat</code>, masukkan kod, cipta gallery sendiri.
+        </p>
+        <div className="adm__baris">
+          <button className="btn btn--sm" disabled={unlockBuat} onClick={() => void janaUnlock(false)}>
+            {unlockBuat ? 'Menjana…' : '+ Jana Kod Standard'}
+          </button>
+          <button className="btn btn--sm btn--ghost" disabled={unlockBuat} onClick={() => void janaUnlock(true)}>
+            + Jana Kod Pro
+          </button>
+        </div>
+        {unlockBaru && (
+          <p className="adm__kecil" style={{ marginTop: 8 }}>
+            Kod baru: <code style={{ fontWeight: 700 }}>{unlockBaru}</code>
+            <button
+              className="btn btn--ghost btn--sm"
+              style={{ marginLeft: 8 }}
+              onClick={() => void navigator.clipboard?.writeText(unlockBaru)}
+            >
+              Salin
+            </button>
+          </p>
+        )}
+        {unlockList.length > 0 && (
+          <table className="adm__jadual" style={{ marginTop: 10 }}>
+            <thead>
+              <tr>
+                <th>Kod</th>
+                <th>Jenis</th>
+                <th>Status</th>
+                <th>Luput</th>
+              </tr>
+            </thead>
+            <tbody>
+              {unlockList.map((u) => (
+                <tr key={u.id}>
+                  <td><code>{u.code}</code></td>
+                  <td>{u.is_pro ? 'Pro' : 'Standard'}</td>
+                  <td>{u.used_at ? 'Dah guna' : 'Aktif'}</td>
+                  <td>{u.expires_at ? new Date(u.expires_at).toLocaleDateString('ms-MY') : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* --- Galeri v2 (self-serve) + sub-event --- */}
+      {galeri.length > 0 && (
+        <div className="adm__kad">
+          <h3 className="adm__sub">Galeri (Self-Serve)</h3>
+          <div className="adm__baris">
+            <select
+              className="adm__input"
+              value={galeriPilih}
+              onChange={(e) => setGaleriPilih(e.target.value)}
+            >
+              {galeri.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.nickname} — {g.slug}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {galeriPilih && (
+            <div style={{ marginTop: 12 }}>
+              <p className="adm__kecil" style={{ marginBottom: 8 }}>
+                Sub-event (filter majlis dalam galeri). Tetamu filter ikut jenis majlis.
+              </p>
+              {subEvents.length > 0 && (
+                <table className="adm__jadual">
+                  <thead>
+                    <tr>
+                      <th>Label</th>
+                      <th>Jenis</th>
+                      <th>Tarikh</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subEvents.map((e) => (
+                      <tr key={e.id}>
+                        <td>{e.label || e.title}</td>
+                        <td>{e.event_type ?? '—'}</td>
+                        <td>{e.event_date ? new Date(e.event_date).toLocaleDateString('ms-MY') : '—'}</td>
+                        <td>{e.active ? 'Aktif' : 'Mati'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+
+              <div className="adm__baris" style={{ marginTop: 10 }}>
+                <input
+                  className="adm__input"
+                  placeholder="Label (cth. Resepsi Lelaki)"
+                  value={subBaru.label}
+                  onChange={(e) => setSubBaru({ ...subBaru, label: e.target.value })}
+                />
+                <select
+                  className="adm__input"
+                  value={subBaru.event_type}
+                  onChange={(e) => setSubBaru({ ...subBaru, event_type: e.target.value })}
+                >
+                  <option value="wedding">Wedding / Nikah</option>
+                  <option value="resepsi_lelaki">Resepsi Lelaki</option>
+                  <option value="resepsi_wanita">Resepsi Wanita</option>
+                  <option value="bertunang">Bertunang</option>
+                  <option value="hari_jadi">Hari Jadi</option>
+                  <option value="lain">Lain-lain</option>
+                </select>
+                <input
+                  className="adm__input"
+                  type="date"
+                  value={subBaru.event_date}
+                  onChange={(e) => setSubBaru({ ...subBaru, event_date: e.target.value })}
+                />
+                <button className="btn btn--sm" disabled={subBuat} onClick={() => void tambahSubEvent()}>
+                  {subBuat ? 'Menambah…' : '+ Tambah Sub-Event'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* --- Pilih majlis --- */}
       {majlis.length > 0 && (

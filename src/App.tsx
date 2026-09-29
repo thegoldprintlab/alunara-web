@@ -13,6 +13,7 @@ import Hubungi from './pages/Hubungi'
 import Checklist from './pages/Checklist'
 import BukuTamu from './pages/BukuTamu'
 import BukuTamuMula from './pages/BukuTamuMula'
+import BukuTamuBuat from './pages/BukuTamuBuat'
 import Tempah from './pages/Tempah'
 import Admin from './pages/Admin'
 import './App.css'
@@ -65,6 +66,9 @@ export default function App() {
           <Route path="/harga-hantar" element={<HargaHantar />} />
           <Route path="/checklist" element={<Checklist />} />
           <Route path="/hubungi" element={<Hubungi />} />
+          {/* Buku tamu — self-serve create mesti DIATAS :kod supaya "buat"
+              tak dianggap sebagai kod majlis. */}
+          <Route path="/buku-tamu/buat" element={<BukuTamuBuat />} />
           {/* Buku tamu — tetamu buka dari QR. Tiada log masuk. */}
           <Route path="/buku-tamu/:kod" element={<BukuTamu />} />
           {/* Tanpa kod = halaman penerangan produk. URL ini juga yang orang

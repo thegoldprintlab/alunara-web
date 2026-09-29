@@ -9,19 +9,24 @@
 .bt-kulit {
   --emas: #c8a165;
   --emas-lembut: #e8d5b0;
-  --gelap: #1a1613;
-  --gelap-2: #241f1a;
-  --teks: #f0e8dc;
-  --teks-lembut: #a89c8a;
+  --gelap: #201a15;
+  --gelap-2: #2a231c;
+  --teks: #f4ede2;
+  --teks-lembut: #b3a691;
   --ralat: #e0785f;
 
   min-height: 100vh;
   background: var(--gelap);
   color: var(--teks);
   padding: 20px 16px 60px;
-  max-width: 720px;
-  margin: 0 auto;
   font-family: inherit;
+}
+
+/* Kandungan buku tamu dikekang di tengah, tapi background kekal penuh skrin. */
+.bt-kulit > * {
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .bt-kepala {
@@ -137,8 +142,12 @@
 
 .bt-btn--halus {
   background: transparent;
-  color: var(--teks-lembut);
-  border: 1px solid rgba(200, 161, 101, 0.3);
+  color: var(--emas-lembut);
+  border: 1px solid rgba(200, 161, 101, 0.4);
+}
+.bt-btn--halus:hover {
+  background: rgba(200, 161, 101, 0.12);
+  color: var(--emas);
 }
 
 .bt-btn--pilih {
@@ -401,6 +410,8 @@
 
 .bt-mula {
   max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
   padding-top: 8px;
 }
 
@@ -545,10 +556,8 @@
 }
 
 .bt-harga-tag {
-  position: absolute;
-  top: -11px;
-  left: 18px;
-  margin: 0;
+  align-self: flex-start;
+  margin: 0 0 12px;
   background: var(--emas);
   color: #1a1613;
   font-size: 0.68rem;
@@ -646,3 +655,269 @@
 }
 
 .bt-bahagian a { color: var(--emas); }
+
+/* ------------------------------ SELF-SERVE (buat) ----------------------- */
+.bt-buat { max-width: 620px; margin-left: auto; margin-right: auto; }
+
+.bt-buat-kod {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+
+.bt-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #14110e;
+  border: 1px solid rgba(200, 161, 101, 0.28);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--teks);
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.bt-input:focus {
+  outline: none;
+  border-color: var(--emas);
+  box-shadow: 0 0 0 3px rgba(200, 161, 101, 0.15);
+}
+
+.bt-input--kod {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  flex: 1 1 220px;
+  font-size: 1.05rem;
+}
+
+.bt-input--area {
+  margin-top: 10px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.bt-ralat {
+  margin: 14px 0 0;
+  color: #e09090;
+  font-size: 0.9rem;
+}
+
+.bt-buat-pilih {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bt-pilih {
+  background: var(--gelap-2);
+  border: 1px solid rgba(200, 161, 101, 0.22);
+  border-radius: 999px;
+  color: var(--teks-lembut);
+  padding: 9px 18px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.bt-pilih:hover {
+  border-color: var(--emas);
+  color: var(--teks);
+}
+
+.bt-pilih--aktif {
+  background: var(--emas);
+  border-color: var(--emas);
+  color: #1a1613;
+  font-weight: 600;
+}
+
+.bt-togol {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  color: var(--teks);
+  font-size: 0.95rem;
+}
+
+.bt-togol input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--emas);
+  cursor: pointer;
+}
+
+.bt-info--kecil {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.bt-pautan {
+  color: var(--emas);
+  text-decoration: underline;
+}
+
+.bt-hero--jaya {
+  text-align: center;
+}
+
+.bt-hasil-link {
+  margin: 18px 0;
+  font-size: 1rem;
+}
+
+.bt-hasil-link code {
+  background: #14110e;
+  border: 1px solid rgba(200, 161, 101, 0.3);
+  border-radius: 8px;
+  padding: 10px 16px;
+  color: var(--emas-lembut);
+  font-size: 1.05rem;
+  word-break: break-all;
+}
+
+.bt-btn--besar {
+  font-size: 1.05rem;
+  padding: 15px 34px;
+}
+
+/* ------------------------------ V2 (media + filter) --------------------- */
+.bt-welcome {
+  margin-top: 12px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.bt-tab {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.bt-tab-btn {
+  background: var(--gelap-2);
+  border: 1px solid rgba(200, 161, 101, 0.22);
+  border-radius: 999px;
+  color: var(--teks-lembut);
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.bt-tab-btn--aktif {
+  background: var(--emas);
+  border-color: var(--emas);
+  color: #1a1613;
+  font-weight: 600;
+}
+
+.bt-filter {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.bt-media-video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #14110e;
+}
+
+.bt-media-voice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  background: #14110e;
+  border-radius: 8px;
+}
+
+.bt-media-voice audio {
+  width: 100%;
+}
+
+.bt-voice {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bt-voice-masa {
+  font-size: 1.2rem;
+  color: var(--emas);
+  font-weight: 600;
+  margin: 0;
+}
+
+.bt-voice audio {
+  width: 100%;
+}
+
+.bt-galeri-kepala {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bt-btn--sm {
+  font-size: 0.85rem;
+  padding: 8px 16px;
+}
+
+.bt-slaid {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #0b0907;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+
+.bt-slaid-img {
+  max-width: 100%;
+  max-height: 82vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.bt-slaid-tutup {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(200, 161, 101, 0.15);
+  border: 1px solid rgba(200, 161, 101, 0.3);
+  color: var(--teks);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.bt-slaid-kapsyen {
+  text-align: center;
+  color: var(--teks);
+  max-width: 60ch;
+}
+
+.bt-slaid-kapsyen .bt-ucapan {
+  display: block;
+  margin-top: 6px;
+  color: var(--teks-lembut);
+}
+

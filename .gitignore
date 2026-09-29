@@ -25,3 +25,11 @@ dist-ssr
 .vercel
 .env*
 docs/SECRETS_LOCAL.md
+
+# Backups data (mengandungi data sensitif + kod unlock) — jangan commit
+backups/
+
+# Skrip migration/debug one-off (ada credential DB hardcoded) — jangan commit
+scripts/
+# kecuali skrip deploy yang sah (tiada credential)
+!scripts/patch-vercel-config.mjs

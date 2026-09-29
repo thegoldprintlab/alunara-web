@@ -63,6 +63,7 @@ export default function Footer() {
           </span>
           <Link to="/tempah">Semak Tarikh Kosong</Link>
           <Link to="/checklist">Checklist Pelan Majlis</Link>
+          <Link to="/buku-tamu">Buku Tamu Digital</Link>
           <Link to="/hubungi">Semua Soalan Lazim</Link>
         </div>
       </div>

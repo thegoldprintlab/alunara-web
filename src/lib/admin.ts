@@ -73,6 +73,54 @@ export type Entri = {
   alunara_guestbook_guests?: { name: string | null; wish: string | null } | null
 }
 
+/** Media generic (v2) — foto + video + voice note. */
+export type Media = {
+  id: string
+  event_id: string
+  guest_id: string | null
+  storage_path: string
+  media_type: 'photo' | 'video' | 'voice'
+  mime_type: string | null
+  duration_sec: number | null
+  stock: string
+  hidden: boolean
+  hidden_reason: string | null
+  created_at: string
+  alunara_guestbook_guests?: { name: string | null; wish: string | null } | null
+}
+
+export type Galeri = {
+  id: string
+  slug: string
+  nickname: string
+  title: string
+  event_type: string
+  event_date: string | null
+  venue: string | null
+  welcome_label: string | null
+  welcome_message: string | null
+  theme: string
+  cover_path: string | null
+  owner_name: string | null
+  owner_phone: string | null
+  active: boolean
+  is_pro: boolean
+  upload_until: string
+  created_at: string
+  updated_at: string
+}
+
+export type UnlockCode = {
+  id: string
+  code: string
+  gallery_id: string | null
+  is_pro: boolean
+  notes: string | null
+  expires_at: string
+  used_at: string | null
+  created_at: string
+}
+
 export type Majlis = {
   id: string
   code: string
@@ -86,6 +134,11 @@ export type Majlis = {
   notes: string | null
   created_at: string
   updated_at: string
+  // v2 — sub-event dalam gallery
+  gallery_id: string | null
+  event_type: string | null
+  venue: string | null
+  label: string | null
 }
 
 export type Klien = {
@@ -371,6 +424,60 @@ export const db = {
       headers: { Prefer: 'return=representation' },
       body: JSON.stringify(e),
     })
+  },
+
+  /* --------------------------- BUKU TAMU v2 ---------------------------
+   * Gallery (boleh banyak sub-event) + media generic + unlock code.
+   */
+  async galeri(s: Sesi) {
+    return minta<Galeri[]>(
+      s,
+      'alunara_guestbook_galleries?select=*&order=created_at.desc&limit=200',
+    )
+  },
+  async galeriEvent(s: Sesi, galleryId: string) {
+    return minta<Majlis[]>(
+      s,
+      `alunara_guestbook_events?gallery_id=eq.${galleryId}&select=*&order=event_date.asc`,
+    )
+  },
+  /** Tambah sub-event (nikah, resepsi lelaki, resepsi wanita) ke gallery v2. */
+  async tambahSubEvent(
+    s: Sesi,
+    galleryId: string,
+    sub: { label: string; event_type?: string; title?: string; event_date?: string; venue?: string },
+  ) {
+    return minta<string>(s, 'rpc/alunara_gb_add_sub_event', {
+      method: 'POST',
+      body: JSON.stringify({
+        p_gallery_id: galleryId,
+        p_label: sub.label,
+        p_event_type: sub.event_type ?? 'wedding',
+        p_title: sub.title ?? null,
+        p_event_date: sub.event_date ?? null,
+        p_venue: sub.venue ?? null,
+      }),
+    })
+  },
+  async unlockCodes(s: Sesi) {
+    return minta<UnlockCode[]>(
+      s,
+      'alunara_guestbook_unlock_codes?select=*&order=created_at.desc&limit=200',
+    )
+  },
+  /** Jana unlock code baru (admin sahaja — RPC security definer). */
+  async janaUnlockCode(s: Sesi, isPro = false, notes = '') {
+    return minta<string>(s, 'rpc/alunara_gb_new_unlock_code', {
+      method: 'POST',
+      body: JSON.stringify({ p_is_pro: isPro, p_notes: notes || null }),
+    })
+  },
+  /** Media satu gallery (ikut filter media_type + event_type). */
+  async mediaGaleri(s: Sesi, _slug: string) {
+    return minta<Media[]>(
+      s,
+      `alunara_guestbook_media?select=*,alunara_guestbook_guests(name,wish)&order=created_at.desc&limit=500`,
+    )
   },
 }
 

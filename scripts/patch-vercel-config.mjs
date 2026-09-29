@@ -35,6 +35,8 @@ const SPA_ROUTES = [
   // Jangan keluarkan dari senarai ini tanpa sebab — kalau tiada, /admin
   // jadi 404 dan bos tak boleh log masuk.
   '/admin',
+  // Self-serve: client cipta gallery sendiri guna unlock code.
+  '/buku-tamu/buat',
 ]
 
 /**
@@ -46,6 +48,8 @@ const SPA_PATTERNS = [
   // Kod majlis: 6 aksara dari abjad tanpa 0/O/1/I/L. Longgar sedikit supaya
   // kod lama / huruf kecil pun sampai ke React (React yang tolak, bukan 404).
   '^/buku-tamu/[A-Za-z0-9]{4,12}/?$',
+  // Slug peribadi gallery (v2) — huruf/angka/sempang, cth. ali-abu.
+  '^/buku-tamu/[a-z0-9][a-z0-9-]{1,40}/?$',
   // Tanpa kod — halaman KodTiada (QR rosak / kod tercicir). Sengaja di sini,
   // bukan dalam SPA_ROUTES, supaya senarai tepat kekal bersih.
   '^/buku-tamu/?$',

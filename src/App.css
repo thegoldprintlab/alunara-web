@@ -112,7 +112,7 @@ main { flex: 1; }
 /* PENTING: display:flex di atas mengalahkan atribut `hidden` pada elemen.
    Tanpa baris ini, menu mudah alih terpapar pada desktop dan menutupi laman. */
 .drawer[hidden] { display: none; }
-@media (min-width: 1081px) {
+@media (min-width: 1221px) {
   .drawer { display: none; }
 }
 .drawer__foot { margin-top: auto; padding-top: 24px; border-top: 1px solid var(--line); }
@@ -1539,6 +1539,9 @@ main { flex: 1; }
 .kunci__ayat { font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 20px; }
 .kunci__form { margin: 0; }
 .kunci__row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+/* Grid item tak boleh shrink bawah saiz kandungannya — mesti beri min-width:0
+   supaya input[type=date] (lebar intrinsik besar) tak tolak kolum langgar dropdown. */
+.kunci__row > .field { min-width: 0; }
 .kunci__ralat {
   margin: 12px 0 0;
   font-size: 0.85rem;
