@@ -18,6 +18,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import { waLink, MSG } from '../content'
 import './BukuTamu.css'
 
 const URL_BASE = (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? ''
@@ -33,11 +34,48 @@ const JENIS_EVENT = [
   { id: 'lain', label: 'Majlis Lain' },
 ] as const
 
+/*
+ * Pilihan tema. `gambar` ialah SETUP SEBENAR ALUNARA (folder /img yang sama
+ * dipakai halaman Tema) — bukan sekadar warna. Klien tak boleh bayangkan tema
+ * daripada nama; mereka kena nampak mejanya.
+ */
 const TEMA = [
-  { id: 'default', label: 'Klasik', warna: '#201a15', aksen: '#c8a165', nota: 'Hitam hangat + emas' },
-  { id: 'minimalis', label: 'Minimalis', warna: '#f3efe8', aksen: '#8a7f6d', nota: 'Ivory bersih, garis halus' },
-  { id: 'floral', label: 'Floral', warna: '#f7ecf1', aksen: '#b4657f', nota: 'Merah jambu + bunga' },
-  { id: 'rustic', label: 'Rustic', warna: '#efe3d2', aksen: '#8a5a34', nota: 'Ton bumi, coklat terracotta' },
+  {
+    /* Klasik = rupa ASAL buku tamu (hitam hangat + emas). Ia bukan setup fizikal
+       — ALUNARA cuma ada 3 setup sebenar (Minimalis / Floral / Rustic), sebab
+       itu tiada gambar di sini. Sebelum ini ia guna hero-setup.webp yang
+       sebenarnya setup RUSTIC, jadi kad Klasik & Rustic nampak sama. */
+    id: 'default',
+    label: 'Klasik',
+    warna: '#201a15',
+    aksen: '#c8a165',
+    nota: 'Rupa asal buku tamu',
+    gambar: null,
+  },
+  {
+    id: 'minimalis',
+    label: 'Minimalis',
+    warna: '#f3efe8',
+    aksen: '#8a7f6d',
+    nota: 'Ivory bersih, garis halus',
+    gambar: '/img/tema-minimalist-cover.webp',
+  },
+  {
+    id: 'floral',
+    label: 'Floral',
+    warna: '#f7ecf1',
+    aksen: '#b4657f',
+    nota: 'Merah jambu + bunga',
+    gambar: '/img/tema-floral-cover.webp',
+  },
+  {
+    id: 'rustic',
+    label: 'Rustic',
+    warna: '#efe3d2',
+    aksen: '#8a5a34',
+    nota: 'Ton bumi, coklat terracotta',
+    gambar: '/img/tema-rustic-cover.webp',
+  },
 ] as const
 
 type InfoKod = { sah: boolean; is_pro: boolean; sebab: string }
@@ -347,9 +385,19 @@ export default function BukuTamuBuat() {
         <section className="bt-bahagian">
           <h2>QR untuk dicetak</h2>
           {qrPratonton ? (
-            <div className="bt-qr">
+            /* QR ini sendiri boleh diklik — klik untuk uji pautan majlis.
+               Sebelum ini pautan di bawahnya pergi ke /hubungi, jadi orang
+               yang klik QR tersasar ke halaman Hubungi. */
+            <a
+              className="bt-qr"
+              href={pautanMajlis(hasil.slug)}
+              target="_blank"
+              rel="noreferrer noopener"
+              title="Buka galeri majlis"
+            >
               <img src={qrPratonton} alt={`QR buku tamu ${hasil.slug}`} width={220} height={220} />
-            </div>
+              <span className="bt-qr__nota">Klik untuk uji pautan majlis</span>
+            </a>
           ) : (
             <p className="bt-info bt-info--kecil">Menjana QR…</p>
           )}
@@ -384,7 +432,16 @@ export default function BukuTamuBuat() {
           </div>
           {hasilRalat && <p className="bt-ralat">{hasilRalat}</p>}
           <p className="bt-info bt-info--kecil">
-            Nak kami cetak & hantar sekali? <Link to="/hubungi" className="bt-pautan">Beritahu kami</Link>.
+            Nak kami cetak &amp; hantar sekali?{' '}
+            <a
+              className="bt-pautan"
+              href={waLink(MSG.bukuTamuQr(nickname.trim() || 'majlis saya', hasil.slug))}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              WhatsApp kami
+            </a>
+            .
           </p>
         </section>
 
@@ -490,7 +547,9 @@ export default function BukuTamuBuat() {
       <section className="bt-bahagian">
         <h2>8. Tema</h2>
         <p className="bt-info bt-info--kecil">
-          Ini warna galeri yang tetamu anda akan nampak. Pilih satu — boleh tukar kemudian.
+          Ini warna galeri yang tetamu anda akan nampak. Tiga tema bawah ada gambar
+          setup sebenar; <strong>Klasik</strong> ialah rupa asal buku tamu.
+          Setup meja &amp; kerusi pula dipilih masa tempah.
         </p>
         <div className="bt-tema-grid">
           {TEMA.map((t) => (
@@ -500,12 +559,16 @@ export default function BukuTamuBuat() {
               onClick={() => setTema(t.id)}
               aria-pressed={tema === t.id}
             >
-              <span className="bt-tema__contoh" style={{ background: t.warna }}>
-                <span className="bt-tema__tajuk" style={{ color: t.aksen }}>
-                  Ali &amp; Abu
+              <span className="bt-tema__contoh">
+                {t.gambar && (
+                  <img src={t.gambar} alt={`Contoh setup tema ${t.label}`} loading="lazy" decoding="async" />
+                )}
+                <span className={'bt-tema__warna' + (t.gambar ? '' : ' bt-tema__warna--tinggi')} style={{ background: t.warna }}>
+                  <span className="bt-tema__tajuk" style={{ color: t.aksen }}>
+                    Ali &amp; Abu
+                  </span>
+                  <span className="bt-tema__bar" style={{ background: t.aksen }} />
                 </span>
-                <span className="bt-tema__bar" style={{ background: t.aksen }} />
-                <span className="bt-tema__bar bt-tema__bar--pendek" style={{ background: t.aksen }} />
               </span>
               <span className="bt-tema__nama">{t.label}</span>
               <span className="bt-tema__nota">{t.nota}</span>

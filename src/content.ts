@@ -59,6 +59,8 @@ export const MSG = {
   deposit: 'Hi ALUNARA! Saya nak bayar deposit RM50 untuk lock tarikh majlis saya.',
   bukuTamu:
     'Hi ALUNARA! Saya nak tempah buku tamu digital untuk majlis saya. Boleh bagitahu cara nak mula?',
+  bukuTamuQr: (nama: string, slug: string) =>
+    `Hi ALUNARA! Buku tamu majlis saya (${nama}) dah siap — pautan ${slug}. Saya nak tanya pasal cetak & hantar QR.`,
 } as const
 
 /* ------------------------------- PAKEJ ---------------------------------- */

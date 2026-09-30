@@ -115,7 +115,15 @@
   border-color: var(--emas);
 }
 
-.bt-medan input:not([type='range']) { height: 48px; }
+.bt-medan input:not([type='range']),
+.bt-medan textarea {
+  height: 48px;
+  appearance: none;
+  -webkit-appearance: none;
+  line-height: 1.4;
+}
+
+.bt-medan textarea { height: auto; min-height: 96px; }
 
 .bt-medan--julat input[type='range'] {
   width: 100%;
@@ -709,9 +717,37 @@ a.bt-btn--halus { color: var(--emas-lembut); }
   line-height: 1.5;
 }
 
-/* Tinggi seragam — input[type=date] asli 2px lebih tinggi, kotak tarikh
-   nampak menonjol. Textarea dikecualikan. */
-.bt-input:not(.bt-input--area) { height: 48px; }
+/*
+ * Tinggi & appearance seragam untuk SEMUA medan satu baris.
+ * Widget asli enjin (ikon kalendar pada input[type=date], anak panah pada
+ * select) mengubah tinggi DAN lebar intrinsik medan — dan setiap enjin
+ * (Chromium, Safari iOS) berbeza. Itu punca kotak "Tarikh majlis" nampak
+ * lain daripada yang lain. Buang appearance, lukis penanda sendiri.
+ * Textarea dikecualikan sebab ia memang berbilang baris.
+ */
+.bt-input:not(.bt-input--area) {
+  height: 48px;
+  appearance: none;
+  -webkit-appearance: none;
+  line-height: 1.4;
+}
+
+/* Anak panah select sendiri (appearance:none membuang anak panah asli). */
+select.bt-input {
+  background-image: linear-gradient(45deg, transparent 50%, var(--teks-lembut) 50%),
+    linear-gradient(135deg, var(--teks-lembut) 50%, transparent 50%);
+  background-position: calc(100% - 20px) calc(50% + 1px), calc(100% - 15px) calc(50% + 1px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 38px;
+}
+
+.bt-input[type='date']::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 6px;
+}
 
 .bt-ralat {
   margin: 14px 0 0;
@@ -1006,19 +1042,33 @@ a.bt-btn--halus { color: var(--emas-lembut); }
 .bt-tema:hover { border-color: var(--emas); transform: translateY(-1px); }
 .bt-tema--aktif { border-color: var(--emas); box-shadow: 0 0 0 2px rgba(200, 161, 101, 0.28); }
 
+/* Kad tema: gambar setup sebenar + jalur warna tema di bawahnya. */
 .bt-tema__contoh {
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #14110e;
+}
+
+.bt-tema__contoh img {
+  width: 100%;
+  height: 92px;
+  object-fit: cover;
+  display: block;
+}
+
+.bt-tema__warna {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  height: 76px;
-  border-radius: 8px;
+  gap: 4px;
+  padding: 9px 6px;
 }
 
-.bt-tema__tajuk { font-family: var(--serif, Georgia, serif); font-size: 1rem; letter-spacing: 0.02em; }
+.bt-tema__tajuk { font-family: var(--serif, Georgia, serif); font-size: 0.95rem; letter-spacing: 0.02em; }
 .bt-tema__bar { width: 54%; height: 3px; border-radius: 2px; opacity: 0.75; }
-.bt-tema__bar--pendek { width: 34%; opacity: 0.5; }
 .bt-tema__nama { font-size: 0.9rem; color: var(--teks); font-weight: 600; }
 .bt-tema__nota { font-size: 0.74rem; color: var(--teks-lembut); }
 
@@ -1037,3 +1087,20 @@ a.bt-btn--halus { color: var(--emas-lembut); }
 }
 
 .bt-qr img { width: 100%; height: auto; display: block; }
+
+/* QR kini pautan: klik untuk uji pautan majlis. */
+a.bt-qr {
+  flex-direction: column;
+  gap: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+a.bt-qr:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28); }
+
+.bt-qr__nota {
+  font-size: 0.72rem;
+  color: var(--teks-lembut);
+  letter-spacing: 0.04em;
+}

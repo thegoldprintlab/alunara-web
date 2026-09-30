@@ -153,7 +153,37 @@ input[type='date'] { min-width: 0; width: 100%; }
 input:not([type='checkbox']):not([type='radio']):not([type='range']),
 select {
   height: 48px;
+  /*
+   * `appearance: none` — punca sebenar medan tarikh nampak berbeza.
+   * Widget asli enjin (ikon kalendar, anak panah select) mengubah tinggi DAN
+   * lebar intrinsik medan, dan setiap enjin (Chromium / Safari iOS) berbeza.
+   * Buang appearance → semua medan render seragam. Ikon kita sendiri pula
+   * dilukis dalam CSS supaya rupa tak berubah ikut enjin.
+   */
+  appearance: none;
+  -webkit-appearance: none;
+  /* Teks sentiasa di tengah menegak, walau enjin apa pun. */
+  line-height: 1.4;
+  padding-top: 0;
+  padding-bottom: 0;
 }
+/* Anak panah select sendiri — sebab appearance:none membuang anak panah asli. */
+select {
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
+    linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
+  background-position: calc(100% - 20px) calc(50% + 1px), calc(100% - 15px) calc(50% + 1px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 38px;
+}
+/* Ikon kalendar sendiri — enjin yang berbeza melukisnya lain saiz. */
+input[type='date']::-webkit-calendar-picker-indicator {
+  opacity: 0.55;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 6px;
+}
+input[type='date'] { padding-right: 10px; }
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--champagne);
