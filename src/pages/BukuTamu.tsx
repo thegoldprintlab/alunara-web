@@ -308,30 +308,48 @@ export default function BukuTamu() {
   }, [slaid, media])
 
   // ---- renderer WebGL ----
+  // Dibuat MALAS, dan diikat pada ELEMEN canvas — bukan pada komponen.
+  //
+  // Bug yang ini betulkan: canvas hanya di-mount selepas tetamu pilih gambar
+  // (`imej &&`), jadi kalau renderer dicipta dalam effect mount, ia terikat
+  // pada canvas yang tak wujud lagi (React buang pada remount StrictMode).
+  // Akibatnya: canvas 300×150 lalai, 0 piksel dilukis — tetamu nampak KOTAK
+  // HITAM, bukan gambar dia. Renderer mesti dicipta bila canvas benar-benar
+  // ada, dan dicipta semula bila elemen canvas bertukar.
+  //
+  // Kenapa tidak cipta setiap kali slider bergerak: satu konteks WebGL per
+  // gerakan slider akan cepat habis had konteks pelayar. Jadi guna semula
+  // selagi elemen canvas sama.
   useEffect(() => {
     const cv = canvasRef.current
-    if (!cv) return
-    try {
-      const r = ciptaRenderer(cv)
+    if (!cv || !imej || !webglSedia) return
+
+    let r = rendererRef.current
+    if (!r || r.canvas !== cv) {
+      r?.buang()
+      try {
+        r = ciptaRenderer(cv)
+      } catch {
+        r = null
+      }
+      rendererRef.current = r
       if (!r) {
         setWebglSedia(false)
         return
       }
-      rendererRef.current = r
-      return () => {
-        r.buang()
-        rendererRef.current = null
-      }
-    } catch {
-      setWebglSedia(false)
     }
-  }, [])
 
-  useEffect(() => {
-    const r = rendererRef.current
-    if (!r || !imej) return
     r.lukis(imej, cariStock(stockPilih), keamatan)
   }, [imej, stockPilih, keamatan, webglSedia])
+
+  // Lepaskan konteks bila komponen unmount — jangan bocor konteks WebGL.
+  useEffect(
+    () => () => {
+      rendererRef.current?.buang()
+      rendererRef.current = null
+    },
+    []
+  )
 
   const stockTersedia = useMemo(() => {
     if (isV2) return STOCKS
