@@ -644,7 +644,7 @@ export default function BukuTamu() {
   }
 
   return (
-    <div className="bt-kulit">
+    <div className="bt-kulit" data-tema={info?.theme || 'default'}>
       <header className="bt-kepala">
         <p className="bt-eyebrow">Buku Tamu</p>
         <h1>{tajuk}</h1>

@@ -45,8 +45,11 @@ export default function Footer() {
 
         <div className="footer__col">
           <div className="footer__heading">Pakej</div>
+          {/* Pautan bawa terus ke kad pakej itu (#pakej-<id>): sebelum ini ia
+              cuma pergi ke /pakej, jadi bila sudah di /pakej skrin tak
+              bergerak dan orang sangka butang rosak. */}
           {PAKEJ.map((p) => (
-            <Link key={p.id} to="/pakej">
+            <Link key={p.id} to={`/pakej#pakej-${p.id}`}>
               {p.nama} · {p.harga}
             </Link>
           ))}

@@ -283,8 +283,10 @@ begin
     v_slug := 'majlis';
   end if;
 
-  -- Pastikan unique — kalau clash, tambah nombor.
-  if exists (select 1 from public.alunara_guestbook_galleries where slug = v_slug) then
+  -- Alias g WAJIB: tanpa ia, "slug" bercanggah dengan OUT parameter slug
+  -- (RPC RETURNS TABLE (gallery_id, slug)) → error 42702
+  -- "column reference \"slug\" is ambiguous" bila buat gallery.
+  if exists (select 1 from public.alunara_guestbook_galleries g where g.slug = v_slug) then
     v_slug := v_slug || '-' || to_char(now(), 'MMDDHH24MI');
   end if;
 

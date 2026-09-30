@@ -29,7 +29,11 @@ export default function Pakej() {
 
           <div className="pkg-grid pkg-grid--page">
             {PAKEJ.map((p) => (
-              <div className={'pkg-card pkg-card--tall' + (p.popular ? ' pkg-card--featured' : '')} key={p.id}>
+              <div
+                id={`pakej-${p.id}`}
+                className={'pkg-card pkg-card--tall' + (p.popular ? ' pkg-card--featured' : '')}
+                key={p.id}
+              >
                 {p.popular && <div className="pkg-card__badge">Paling Popular</div>}
                 <div className="pkg-card__name">{p.nama}</div>
                 <div className="pkg-card__price">

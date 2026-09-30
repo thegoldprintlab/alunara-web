@@ -581,6 +581,7 @@ function TabTempahan({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> 
             <label htmlFor="b-nota">Nota</label>
             <textarea
               id="b-nota"
+              className="adm__input--area"
               rows={3}
               value={borang.notes}
               onChange={(e) => setBorang({ ...borang, notes: e.target.value })}
@@ -861,6 +862,7 @@ function TabKlien({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) 
             <label htmlFor="k-nota">Nota</label>
             <textarea
               id="k-nota"
+              className="adm__input--area"
               rows={2}
               value={borang.notes}
               onChange={(e) => setBorang({ ...borang, notes: e.target.value })}

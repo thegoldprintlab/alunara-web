@@ -14,6 +14,9 @@
   --teks: #f4ede2;
   --teks-lembut: #b3a691;
   --ralat: #e0785f;
+  /* Medan borang + garis — dipakai oleh input/textarea/kad. */
+  --medan: #14110e;
+  --garis: rgba(200, 161, 101, 0.25);
 
   min-height: 100vh;
   background: var(--gelap);
@@ -94,8 +97,9 @@
 .bt-medan textarea {
   width: 100%;
   box-sizing: border-box;
-  background: #14110e;
-  border: 1px solid rgba(200, 161, 101, 0.25);
+  /* Token, bukan warna tetap — supaya tema galeri (data-tema) boleh tukar nada. */
+  background: var(--medan);
+  border: 1px solid var(--garis);
   border-radius: 9px;
   color: var(--teks);
   padding: 13px 14px;
@@ -110,6 +114,8 @@
   outline: none;
   border-color: var(--emas);
 }
+
+.bt-medan input:not([type='range']) { height: 48px; }
 
 .bt-medan--julat input[type='range'] {
   width: 100%;
@@ -674,8 +680,8 @@ a.bt-btn--halus { color: var(--emas-lembut); }
 .bt-input {
   width: 100%;
   box-sizing: border-box;
-  background: #14110e;
-  border: 1px solid rgba(200, 161, 101, 0.28);
+  background: var(--medan);
+  border: 1px solid var(--garis);
   border-radius: 10px;
   padding: 12px 14px;
   color: var(--teks);
@@ -702,6 +708,10 @@ a.bt-btn--halus { color: var(--emas-lembut); }
   resize: vertical;
   line-height: 1.5;
 }
+
+/* Tinggi seragam — input[type=date] asli 2px lebih tinggi, kotak tarikh
+   nampak menonjol. Textarea dikecualikan. */
+.bt-input:not(.bt-input--area) { height: 48px; }
 
 .bt-ralat {
   margin: 14px 0 0;
@@ -926,3 +936,104 @@ a.bt-btn--halus { color: var(--emas-lembut); }
   color: var(--teks-lembut);
 }
 
+
+
+/* ---------------------------------------------------------------------------
+ * TEMA GALERI (data-tema pada .bt-kulit)
+ *
+ * Setakat ini keempat-empat pilihan dalam borang self-serve menghasilkan
+ * rupa yang SAMA — jadi pratonton di borang akan berbohong. Blok ini yang
+ * menjadikan pilihan tema benar-benar berkesan.
+ *
+ * Nilai `--teks` setiap tema mesti kontras dengan `--gelap`/`--gelap-2` tema
+ * itu sendiri: teks gelap atas kad cerah, teks cerah atas kad gelap.
+ * ------------------------------------------------------------------------- */
+.bt-kulit[data-tema='minimalis'] {
+  --emas: #a8967a;
+  --emas-lembut: #6f6252;
+  --gelap: #f3efe8;
+  --gelap-2: #ffffff;
+  --teks: #2b2723;
+  --teks-lembut: #6f675c;
+  --medan: #fbf9f6;
+  --garis: rgba(43, 39, 35, 0.16);
+}
+
+.bt-kulit[data-tema='floral'] {
+  --emas: #c0768f;
+  --emas-lembut: #9c4f6c;
+  --gelap: #f9eef3;
+  --gelap-2: #ffffff;
+  --teks: #3d2029;
+  --teks-lembut: #7d5566;
+  --medan: #fdf7fa;
+  --garis: rgba(156, 79, 108, 0.22);
+}
+
+.bt-kulit[data-tema='rustic'] {
+  --emas: #a9764a;
+  --emas-lembut: #7d4f28;
+  --gelap: #f2e6d6;
+  --gelap-2: #fffaf3;
+  --teks: #33241a;
+  --teks-lembut: #6d5541;
+  --medan: #fdf6ec;
+  --garis: rgba(125, 79, 40, 0.22);
+}
+
+/* --- Kad pilihan tema dalam borang self-serve (dengan pratonton) --- */
+.bt-tema-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.bt-tema {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--gelap-2);
+  border: 1px solid var(--garis);
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.bt-tema:hover { border-color: var(--emas); transform: translateY(-1px); }
+.bt-tema--aktif { border-color: var(--emas); box-shadow: 0 0 0 2px rgba(200, 161, 101, 0.28); }
+
+.bt-tema__contoh {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 76px;
+  border-radius: 8px;
+}
+
+.bt-tema__tajuk { font-family: var(--serif, Georgia, serif); font-size: 1rem; letter-spacing: 0.02em; }
+.bt-tema__bar { width: 54%; height: 3px; border-radius: 2px; opacity: 0.75; }
+.bt-tema__bar--pendek { width: 34%; opacity: 0.5; }
+.bt-tema__nama { font-size: 0.9rem; color: var(--teks); font-weight: 600; }
+.bt-tema__nota { font-size: 0.74rem; color: var(--teks-lembut); }
+
+/* --- QR hasil (halaman /buku-tamu/buat) --- */
+.bt-qr {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  margin: 12px 0;
+  background: #ffffff;
+  border: 1px solid var(--emas);
+  border-radius: 12px;
+  max-width: 260px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.bt-qr img { width: 100%; height: auto; display: block; }

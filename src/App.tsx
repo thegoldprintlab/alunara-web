@@ -19,12 +19,27 @@ import Admin from './pages/Admin'
 import './App.css'
 import './pages/Admin.css'
 
-/** Scroll ke atas setiap kali tukar halaman. */
+/**
+ * Scroll ke atas setiap kali tukar halaman.
+ *
+ * `key` (bukan `pathname`) — sebab klik pautan footer ke halaman yang SAMA
+ * (cth. di /pakej, klik "Sari · RM109" yang juga pergi ke /pakej) tak ubah
+ * pathname, jadi skrin kekal di bawah dan orang sangka butang tak berfungsi.
+ * location.key berubah pada setiap navigasi, jadi kes itu pun di-scroll atas.
+ */
 function ScrollTop() {
-  const { pathname } = useLocation()
+  const { key, hash } = useLocation()
   useEffect(() => {
+    // Pautan footer pakej bawa #pakej-<id> — pergi terus ke kad itu, bukan atas.
+    if (hash) {
+      const el = document.querySelector(hash)
+      if (el) {
+        el.scrollIntoView({ block: 'center' })
+        return
+      }
+    }
     window.scrollTo(0, 0)
-  }, [pathname])
+  }, [key, hash])
   return null
 }
 

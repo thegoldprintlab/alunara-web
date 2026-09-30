@@ -143,6 +143,17 @@ input, select, textarea {
 }
 /* Input tarikh: jangan benarkan lebar intrinsik enjin menolak layout. */
 input[type='date'] { min-width: 0; width: 100%; }
+/*
+ * TINGGI SERAGAM — jangan buang.
+ * input[type=date] dan select asli enjin 2px lebih tinggi daripada input teks
+ * (ruang ikon kalendar / anak panah), jadi kotak "Tarikh majlis" nampak
+ * menonjol keluar dari barisnya walaupun lebarnya sama. Kunci tinggi semua
+ * medan satu baris; textarea dikecualikan sebab ia memang berbilang baris.
+ */
+input:not([type='checkbox']):not([type='radio']):not([type='range']),
+select {
+  height: 48px;
+}
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--champagne);
