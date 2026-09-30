@@ -11,6 +11,7 @@ const LINKS = [
   { to: '/buku-tamu', label: 'Buku Tamu' },
   { to: '/checklist', label: 'Checklist' },
   { to: '/harga-hantar', label: 'Penghantaran' },
+  { to: '/tempah', label: 'Semak Tarikh' },
   { to: '/hubungi', label: 'Hubungi' },
 ]
 

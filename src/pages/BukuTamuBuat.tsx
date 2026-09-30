@@ -35,46 +35,45 @@ const JENIS_EVENT = [
 ] as const
 
 /*
- * Pilihan tema. `gambar` ialah SETUP SEBENAR ALUNARA (folder /img yang sama
- * dipakai halaman Tema) — bukan sekadar warna. Klien tak boleh bayangkan tema
- * daripada nama; mereka kena nampak mejanya.
+ * Pilihan tema = warna GALERI TETAMU, bukan setup meja & kerusi.
+ *
+ * Bos tegur: jangan guna gambar meja di sini — ia mengelirukan (setup meja
+ * dipilih masa tempah, bukan masa buat buku tamu). Jadi setiap kad melukis
+ * UI sebenar halaman tetamu: kepala majlis, medan nama, butang.
+ * `kad` = warna latar kad dalam mockup itu.
  */
 const TEMA = [
   {
-    /* Klasik = rupa ASAL buku tamu (hitam hangat + emas). Ia bukan setup fizikal
-       — ALUNARA cuma ada 3 setup sebenar (Minimalis / Floral / Rustic), sebab
-       itu tiada gambar di sini. Sebelum ini ia guna hero-setup.webp yang
-       sebenarnya setup RUSTIC, jadi kad Klasik & Rustic nampak sama. */
     id: 'default',
     label: 'Klasik',
     warna: '#201a15',
+    kad: '#2a231c',
     aksen: '#c8a165',
-    nota: 'Rupa asal buku tamu',
-    gambar: null,
+    nota: 'Hitam hangat + emas',
   },
   {
     id: 'minimalis',
     label: 'Minimalis',
     warna: '#f3efe8',
+    kad: '#ffffff',
     aksen: '#8a7f6d',
     nota: 'Ivory bersih, garis halus',
-    gambar: '/img/tema-minimalist-cover.webp',
   },
   {
     id: 'floral',
     label: 'Floral',
     warna: '#f7ecf1',
+    kad: '#ffffff',
     aksen: '#b4657f',
     nota: 'Merah jambu + bunga',
-    gambar: '/img/tema-floral-cover.webp',
   },
   {
     id: 'rustic',
     label: 'Rustic',
     warna: '#efe3d2',
+    kad: '#fffaf3',
     aksen: '#8a5a34',
     nota: 'Ton bumi, coklat terracotta',
-    gambar: '/img/tema-rustic-cover.webp',
   },
 ] as const
 
@@ -547,9 +546,8 @@ export default function BukuTamuBuat() {
       <section className="bt-bahagian">
         <h2>8. Tema</h2>
         <p className="bt-info bt-info--kecil">
-          Ini warna galeri yang tetamu anda akan nampak. Tiga tema bawah ada gambar
-          setup sebenar; <strong>Klasik</strong> ialah rupa asal buku tamu.
-          Setup meja &amp; kerusi pula dipilih masa tempah.
+          Ini warna halaman yang <strong>tetamu anda nampak</strong> masa scan QR.
+          Pilih satu — boleh tukar kemudian. Setup meja &amp; kerusi dipilih masa tempah.
         </p>
         <div className="bt-tema-grid">
           {TEMA.map((t) => (
@@ -559,15 +557,20 @@ export default function BukuTamuBuat() {
               onClick={() => setTema(t.id)}
               aria-pressed={tema === t.id}
             >
-              <span className="bt-tema__contoh">
-                {t.gambar && (
-                  <img src={t.gambar} alt={`Contoh setup tema ${t.label}`} loading="lazy" decoding="async" />
-                )}
-                <span className={'bt-tema__warna' + (t.gambar ? '' : ' bt-tema__warna--tinggi')} style={{ background: t.warna }}>
-                  <span className="bt-tema__tajuk" style={{ color: t.aksen }}>
+              {/* Mockup UI halaman tetamu — bukan gambar setup meja. */}
+              <span className="bt-tema__contoh" style={{ background: t.warna }} aria-hidden="true">
+                <span className="bt-tema__ui">
+                  <span className="bt-tema__ui-eyebrow" style={{ color: t.aksen }}>
+                    Buku Tamu
+                  </span>
+                  <span className="bt-tema__ui-tajuk" style={{ color: t.aksen }}>
                     Ali &amp; Abu
                   </span>
-                  <span className="bt-tema__bar" style={{ background: t.aksen }} />
+                  <span className="bt-tema__ui-kad" style={{ background: t.kad }}>
+                    <span className="bt-tema__ui-baris" style={{ background: t.aksen }} />
+                    <span className="bt-tema__ui-baris bt-tema__ui-baris--pendek" style={{ background: t.aksen }} />
+                  </span>
+                  <span className="bt-tema__ui-btn" style={{ background: t.aksen }} />
                 </span>
               </span>
               <span className="bt-tema__nama">{t.label}</span>

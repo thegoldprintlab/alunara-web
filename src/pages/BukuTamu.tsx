@@ -414,11 +414,18 @@ export default function BukuTamu() {
     setSibuk(true)
     setRalat('')
     try {
-      const s = (await rpc('alunara_guestbook_join', {
-        p_code: kodAtas,
-        p_name: nama.trim(),
-        p_wish: ucapan.trim() || null,
-      })) as string
+      /*
+       * v2 guna RPC ikut SLUG. Sebelum ini ia panggil `alunara_guestbook_join`
+       * (v1, ikut kod 6 aksara) walaupun halaman dibuka ikut slug — carian
+       * tidak jumpa event, jadi tetamu dapat "Kod majlis tak sah" sedangkan
+       * galeri memang wujud.
+       */
+      const s = (await rpc(
+        isV2 ? 'alunara_gb_join' : 'alunara_guestbook_join',
+        isV2
+          ? { p_slug: kod, p_name: nama.trim(), p_wish: ucapan.trim() || null }
+          : { p_code: kodAtas, p_name: nama.trim(), p_wish: ucapan.trim() || null },
+      )) as string
       setSesi(s)
       try {
         localStorage.setItem(SESI_KEY, JSON.stringify({ kod: kodAtas, sesi: s, nama: nama.trim() }))

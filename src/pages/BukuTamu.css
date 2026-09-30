@@ -1042,33 +1042,54 @@ select.bt-input {
 .bt-tema:hover { border-color: var(--emas); transform: translateY(-1px); }
 .bt-tema--aktif { border-color: var(--emas); box-shadow: 0 0 0 2px rgba(200, 161, 101, 0.28); }
 
-/* Kad tema: gambar setup sebenar + jalur warna tema di bawahnya. */
+/*
+ * Kad tema = MOCKUP UI halaman tetamu (bukan gambar setup meja).
+ * Bos tegur gambar meja mengelirukan: setup meja dipilih masa tempah, bukan
+ * masa buat buku tamu. Jadi kad melukis apa yang tetamu sebenarnya nampak.
+ */
 .bt-tema__contoh {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  place-items: center;
+  height: 118px;
   border-radius: 8px;
   overflow: hidden;
-  background: #14110e;
 }
 
-.bt-tema__contoh img {
-  width: 100%;
-  height: 92px;
-  object-fit: cover;
-  display: block;
-}
-
-.bt-tema__warna {
+.bt-tema__ui {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 9px 6px;
+  gap: 5px;
+  width: 86%;
 }
 
-.bt-tema__tajuk { font-family: var(--serif, Georgia, serif); font-size: 0.95rem; letter-spacing: 0.02em; }
-.bt-tema__bar { width: 54%; height: 3px; border-radius: 2px; opacity: 0.75; }
+.bt-tema__ui-eyebrow {
+  font-size: 0.42rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.bt-tema__ui-tajuk {
+  font-family: var(--serif, Georgia, serif);
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+}
+
+.bt-tema__ui-kad {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 8px 9px;
+  border-radius: 6px;
+}
+
+.bt-tema__ui-baris { width: 100%; height: 5px; border-radius: 3px; opacity: 0.28; }
+.bt-tema__ui-baris--pendek { width: 62%; }
+
+.bt-tema__ui-btn { width: 58%; height: 9px; border-radius: 5px; opacity: 0.9; }
 .bt-tema__nama { font-size: 0.9rem; color: var(--teks); font-weight: 600; }
 .bt-tema__nota { font-size: 0.74rem; color: var(--teks-lembut); }
 

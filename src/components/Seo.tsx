@@ -53,6 +53,14 @@ const META: Record<string, Meta> = {
     title: 'Semak Tarikh Kosong & Tempah | ALUNARA Melaka',
     desc: 'Semak kalendar tarikh kosong ALUNARA dan tempah tarikh majlis anda di Melaka. Deposit RM50 untuk lock tarikh.',
   },
+  '/buku-tamu': {
+    title: 'Buku Tamu Digital QR untuk Majlis | ALUNARA Melaka',
+    desc: 'Buku tamu digital ALUNARA — tetamu scan QR di meja majlis dan kongsi gambar terus dari telefon. Tiada app, tiada akaun. Galeri peribadi untuk majlis anda.',
+  },
+  '/buku-tamu/buat': {
+    title: 'Cipta Buku Tamu Majlis Anda | ALUNARA',
+    desc: 'Masukkan kod yang anda terima daripada kami untuk mencipta galeri buku tamu majlis anda sendiri — siap dengan QR untuk dicetak.',
+  },
 }
 
 const NOINDEX = ['/admin']
