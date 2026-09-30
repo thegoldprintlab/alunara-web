@@ -105,6 +105,23 @@ type Media = {
   created_at: string
 }
 
+/**
+ * Satu ucapan dari dinding ucapan.
+ *
+ * KENAPA BERASINGAN DARI MEDIA: sebelum ini ucapan hanya dilukis dalam
+ * `figcaption` setiap media. Akibatnya (a) tetamu yang tulis ucapan SAHAJA —
+ * tanpa foto/video/suara — langsung tak muncul dalam galeri walaupun barisnya
+ * ada dalam DB, dan (b) tetamu yang upload 3 gambar nampak ucapannya 3 kali.
+ * Dinding ucapan membetulkan kedua-duanya.
+ */
+type Ucapan = {
+  guest_id: string
+  nama: string
+  wish: string
+  event_type: string | null
+  created_at: string
+}
+
 /* ------------------------------ v1 types (fallback) ------------------- */
 type MaklumatV1 = {
   event_title: string
@@ -142,6 +159,7 @@ export default function BukuTamu() {
   const [info, setInfo] = useState<InfoGallery | null>(null)
   const [subEvents, setSubEvents] = useState<SubEvent[]>([])
   const [media, setMedia] = useState<Media[]>([])
+  const [dinding, setDinding] = useState<Ucapan[]>([])
   const [urlPeta, setUrlPeta] = useState<Record<string, string>>({})
   const [filterMedia, setFilterMedia] = useState<MediaFilter>('semua')
   const [filterEvent, setFilterEvent] = useState<string>('semua')
@@ -236,6 +254,19 @@ export default function BukuTamu() {
     }
   }
 
+  /**
+   * Dinding ucapan — satu baris per tetamu, tidak kira berapa media dia hantar.
+   * Dipanggil berasingan dari media supaya ucapan tanpa gambar tetap muncul.
+   */
+  async function muatUcapan() {
+    try {
+      const u = (await rpc('alunara_gb_ucapan', { p_slug: kod })) as Ucapan[]
+      setDinding(u || [])
+    } catch {
+      /* dinding ucapan tak kritikal — galeri tetap jalan */
+    }
+  }
+
   async function muatGaleriV1() {
     try {
       const g = (await rpc('alunara_guestbook_gallery', {
@@ -259,6 +290,7 @@ export default function BukuTamu() {
         const ev = (await rpc('alunara_gb_events', { p_slug: kod })) as SubEvent[]
         setSubEvents(ev || [])
         await muatMediaV2()
+        await muatUcapan()
         return
       }
     } catch {
@@ -294,6 +326,12 @@ export default function BukuTamu() {
     if (isV2) void muatMediaV2()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterMedia, filterEvent, isV2])
+
+  // ---- muat dinding ucapan bila event filter berubah ----
+  useEffect(() => {
+    if (isV2) void muatUcapan()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isV2, kod])
 
   // ---- realtime (polling 5 saat) — galeri auto-refresh masa majlis ----
   useEffect(() => {
@@ -1011,7 +1049,6 @@ export default function BukuTamu() {
                       <strong>{m.nama_awal}</strong>
                       {m.media_type !== 'photo' && <em> · {LABEL_MEDIA[m.media_type as MediaFilter]}</em>}
                       {m.stock !== 'none' && m.media_type === 'photo' && <em> · {cariStock(m.stock).pendek}</em>}
-                      {m.wish && <span className="bt-ucapan">{m.wish}</span>}
                     </figcaption>
                   </figure>
                 )
@@ -1043,13 +1080,52 @@ export default function BukuTamu() {
                     <figcaption>
                       <strong>{g.nama_awal}</strong>
                       {g.stock !== 'none' && <em> · {cariStock(g.stock).pendek}</em>}
-                      {g.wish && <span className="bt-ucapan">{g.wish}</span>}
                     </figcaption>
                   </figure>
                 )
               })}
             </div>
+
+            {/* Ucapan v1 — tiada RPC dinding untuk v1, jadi guna yang ada pada
+                gambar. Kalau tiada gambar, tiada ucapan (had v1, bukan bug). */}
+            {gambarV1.some((g) => g.wish) && (
+              <section className="bt-dinding" aria-labelledby="bt-dinding-v1">
+                <h3 id="bt-dinding-v1" className="bt-dinding__tajuk">
+                  Ucapan tetamu
+                </h3>
+                <ul className="bt-dinding__senarai">
+                  {gambarV1
+                    .filter((g) => g.wish)
+                    .map((g) => (
+                      <li key={`u-${g.id}`} className="bt-dinding__kad">
+                        <p className="bt-dinding__wish">“{g.wish}”</p>
+                        <span className="bt-dinding__nama">— {g.nama_awal}</span>
+                      </li>
+                    ))}
+                </ul>
+              </section>
+            )}
           </>
+        )}
+
+        {/* --- dinding ucapan (v2) ---
+            Setiap tetamu sekali sahaja. Ini satu-satunya tempat ucapan
+            dipaparkan, supaya ucapan tak berulang pada setiap gambar dan
+            ucapan tanpa gambar tetap kelihatan. */}
+        {isV2 && dinding.length > 0 && (
+          <section className="bt-dinding" aria-labelledby="bt-dinding-v2">
+            <h3 id="bt-dinding-v2" className="bt-dinding__tajuk">
+              Ucapan tetamu <span className="bt-dinding__kira">({dinding.length})</span>
+            </h3>
+            <ul className="bt-dinding__senarai">
+              {dinding.map((u) => (
+                <li key={u.guest_id} className="bt-dinding__kad">
+                  <p className="bt-dinding__wish">“{u.wish}”</p>
+                  <span className="bt-dinding__nama">— {u.nama}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
       </section>
 

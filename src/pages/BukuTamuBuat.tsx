@@ -18,6 +18,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import type { PDFFont, PDFPage } from 'pdf-lib'
 import { waLink, MSG } from '../content'
 import './BukuTamu.css'
 
@@ -97,95 +98,292 @@ type SaizKertas = {
   label: string
   mm: [number, number]
   qrMm: number
-  tajukMm: number
-  teksMm: number
 }
 
 const SAIZ: SaizKertas[] = [
-  { id: 'a4', label: 'A4 — poster meja (210 × 297 mm)', mm: [210, 297], qrMm: 62, tajukMm: 26, teksMm: 13 },
-  { id: 'a6', label: 'A6 — kad kecil (105 × 148 mm)', mm: [105, 148], qrMm: 38, tajukMm: 12, teksMm: 8 },
-  { id: 'a5', label: 'A5 — kad sederhana (148 × 210 mm)', mm: [148, 210], qrMm: 48, tajukMm: 15, teksMm: 9.5 },
+  { id: 'a4', label: 'A4 — poster meja (210 × 297 mm)', mm: [210, 297], qrMm: 70 },
+  { id: 'a5', label: 'A5 — kad sederhana (148 × 210 mm)', mm: [148, 210], qrMm: 54 },
+  { id: 'a6', label: 'A6 — kad kecil (105 × 148 mm)', mm: [105, 148], qrMm: 42 },
 ]
+
+/**
+ * Palet CETAK setiap tema.
+ *
+ * KENAPA BUKAN WARNA SKRIN TERUS
+ *   Tema skrin (cth. floral #c0768f) terlalu cerah untuk dakwat atas kertas,
+ *   dan jalur gelap memakan dakwat. Setiap tema di sini ada versi cetak:
+ *   aksen yang lebih dalam + jalur pastel yang murah dakwat, atas kertas putih.
+ *   Nama tema dicetak pada poster supaya klien nampak ia benar-benar ikut
+ *   pilihan dia, bukan template generik.
+ */
+type TemaCetak = { nama: string; aksen: string; jalur: string; teks: string }
+const TEMA_CETAK: Record<string, TemaCetak> = {
+  default: { nama: 'Klasik', aksen: '#9c7a36', jalur: '#f8f3e9', teks: '#1a1613' },
+  minimalis: { nama: 'Minimalis', aksen: '#7d7263', jalur: '#f2eee7', teks: '#2b2723' },
+  floral: { nama: 'Floral', aksen: '#a94f6d', jalur: '#fbeef3', teks: '#3d2029' },
+  rustic: { nama: 'Rustic', aksen: '#8a5a34', jalur: '#f7ecdd', teks: '#33241a' },
+}
+const temaCetak = (id: string): TemaCetak => TEMA_CETAK[id] ?? TEMA_CETAK.default
+
+function warna(hex: string) {
+  const h = hex.replace('#', '')
+  return rgb(
+    parseInt(h.slice(0, 2), 16) / 255,
+    parseInt(h.slice(2, 4), 16) / 255,
+    parseInt(h.slice(4, 6), 16) / 255,
+  )
+}
+
+/**
+ * Buang aksara yang font Standard (WinAnsi) tak boleh lukis.
+ * pdf-lib TIDAK guna font Unicode — emoji/aksara luar set akan jadi "?" atau
+ * membaling ralat. Nama majlis orang Melayu selalunya selamat, tapi tetamu
+ * suka letak emoji, jadi kita bersihkan di sini.
+ */
+function bersih(s: string): string {
+  return s
+    .replace(/[\u2018\u2019\u201B]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/\u2026/g, '...')
+    .replace(/[^\x20-\x7E]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** Pecah teks ikut lebar sebenar font. */
+function bungkus(teks: string, font: PDFFont, saiz: number, maks: number): string[] {
+  const kata = teks.split(/\s+/).filter(Boolean)
+  const baris: string[] = []
+  let semasa = ''
+  for (const k of kata) {
+    const cuba = semasa ? `${semasa} ${k}` : k
+    if (!semasa || font.widthOfTextAtSize(cuba, saiz) <= maks) semasa = cuba
+    else {
+      baris.push(semasa)
+      semasa = k
+    }
+  }
+  if (semasa) baris.push(semasa)
+  return baris
+}
+
+/** Kecilkan saiz sehingga teks muat dalam `maksBaris` baris. */
+function muat(
+  teks: string,
+  font: PDFFont,
+  saizMula: number,
+  maks: number,
+  maksBaris: number,
+): { baris: string[]; saiz: number } {
+  let saiz = saizMula
+  let baris = bungkus(teks, font, saiz, maks)
+  while (baris.length > maksBaris && saiz > 7) {
+    saiz -= 0.5
+    baris = bungkus(teks, font, saiz, maks)
+  }
+  return { baris, saiz }
+}
+
+/** Lukis teks tengah dengan jarak huruf (pdf-lib tak sokong letter-spacing). */
+function teksJarak(
+  page: PDFPage,
+  teks: string,
+  font: PDFFont,
+  saiz: number,
+  jarak: number,
+  tengahX: number,
+  y: number,
+  color: ReturnType<typeof rgb>,
+) {
+  const lebar =
+    font.widthOfTextAtSize(teks, saiz) + jarak * Math.max(teks.length - 1, 0)
+  let x = tengahX - lebar / 2
+  for (const c of teks) {
+    page.drawText(c, { x, y, size: saiz, font, color })
+    x += font.widthOfTextAtSize(c, saiz) + jarak
+  }
+}
 
 function pautanMajlis(slug: string) {
   return `https://alunara.my/buku-tamu/${slug}`
 }
 
+/** '2026-11-22' → '22 November 2026' untuk cetakan. */
+function tarikhMs(iso: string): string {
+  const d = new Date(`${iso}T00:00:00`)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+export type QrMeta = {
+  tajuk: string
+  tema: string
+  jenis: string
+  tarikh?: string
+  venue?: string
+}
+
 /**
- * Jana PDF QR pada saiz kertas yang dipilih.
- * Teks dipecah baris secara manual — pdf-lib tiada word-wrap automatik, dan
- * teks Melayu yang panjang mesti muat dalam margin kad kecil.
+ * Jana PDF QR pada saiz kertas yang dipilih, IKUT TEMA yang klien pilih.
+ *
+ * Susun atur (semua saiz skala dari lebar kertas):
+ *   jalur tema di atas → "BUKU TAMU" berjarak huruf → nama majlis →
+ *   jenis/tarikh/venue → kad putih QR (quiet zone dikekalkan) →
+ *   arahan imbas → pautan taip-tangan → kaki ALUNARA + nama tema.
+ *
+ * QR dilukis pada saiz FIZIKAL (mm) dan PDF ditulis pada dimensi mm sebenar,
+ * jadi cetakan "100%" menghasilkan QR yang tepat — bukan skala kabur.
  */
-async function janaPdfQr(slug: string, saiz: SaizKertas, tajuk: string) {
+async function janaPdfQr(slug: string, saiz: SaizKertas, meta: QrMeta) {
   const [lebarMm, tinggiMm] = saiz.mm
+  const f = lebarMm / 210 // faktor skala dari reka bentuk asas A4
+  const tema = temaCetak(meta.tema)
+
   const pdf = await PDFDocument.create()
   const page = pdf.addPage([lebarMm * MM, tinggiMm * MM])
   const font = await pdf.embedFont(StandardFonts.HelveticaBold)
   const font2 = await pdf.embedFont(StandardFonts.Helvetica)
-  const emas = rgb(0.784, 0.631, 0.396)
-  const gelap = rgb(0.125, 0.102, 0.082)
+  const fontMiring = await pdf.embedFont(StandardFonts.HelveticaOblique)
+
+  const W = lebarMm * MM
+  const H = tinggiMm * MM
+  const aksen = warna(tema.aksen)
+  const gelap = warna(tema.teks)
+  const jalur = warna(tema.jalur)
+  const kelabu = warna('#6f675c')
+
+  const tengah = W / 2
+  /** y dari atas (mm) → koordinat PDF. */
+  const Y = (mm: number) => H - mm * MM
+
+  // ---- jalur tema di atas + garis aksen ----
+  const tinggiJalur = 30 * f
+  page.drawRectangle({ x: 0, y: H - tinggiJalur * MM, width: W, height: tinggiJalur * MM, color: jalur })
+  page.drawRectangle({ x: 0, y: H - (tinggiJalur + 1.6) * MM, width: W, height: 1.6 * MM, color: aksen })
+
+  // ---- bingkai halus ----
+  const margin = 6 * f
+  page.drawRectangle({
+    x: margin * MM,
+    y: margin * MM,
+    width: W - 2 * margin * MM,
+    height: H - 2 * margin * MM,
+    borderColor: warna('#e2dbcd'),
+    borderWidth: 0.6,
+  })
+
+  // ---- "BUKU TAMU" berjarak huruf, dalam jalur ----
+  teksJarak(
+    page,
+    'BUKU TAMU',
+    font2,
+    9 * f + 2,
+    2.2 * f + 0.6,
+    tengah,
+    Y(13 * f),
+    aksen,
+  )
+
+  // ---- nama majlis (auto-kecil supaya muat 2 baris) ----
+  const tajuk = bersih(meta.tajuk) || 'Majlis Kami'
+  const { baris, saiz: saizTajuk } = muat(tajuk, font, 30 * f, W - 26 * MM, 2)
+  baris.forEach((b, i) => {
+    page.drawText(b, {
+      x: tengah - font.widthOfTextAtSize(b, saizTajuk) / 2,
+      y: Y(40 * f + i * saizTajuk * 0.42),
+      size: saizTajuk,
+      font,
+      color: gelap,
+    })
+  })
+
+  // ---- sub-baris: jenis majlis · tarikh · venue ----
+  const bahagian = [bersih(meta.jenis), bersih(meta.tarikh ?? ''), bersih(meta.venue ?? '')]
+    .filter(Boolean)
+  if (bahagian.length) {
+    const sub = bahagian.join('  ·  ')
+    const { baris: bSub, saiz: sSub } = muat(sub, font2, 10.5 * f + 1.5, W - 30 * MM, 2)
+    const ySub = Y(40 * f + baris.length * saizTajuk * 0.42 + 7 * f + 3)
+    bSub.forEach((b, i) => {
+      page.drawText(b, {
+        x: tengah - font2.widthOfTextAtSize(b, sSub) / 2,
+        y: ySub - i * (sSub + 2),
+        size: sSub,
+        font: font2,
+        color: kelabu,
+      })
+    })
+  }
+
+  // ---- kad QR: kotak putih bertepi aksen, QR di tengah ----
+  const qrPt = saiz.qrMm * MM
+  const padKad = 5 * f * MM
+  const kadW = qrPt + padKad * 2
+  const kadY = Y(150 * f) - padKad // bawah kad
+  page.drawRectangle({
+    x: tengah - kadW / 2,
+    y: kadY,
+    width: kadW,
+    height: kadW,
+    color: rgb(1, 1, 1),
+    borderColor: aksen,
+    borderWidth: saiz.id === 'a4' ? 1.4 : 1,
+  })
 
   const qrPng = await QRCode.toDataURL(pautanMajlis(slug), {
-    margin: 1,
-    width: Math.round(saiz.qrMm * 12),
+    margin: 1, // quiet zone — pengimbas perlu ruang putih di sekeliling QR
+    width: Math.round(saiz.qrMm * 14),
     errorCorrectionLevel: 'M',
     color: { dark: '#1a1613', light: '#ffffff' },
   })
   const qrImg = await pdf.embedPng(qrPng)
-  const qrPt = saiz.qrMm * MM
-  const x = (lebarMm * MM - qrPt) / 2
+  page.drawImage(qrImg, { x: tengah - qrPt / 2, y: kadY + padKad, width: qrPt, height: qrPt })
 
-  // Bingkai emas halus + tajuk di atas, arahan di bawah.
-  page.drawRectangle({
-    x: 5 * MM,
-    y: 5 * MM,
-    width: lebarMm * MM - 10 * MM,
-    height: tinggiMm * MM - 10 * MM,
-    borderColor: emas,
-    borderWidth: saiz.id === 'a4' ? 1.6 : 0.9,
-  })
-
-  const tajukY = tinggiMm * MM - 22 * MM
-  page.drawText('BUKU TAMU', {
-    x: (lebarMm * MM - font2.widthOfTextAtSize('BUKU TAMU', saiz.teksMm * 0.8 * MM)) / 2,
-    y: tajukY,
-    size: saiz.teksMm * 0.8 * MM,
-    font: font2,
-    color: gelap,
-  })
-  const nama = tajuk.length > 40 ? tajuk.slice(0, 39) + '…' : tajuk
-  page.drawText(nama, {
-    x: (lebarMm * MM - font.widthOfTextAtSize(nama, saiz.tajukMm)) / 2,
-    y: tajukY - saiz.tajukMm * 1.15,
-    size: saiz.tajukMm,
-    font,
-    color: gelap,
-  })
-
-  page.drawImage(qrImg, { x, y: (tinggiMm * MM - qrPt) / 2 - (saiz.id === 'a4' ? 12 * MM : 5 * MM), width: qrPt, height: qrPt })
-
-  const baris =
-    saiz.id === 'a4'
-      ? ['Imbas QR ini, kongsi gambar anda di buku tamu kami.', 'Terima kasih kerana hadir!']
-      : ['Imbas QR, kongsi gambar anda.', 'Terima kasih kerana hadir!']
-  const saizTeks = saiz.id === 'a4' ? 12 : 8.5
-  baris.forEach((b, i) => {
+  // ---- arahan imbas ----
+  const arahan = bersih(
+    'Imbas QR ini untuk kongsi gambar anda di buku tamu majlis kami.',
+  )
+  const { baris: bArahan, saiz: sArahan } = muat(arahan, font2, 11 * f + 2, W - 30 * MM, 2)
+  let yArahan = kadY - 9 * MM
+  bArahan.forEach((b) => {
     page.drawText(b, {
-      x: (lebarMm * MM - font2.widthOfTextAtSize(b, saizTeks)) / 2,
-      y: 14 * MM - i * (saizTeks + 4),
-      size: saizTeks,
+      x: tengah - font2.widthOfTextAtSize(b, sArahan) / 2,
+      y: yArahan,
+      size: sArahan,
       font: font2,
       color: gelap,
     })
+    yArahan -= sArahan + 3
   })
-  // Link kecil di bawah — sesetengah orang lebih suka taip.
-  const kecil = pautanMajlis(slug).replace('https://', '')
-  page.drawText(kecil, {
-    x: (lebarMm * MM - font2.widthOfTextAtSize(kecil, saiz.id === 'a4' ? 9 : 6)) / 2,
-    y: 8 * MM,
-    size: saiz.id === 'a4' ? 9 : 6,
+
+  page.drawText(bersih('Terima kasih kerana hadir!'), {
+    x: tengah - fontMiring.widthOfTextAtSize('Terima kasih kerana hadir!', 10 * f + 1.5) / 2,
+    y: yArahan - 1,
+    size: 10 * f + 1.5,
+    font: fontMiring,
+    color: kelabu,
+  })
+
+  // ---- pautan taip-tangan (sesetengah orang lebih suka taip) ----
+  const pautanKecil = bersih(pautanMajlis(slug).replace('https://', ''))
+  const saizPautan = 8.5 * f + 2
+  page.drawText(pautanKecil, {
+    x: tengah - font2.widthOfTextAtSize(pautanKecil, saizPautan) / 2,
+    y: margin * MM + 9 * MM,
+    size: saizPautan,
     font: font2,
-    color: emas,
+    color: aksen,
+  })
+
+  // ---- kaki: nama tema (bukti ia ikut pilihan klien) ----
+  const kaki = bersih(`Tema ${tema.nama}  ·  Buku Tamu ALUNARA  ·  alunara.my`)
+  page.drawText(kaki, {
+    x: tengah - font2.widthOfTextAtSize(kaki, 7.5 * f + 1.5) / 2,
+    y: margin * MM + 4.5 * MM,
+    size: 7.5 * f + 1.5,
+    font: font2,
+    color: kelabu,
   })
 
   return await pdf.save()
@@ -257,8 +455,15 @@ export default function BukuTamuBuat() {
   async function muatPdf(saiz: SaizKertas) {
     if (!hasil?.slug) return
     setJana(saiz.id)
+    setHasilRalat('')
     try {
-      const bytes = await janaPdfQr(hasil.slug, saiz, nickname.trim() || 'Majlis Kami')
+      const bytes = await janaPdfQr(hasil.slug, saiz, {
+        tajuk: nickname.trim() || 'Majlis Kami',
+        tema,
+        jenis: JENIS_EVENT.find((j) => j.id === eventType)?.label ?? '',
+        tarikh: tarikh ? tarikhMs(tarikh) : '',
+        venue,
+      })
       muatTurun(new Blob([bytes as BlobPart], { type: 'application/pdf' }), `QR-BukuTamu-${hasil.slug}-${saiz.id.toUpperCase()}.pdf`)
     } catch {
       setHasilRalat('Gagal jana PDF. Cuba lagi atau minta kami hantar QR.')
@@ -401,7 +606,8 @@ export default function BukuTamuBuat() {
             <p className="bt-info bt-info--kecil">Menjana QR…</p>
           )}
           <p className="bt-info bt-info--kecil">
-            Pilih saiz kertas. Cetak pada 100% (jangan “fit to page”) supaya QR kekal tajam.
+            Poster cetak akan ikut tema <strong>{TEMA.find((t) => t.id === tema)?.label}</strong> yang
+            anda pilih, dengan nama majlis, jenis majlis, tarikh dan venue.
           </p>
           <div className="bt-buat-pilih">
             {SAIZ.map((s) => (
@@ -422,13 +628,11 @@ export default function BukuTamuBuat() {
             >
               {jana ? 'Menjana…' : `Muat turun QR ${saizPilih.toUpperCase()} (PDF)`}
             </button>
-            <button className="bt-btn bt-btn--halus" disabled={!!jana} onClick={() => void muatPdf(SAIZ[0])}>
-              Muat turun A4
-            </button>
-            <button className="bt-btn bt-btn--halus" disabled={!!jana} onClick={() => void muatPdf(SAIZ[1])}>
-              Muat turun A6
-            </button>
           </div>
+          <p className="bt-info bt-info--kecil">
+            Cetak pada 100% (jangan “fit to page”). QR di atas kertas kekal 70 mm (A4) /
+            54 mm (A5) / 42 mm (A6) — cukup besar untuk diimbas dari jauh.
+          </p>
           {hasilRalat && <p className="bt-ralat">{hasilRalat}</p>}
           <p className="bt-info bt-info--kecil">
             Nak kami cetak &amp; hantar sekali?{' '}

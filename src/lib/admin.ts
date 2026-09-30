@@ -73,6 +73,17 @@ export type Entri = {
   alunara_guestbook_guests?: { name: string | null; wish: string | null } | null
 }
 
+/**
+ * Tetamu (v2) — satu baris per sesi tetamu, ada atau tiada media.
+ * Ucapan ada di sini, jadi panel boleh baca ucapan tetamu tanpa gambar.
+ */
+export type Tetamu = {
+  id: string
+  name: string
+  wish: string | null
+  created_at: string
+}
+
 /** Media generic (v2) — foto + video + voice note. */
 export type Media = {
   id: string
@@ -427,6 +438,23 @@ export const db = {
       s,
       `alunara_guestbook_media?event_id=eq.${eventId}` +
         `&select=*,alunara_guestbook_guests(name,wish)` +
+        `&order=created_at.desc&limit=500`,
+    )
+  },
+  /**
+   * Semua tetamu satu majlis — termasuk yang TIDAK hantar media.
+   *
+   * KENAPA BERASINGAN DARI `entri`
+   *   `entri` bermula dari jadual media, jadi tetamu yang hanya tulis ucapan
+   *   (tiada foto/video/suara) langsung tak muncul. Ucapan mereka memang ada
+   *   dalam DB — cuma tiada baris media untuk di-join. Panel perlu senarai
+   *   tetamu sendiri supaya ucapan itu boleh dibaca dan disemak.
+   */
+  async tetamu(s: Sesi, eventId: string) {
+    return minta<Tetamu[]>(
+      s,
+      `alunara_guestbook_guests?event_id=eq.${eventId}` +
+        `&select=id,name,wish,created_at` +
         `&order=created_at.desc&limit=500`,
     )
   },

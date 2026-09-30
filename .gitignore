@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Hasil transpile ujian (scripts/uji-qr-poster.mjs) — jangan commit
+.uji/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -29,7 +32,12 @@ docs/SECRETS_LOCAL.md
 # Backups data (mengandungi data sensitif + kod unlock) — jangan commit
 backups/
 
-# Skrip migration/debug one-off (ada credential DB hardcoded) — jangan commit
-scripts/
-# kecuali skrip deploy yang sah (tiada credential)
+# Skrip migration/debug one-off (ada credential DB hardcoded) — jangan commit.
+# Guna `scripts/*` (bukan `scripts/`) supaya pengecualian di bawah berkesan —
+# git TIDAK boleh re-include fail kalau direktori induknya di-ignore penuh.
+scripts/*
+# kecuali skrip deploy/uji yang sah (tiada credential)
 !scripts/patch-vercel-config.mjs
+!scripts/prerender.mjs
+!scripts/uji-qr-poster.mjs
+!scripts/apply-fn-ucapan.mjs

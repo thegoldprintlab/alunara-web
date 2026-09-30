@@ -21,13 +21,17 @@
     "react-router-dom": "^7.18.3"
   },
   "devDependencies": {
+    "@napi-rs/canvas": "^1.0.9",
     "@types/node": "^24.13.3",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.1.0",
+    "jsqr": "^1.4.0",
     "oxlint": "^1.79.0",
+    "pdfjs-dist": "^4.2.67",
     "pg": "^8.23.0",
+    "pngjs": "^7.0.0",
     "typescript": "~6.0.2",
     "vite": "^8.2.2"
   }

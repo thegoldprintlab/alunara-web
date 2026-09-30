@@ -404,6 +404,64 @@
   opacity: 0.85;
 }
 
+/* ---------------------------------------------------------------------------
+ * DINDING UCAPAN
+ *
+ * Ucapan disimpan per-tetamu, jadi ia dipaparkan sekali di sini — bukan
+ * dilekatkan pada setiap gambar (yang menyebabkan ucapan sama berulang 3×
+ * untuk tetamu yang upload 3 gambar, dan hilang terus untuk tetamu yang
+ * tulis ucapan tanpa gambar).
+ * ------------------------------------------------------------------------- */
+.bt-dinding {
+  margin-top: 34px;
+  padding-top: 22px;
+  border-top: 1px solid var(--garis);
+}
+
+.bt-dinding__tajuk {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--emas-lembut);
+  margin: 0 0 14px;
+}
+
+.bt-dinding__kira {
+  font-size: 0.85rem;
+  color: var(--teks-lembut);
+  font-weight: 400;
+}
+
+.bt-dinding__senarai {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.bt-dinding__kad {
+  background: var(--gelap-2);
+  border: 1px solid var(--garis);
+  border-radius: 12px;
+  padding: 14px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bt-dinding__wish {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--teks);
+}
+
+.bt-dinding__nama {
+  font-size: 0.78rem;
+  color: var(--emas);
+}
+
 .bt-kaki {
   margin-top: 44px;
   text-align: center;

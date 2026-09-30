@@ -11,7 +11,7 @@ import {
   sesiSah,
   tarikhSibukSet,
 } from '../lib/admin'
-import type { Booking, Klien, Lead, Majlis, Media, UnlockCode, Galeri } from '../lib/admin'
+import type { Booking, Klien, Lead, Majlis, Media, Tetamu, UnlockCode, Galeri } from '../lib/admin'
 import { PAKEJ } from '../content'
 import { IconWhatsApp } from '../components/Icons'
 
@@ -1092,6 +1092,7 @@ function TabTamu({ sesi }: { sesi: Sesi }) {
   const [majlis, setMajlis] = useState<Majlis[]>([])
   const [pilih, setPilih] = useState<string>('')
   const [entri, setEntri] = useState<Media[]>([])
+  const [tetamu, setTetamu] = useState<Tetamu[]>([])
   const [muat, setMuat] = useState(true)
   const [ralat, setRalat] = useState('')
   const [baru, setBaru] = useState({ title: '', host_name: '', event_date: '' })
@@ -1235,6 +1236,13 @@ function TabTamu({ sesi }: { sesi: Sesi }) {
         }
         const e = r.data ?? []
         setEntri(e)
+
+        // Senarai tetamu diambil BERASINGAN dari media — supaya tetamu yang
+        // hanya tulis ucapan (tiada foto/video/suara) tetap kelihatan di panel.
+        const rt = await db.tetamu(sesi, pilih)
+        if (batal) return
+        if (rt.ok) setTetamu(rt.data ?? [])
+
         if (!e.length) return
         const res = await fetch('/api/guestbook-sign', {
           method: 'POST',
@@ -1630,6 +1638,51 @@ function TabTamu({ sesi }: { sesi: Sesi }) {
                 </figure>
               ))}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* --- Senarai tetamu + ucapan ---
+          Berasingan dari grid media di atas. Grid itu bermula dari jadual
+          media, jadi tetamu yang hanya tulis ucapan (tiada gambar) tak pernah
+          muncul di sana walaupun ucapannya ada dalam DB. Panel ini yang
+          mendedahkan mereka. */}
+      {pilih && (
+        <div className="adm__kad">
+          <h3 className="adm__sub">
+            Tetamu ({tetamu.length})
+            {tetamu.some((t) => t.wish) ? ` · ${tetamu.filter((t) => t.wish).length} ada ucapan` : ''}
+          </h3>
+          {!tetamu.length ? (
+            <p className="adm__kecil">Belum ada tetamu daftar untuk majlis ini.</p>
+          ) : (
+            <table className="adm__jadual">
+              <thead>
+                <tr>
+                  <th>Nama</th>
+                  <th>Ucapan</th>
+                  <th>Media</th>
+                  <th>Masa</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tetamu.map((t) => {
+                  const bil = entri.filter(
+                    (e) => e.alunara_guestbook_guests?.name === t.name,
+                  ).length
+                  return (
+                    <tr key={t.id}>
+                      <td>{t.name}</td>
+                      <td className="adm__kecil">{t.wish ? `"${t.wish}"` : '—'}</td>
+                      <td>{bil || '—'}</td>
+                      <td className="adm__kecil">
+                        {new Date(t.created_at).toLocaleString('ms-MY')}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           )}
         </div>
       )}
