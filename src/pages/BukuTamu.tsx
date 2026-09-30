@@ -9,7 +9,7 @@
  *
  * MEDIA
  *   * Foto    — WebGL filter film stock (macam v1).
- *   * Video   — fail dari kamera/gallery (max 3 minit).
+ *   * Video   — fail dari kamera/gallery (max 60 saat, max 200MB).
  *   * Voice   — rakam terus dari browser (MediaRecorder, max 30 saat).
  *
  * KESELAMATAN
@@ -36,6 +36,15 @@ const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?
 const ANON = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? ''
 
 const VOICE_MAX_SAAT = 30
+
+/**
+ * Had video. Disimpan di SATU tempat supaya UI, pengesahan klien, dan
+ * pengesahan server (RPC `alunara_gb_add_media`) tak boleh bercanggah.
+ * Kalau tukar nilai ini, tukar juga di supabase/alunara_guestbook_v2.sql.
+ */
+const VIDEO_MAX_SAAT = 60
+const VIDEO_MAX_MB = 200
+const VIDEO_MAX_BYTES = VIDEO_MAX_MB * 1024 * 1024
 const UCAPAN_MAX = 1000
 
 async function rpc(nama: string, args: Record<string, unknown>) {
@@ -372,11 +381,27 @@ export default function BukuTamu() {
   }
 
   // ---- video ----
-  function pilihVideo(f: File | null) {
+  /**
+   * Sahkan video SEBELUM ia diterima: saiz + durasi.
+   *
+   * Had durasi di sini penting untuk UX (bagi tahu awal, bukan selepas muat
+   * naik 200MB), tetapi ia BUKAN pertahanan sebenar — pelanggan boleh tipu
+   * `duration_sec` masa panggil RPC. RPC `alunara_gb_add_media` juga semak
+   * nilai itu, jadi dua-dua hujung bersetuju pada had yang sama.
+   */
+  async function pilihVideo(f: File | null) {
     if (!f) return
     setRalat('')
-    if (f.size > 200 * 1024 * 1024) {
-      setRalat('Video terlalu besar (max 200MB).')
+    if (f.size > VIDEO_MAX_BYTES) {
+      setRalat(`Video terlalu besar (maksimum ${VIDEO_MAX_MB}MB).`)
+      return
+    }
+    const saat = await ukurDurasi(f)
+    if (saat !== null && saat > VIDEO_MAX_SAAT) {
+      setRalat(
+        `Video ${saat} saat — terlalu panjang. Maksimum ${VIDEO_MAX_SAAT} saat sahaja. ` +
+          `Potong dulu, kemudian cuba lagi.`,
+      )
       return
     }
     setVideoFail(f)
@@ -832,7 +857,7 @@ export default function BukuTamu() {
                   <label htmlFor="bt-video" className="bt-btn bt-btn--pilih">
                     Pilih video
                   </label>
-                  <p className="bt-info bt-info--kecil">Maksimum 3 minit.</p>
+                  <p className="bt-info bt-info--kecil">Maksimum {VIDEO_MAX_SAAT} saat ({VIDEO_MAX_MB}MB).</p>
                 </>
               ) : (
                 <>

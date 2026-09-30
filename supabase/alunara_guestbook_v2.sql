@@ -493,6 +493,13 @@ begin
     raise exception 'Filter % tak dibenarkan untuk majlis ini', p_stock;
   end if;
 
+  -- Had durasi video. Ini pertahanan SEBENAR — klien boleh hantar apa-apa
+  -- nilai dalam p_duration_sec, jadi had di UI sahaja tidak cukup.
+  -- Selari dengan VIDEO_MAX_SAAT dalam src/pages/BukuTamu.tsx.
+  if p_media_type = 'video' and coalesce(p_duration_sec, 0) > 60 then
+    raise exception 'Video terlalu panjang — maksimum 60 saat';
+  end if;
+
   if p_storage_path not like (v_event::text || '/%') then
     raise exception 'Laluan fail tak sah';
   end if;
