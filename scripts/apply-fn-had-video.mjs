@@ -8,16 +8,17 @@
  *
  * CARA GUNA
  *   cd ~/alunara-web
- *   node scripts/apply-fn-had-video.mjs          # tunjuk diff, tak apply
- *   node scripts/apply-fn-had-video.mjs --apply  # betul-betul apply
+ *   PG_PW='<password DB>' node scripts/apply-fn-had-video.mjs          # tunjuk, tak apply
+ *   PG_PW='<password DB>' node scripts/apply-fn-had-video.mjs --apply  # betul-betul apply
  *
- * Password DB dibaca dari ~/gold-plan-web/.env.production (POSTGRES_PASSWORD).
+ * Password DB: guna env PG_PW. Fail .env.production dalam ~/gold-plan-web
+ * TIDAK boleh dipercayai — Vercel tulis "[SENSITIVE]" sebagai placeholder
+ * untuk secret, jadi nilainya bukan password sebenar.
  */
 import { readFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import pg from 'pg'
 
-const REF = 'gtblmwijohoetczqngpr'
+const REF = 'sdzjlekydkwtxjjtrwrh'
 const sql = readFileSync(new URL('../supabase/alunara_guestbook_v2.sql', import.meta.url), 'utf8')
 
 /** Ambil satu blok `create or replace function <nama>(...) ... $$;` dari fail. */
@@ -36,15 +37,9 @@ if (!badan.includes('maksimum 60 saat')) {
   process.exit(1)
 }
 
-// Baca password DB dari env gold-plan-web (jangan cetak).
-const env = readFileSync(`${homedir()}/gold-plan-web/.env.production`, 'utf8')
-const baca = (k) => {
-  const m = new RegExp(`^${k}=(.*)$`, 'm').exec(env)
-  return m ? m[1].trim().replace(/^["']|["']$/g, '') : null
-}
-const pw = baca('POSTGRES_PASSWORD')
+const pw = process.env.PG_PW
 if (!pw) {
-  console.error('POSTGRES_PASSWORD tak jumpa dalam ~/gold-plan-web/.env.production')
+  console.error('PG_PW tak set. Contoh: PG_PW=\'...\' node scripts/apply-fn-had-video.mjs --apply')
   process.exit(1)
 }
 
