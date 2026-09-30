@@ -306,7 +306,13 @@ export function ciptaRenderer(canvas: HTMLCanvasElement): FilmRenderer | null {
       if (canvas.height !== h) canvas.height = h
 
       gl.bindTexture(gl.TEXTURE_2D, tex)
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0)
+      // MESTI 1 (flip). Baris pertama data imej ialah ATAS gambar, tetapi
+      // uv (0,0) dalam shader ini terletak di BAWAH-BIRI canvas (v_uv =
+      // a_pos*0.5+0.5, dan gl_Position y=+1 ialah atas). Tanpa flip, gambar
+      // dilukis TERBALIK atas-bawah — pada pratonton DAN pada fail yang
+      // disimpan. Bug ini tersembunyi lama sebab pratonton dulu tak melukis
+      // apa-apa (kotak hitam); bila pratonton dibaiki, flip terus ternampak.
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1)
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imej)
 
       // Campur antara identiti dan stock penuh ikut keamatan.

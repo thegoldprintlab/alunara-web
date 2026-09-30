@@ -81,8 +81,12 @@ export type Media = {
   storage_path: string
   media_type: 'photo' | 'video' | 'voice'
   mime_type: string | null
+  width: number | null
+  height: number | null
+  bytes: number | null
   duration_sec: number | null
   stock: string
+  stock_strength: number
   hidden: boolean
   hidden_reason: string | null
   created_at: string
@@ -408,18 +412,27 @@ export const db = {
   async buangMajlis(s: Sesi, id: string) {
     return minta<void>(s, `alunara_guestbook_events?id=eq.${id}`, { method: 'DELETE' })
   },
-  /** Gambar satu majlis + nama/ucapan tetamu (join jadual guests). */
+  /**
+   * Media satu majlis (v2) — foto + video + suara, join nama/ucapan tetamu.
+   *
+   * KENAPA BUKAN `alunara_guestbook_photos`
+   *   Jadual photos itu skema v1. Buku tamu v2 tulis ke
+   *   `alunara_guestbook_media`, jadi kalau panel baca photos, tetamu yang
+   *   kongsi video atau nota suara TAK PERNAH muncul di /admin — bukan bug
+   *   paparan, data memang di jadual lain. (Migrasi v2 memang menyalin foto
+   *   lama ke media; selepas itu photos tak lagi ditulis.)
+   */
   async entri(s: Sesi, eventId: string) {
-    return minta<Entri[]>(
+    return minta<Media[]>(
       s,
-      `alunara_guestbook_photos?event_id=eq.${eventId}` +
+      `alunara_guestbook_media?event_id=eq.${eventId}` +
         `&select=*,alunara_guestbook_guests(name,wish)` +
         `&order=created_at.desc&limit=500`,
     )
   },
   /** Sembunyi / tunjuk semula entri (moderation, bukan padam). */
-  async kemasEntri(s: Sesi, id: string, e: Partial<Entri>) {
-    return minta<Entri[]>(s, `alunara_guestbook_photos?id=eq.${id}`, {
+  async kemasEntri(s: Sesi, id: string, e: Partial<Media>) {
+    return minta<Media[]>(s, `alunara_guestbook_media?id=eq.${id}`, {
       method: 'PATCH',
       headers: { Prefer: 'return=representation' },
       body: JSON.stringify(e),

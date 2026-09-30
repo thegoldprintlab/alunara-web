@@ -100,6 +100,8 @@ export default async function handler(req, res) {
   if (!eventId) return res.status(400).json({ ralat: 'event_id diperlukan.' })
 
   // 1. Ambil senarai media dari DB (hidden=false).
+  //    Jadual v2 — ia yang menyimpan foto + video + suara. Baca
+  //    `alunara_guestbook_photos` (v1) bermakna video/suara hilang dari ZIP.
   const r1 = await sb(
     `/rest/v1/alunara_guestbook_media?event_id=eq.${encodeURIComponent(eventId)}` +
       `&hidden=eq.false&select=storage_path,mime_type,bytes`

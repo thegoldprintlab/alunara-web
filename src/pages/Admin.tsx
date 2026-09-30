@@ -11,7 +11,7 @@ import {
   sesiSah,
   tarikhSibukSet,
 } from '../lib/admin'
-import type { Booking, Klien, Lead, Majlis, Entri, UnlockCode, Galeri } from '../lib/admin'
+import type { Booking, Klien, Lead, Majlis, Media, UnlockCode, Galeri } from '../lib/admin'
 import { PAKEJ } from '../content'
 import { IconWhatsApp } from '../components/Icons'
 
@@ -1091,7 +1091,7 @@ function TabLead({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
 function TabTamu({ sesi }: { sesi: Sesi }) {
   const [majlis, setMajlis] = useState<Majlis[]>([])
   const [pilih, setPilih] = useState<string>('')
-  const [entri, setEntri] = useState<Entri[]>([])
+  const [entri, setEntri] = useState<Media[]>([])
   const [muat, setMuat] = useState(true)
   const [ralat, setRalat] = useState('')
   const [baru, setBaru] = useState({ title: '', host_name: '', event_date: '' })
@@ -1307,7 +1307,7 @@ function TabTamu({ sesi }: { sesi: Sesi }) {
     }
   }
 
-  async function toggleSembunyi(e: Entri) {
+  async function toggleSembunyi(e: Media) {
     try {
       await db.kemasEntri(sesi, e.id, { hidden: !e.hidden })
       setEntri((sen) => sen.map((x) => (x.id === e.id ? { ...x, hidden: !x.hidden } : x)))
@@ -1575,25 +1575,50 @@ function TabTamu({ sesi }: { sesi: Sesi }) {
           </div>
 
           {!entri.length ? (
-            <p className="adm__kecil">Belum ada tetamu upload. Kongsi pautan di atas.</p>
+            <p className="adm__kecil">Belum ada media. Kongsi pautan di atas.</p>
           ) : (
             <div className="adm__tamu-grid">
               {entri.map((e) => (
                 <figure key={e.id} className={'adm__tamu' + (e.hidden ? ' adm__tamu--sembunyi' : '')}>
                   {urls[e.storage_path] ? (
-                    <img
-                      src={urls[e.storage_path]}
-                      alt={`Gambar dari ${e.alunara_guestbook_guests?.name ?? 'tetamu'}`}
-                      loading="lazy"
-                    />
+                    e.media_type === 'photo' ? (
+                      <img
+                        src={urls[e.storage_path]}
+                        alt={`Gambar dari ${e.alunara_guestbook_guests?.name ?? 'tetamu'}`}
+                        loading="lazy"
+                      />
+                    ) : e.media_type === 'video' ? (
+                      <video
+                        src={urls[e.storage_path]}
+                        controls
+                        preload="metadata"
+                        className="adm__tamu-media"
+                      />
+                    ) : (
+                      <audio
+                        src={urls[e.storage_path]}
+                        controls
+                        preload="metadata"
+                        className="adm__tamu-audio"
+                      />
+                    )
                   ) : (
                     <div className="adm__tamu-tunggu">…</div>
                   )}
                   <figcaption>
                     <strong>{e.alunara_guestbook_guests?.name ?? 'Tetamu'}</strong>
                     <span className="adm__kecil">
-                      {e.stock}
-                      {e.width && e.height ? ` · ${e.width}×${e.height}` : ''}
+                      {e.media_type === 'photo'
+                        ? e.stock
+                        : e.media_type === 'video'
+                          ? 'Video'
+                          : 'Suara'}
+                      {e.media_type === 'photo' && e.width && e.height
+                        ? ` · ${e.width}×${e.height}`
+                        : ''}
+                      {e.media_type !== 'photo' && e.duration_sec
+                        ? ` · ${e.duration_sec}s`
+                        : ''}
                     </span>
                     {e.alunara_guestbook_guests?.wish && (
                       <p className="adm__tamu-ucap">"{e.alunara_guestbook_guests.wish}"</p>

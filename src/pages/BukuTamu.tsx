@@ -543,14 +543,14 @@ export default function BukuTamu() {
       const r1 = await fetch('/api/guestbook-sign', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action: 'upload', session: sesi, nama: f.name }),
+        body: JSON.stringify({ action: 'upload', session: sesi, nama: f.name, media_type: 'video' }),
       })
       const j1 = await r1.json()
       if (!r1.ok) throw new Error(j1.ralat || 'Gagal minta kebenaran')
 
       const r2 = await fetch(j1.url, {
         method: 'PUT',
-        headers: { 'content-type': f.type || 'video/mp4', 'x-upsert': 'false' },
+        headers: { 'content-type': j1.content_type || 'video/mp4', 'x-upsert': 'false' },
         body: f,
       })
       if (!r2.ok) throw new Error('Muat naik gagal. Periksa internet, cuba lagi.')
@@ -560,7 +560,7 @@ export default function BukuTamu() {
           p_session: sesi,
           p_storage_path: j1.laluan,
           p_media_type: 'video',
-          p_mime_type: f.type || 'video/mp4',
+          p_mime_type: j1.content_type || 'video/mp4',
           p_bytes: f.size,
           p_duration_sec: await ukurDurasi(f),
         })
@@ -588,14 +588,14 @@ export default function BukuTamu() {
       const r1 = await fetch('/api/guestbook-sign', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action: 'upload', session: sesi, nama: 'voice-note' }),
+        body: JSON.stringify({ action: 'upload', session: sesi, nama: 'voice-note', media_type: 'voice' }),
       })
       const j1 = await r1.json()
       if (!r1.ok) throw new Error(j1.ralat || 'Gagal minta kebenaran')
 
       const r2 = await fetch(j1.url, {
         method: 'PUT',
-        headers: { 'content-type': blob.type || 'audio/webm', 'x-upsert': 'false' },
+        headers: { 'content-type': j1.content_type || 'audio/webm', 'x-upsert': 'false' },
         body: blob,
       })
       if (!r2.ok) throw new Error('Muat naik gagal. Periksa internet, cuba lagi.')
@@ -605,7 +605,7 @@ export default function BukuTamu() {
           p_session: sesi,
           p_storage_path: j1.laluan,
           p_media_type: 'voice',
-          p_mime_type: blob.type || 'audio/webm',
+          p_mime_type: j1.content_type || 'audio/webm',
           p_bytes: blob.size,
           p_duration_sec: voiceSaat,
         })

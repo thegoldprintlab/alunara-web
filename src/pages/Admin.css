@@ -398,11 +398,21 @@ select.adm__input {
   background: var(--white);
   overflow: hidden;
 }
-.adm__tamu img {
+.adm__tamu img,
+.adm__tamu-media {
   display: block;
   width: 100%;
   aspect-ratio: 3 / 4;
   object-fit: cover;
+  background: var(--cream-warm);
+}
+.adm__tamu-media { object-fit: contain; background: #000; }
+/* Nota suara tiada imej — biar pemain audio dapat ruang penuh, bukan kotak
+   potret kosong 3:4. */
+.adm__tamu-audio {
+  display: block;
+  width: 100%;
+  padding: 14px 10px;
   background: var(--cream-warm);
 }
 .adm__tamu--sembunyi img { filter: grayscale(1) opacity(0.45); }
