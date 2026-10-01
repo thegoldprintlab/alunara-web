@@ -651,7 +651,17 @@ export default function BukuTamu() {
       const r1 = await fetch('/api/guestbook-sign', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action: 'upload', session: sesi, nama: 'voice-note', media_type: 'voice' }),
+        // Hantar mime sebenar dari MediaRecorder (blob.type) supaya
+        // server jana Content-Type & extension yang betul. Safari/iOS
+        // rakam audio/mp4; Chrome rakam audio/webm. Kalau hardcode
+        // audio/webm, R2 hidang Content-Type salah → tak boleh play.
+        body: JSON.stringify({
+          action: 'upload',
+          session: sesi,
+          nama: 'voice-note',
+          media_type: 'voice',
+          mime_type: blob.type || undefined,
+        }),
       })
       const j1 = await r1.json()
       if (!r1.ok) throw new Error(j1.ralat || 'Gagal minta kebenaran')
