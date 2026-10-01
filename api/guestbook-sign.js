@@ -28,7 +28,7 @@
  *   R2_BUCKET                 nama bucket (default: alunara-guestbook)
  */
 
-import { S3Client, PutObjectCommand, GetObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 const BUCKET = process.env.R2_BUCKET || 'alunara-guestbook'
@@ -353,52 +353,6 @@ export default async function handler(req, res) {
     if (!peta) return res.status(502).json({ ralat: 'Gagal jana URL muat turun' })
 
     return res.status(200).json({ urls: peta })
-  }
-
-  // ---------------------------------------------------- FIX MIME (admin)
-  // Betulkan Content-Type fail voice lama di R2.
-  // MediaRecorder Safari rakam audio/mp4 tapi kita hardcode audio/webm,
-  // jadi R2 hidang Content-Type salah → browser tak boleh play.
-  // CopyObject ke path sama (MetadataDirective=REPLACE) tukar metadata.
-  if (action === 'fix-mime') {
-    if (!(await adminSah(req.headers.authorization))) {
-      return res.status(403).json({ ralat: 'Hanya admin' })
-    }
-    if (!R2_SEDIA) {
-      return res.status(503).json({ ralat: 'R2 belum disedia — fallback Supabase' })
-    }
-
-    // body: { fix: [{ path, mime }] }  — klien beri laluan + mime betul
-    const fix = Array.isArray(body?.fix) ? body.fix.slice(0, 100) : []
-    if (!fix.length) return res.status(400).json({ ralat: 'Tiada laluan untuk dibaiki' })
-
-    const sah = await laluanDibenarkan(fix.map((f) => f.path))
-    if (sah === null) return res.status(502).json({ ralat: 'Gagal semak laluan' })
-
-    const benar = new Set(sah)
-    const hasil = []
-    for (const f of fix) {
-      if (!benar.has(f.path)) {
-        hasil.push({ path: f.path, ok: false, ralat: 'Laluan tidak dibenarkan' })
-        continue
-      }
-      const mime = String(f.mime || '').slice(0, 100)
-      try {
-        await s3().send(
-          new CopyObjectCommand({
-            Bucket: BUCKET,
-            CopySource: `${BUCKET}/${f.path}`,
-            Key: f.path,
-            ContentType: mime,
-            MetadataDirective: 'REPLACE',
-          }),
-        )
-        hasil.push({ path: f.path, ok: true, mime })
-      } catch (e) {
-        hasil.push({ path: f.path, ok: false, ralat: e?.message })
-      }
-    }
-    return res.status(200).json({ hasil })
   }
 
   return res.status(400).json({ ralat: 'action tak dikenali' })
