@@ -159,17 +159,40 @@ async function laluanDibenarkanPhotos(laluan) {
   return laluan.filter((p) => dibenarkan.has(p))
 }
 
+/**
+ * Peta storage_path → mime_type dari DB. Untuk paksa ResponsContentType
+ * pada presigned URL — R2 simpan metadata lama yang salah (fail voice lama
+ * di-tag audio/webm padahal sebenarnya audio/mp4), jadi kita override masa
+ * serve. Ini self-healing: upload baru pun betul automatic.
+ */
+async function mimePeta(laluan) {
+  const peta = {}
+  const senarai = laluan.map((p) => `"${String(p).replace(/"/g, '')}"`).join(',')
+  const { ok, data } = await sb(
+    `/rest/v1/alunara_guestbook_media?storage_path=in.(${encodeURIComponent(senarai)})` +
+      `&select=storage_path,mime_type`
+  )
+  if (ok && Array.isArray(data)) {
+    for (const r of data) if (r.mime_type) peta[r.storage_path] = r.mime_type
+  }
+  return peta
+}
+
 /** Jana presigned URL baca (R2 atau fallback Supabase). */
 async function signedReadUrls(sah) {
   if (R2_SEDIA) {
+    // Ambil mime betul dari DB supaya R2 hidang Content-Type yang sah.
+    const mimes = await mimePeta(sah)
     const peta = {}
     for (const p of sah) {
       try {
-        const url = await getSignedUrl(
-          s3(),
-          new GetObjectCommand({ Bucket: BUCKET, Key: p }),
-          { expiresIn: 3600 }
-        )
+        const mime = mimes[p]
+        const cmd = new GetObjectCommand({
+          Bucket: BUCKET,
+          Key: p,
+          ...(mime ? { ResponseContentType: mime } : {}),
+        })
+        const url = await getSignedUrl(s3(), cmd, { expiresIn: 3600 })
         peta[p] = url
       } catch (e) {
         console.error('[guestbook-sign] R2 sign read gagal:', e?.message)
