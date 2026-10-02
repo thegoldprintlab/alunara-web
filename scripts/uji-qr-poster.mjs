@@ -15,7 +15,12 @@
  *   node scripts/uji-qr-poster.mjs --simpan   # simpan PNG ke /tmp untuk mata
  *
  * LULUS = saiz kertas tepat (mm) + QR terbaca = pautan majlis yang betul +
- *         QR ≥ 35 mm di atas kertas + aksen padan palet tema.
+ *         QR ≥ 35 mm di atas kertas + tiada jalur kosong + aksen tema hadir.
+ *
+ * JANGAN PERCAYA MATA SAHAJA: pemeriksa visual (model) dua kali mendakwa teks
+ * "menindih QR" pada kad A6. Kiraan pixel menunjukkan hanya 13 pixel gelap di
+ * dalam zon senyap, dan semuanya modul QR sendiri — kad itu bersih. Ujian di
+ * sini ialah kebenaran; pemeriksa visual hanya berguna untuk irama dan jurang.
  *
  * BERGANTUNG PADA: poppler-utils (pdftoppm). Kalau tiada:
  *   sudo apt-get install -y poppler-utils
@@ -23,7 +28,7 @@
  * NOTA: src/lib/qrPoster.ts ditranspile ke .uji/ dahulu, supaya yang diuji
  * ialah kod SEBENAR yang dihantar ke pelayar — bukan salinan.
  */
-import { existsSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync, rmSync, readFileSync, readdirSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import jsQR from 'jsqr'
 import { PNG } from 'pngjs'
@@ -37,13 +42,23 @@ const JANGKA = `https://alunara.my/buku-tamu/${SLUG}`
 const TEMA_UJIAN = ['default', 'minimalis', 'floral', 'rustic']
 
 // ---------------------------------------------------------------- transpile
-if (!existsSync('.uji/qrPoster.js')) {
-  console.log('[persediaan] transpile src/lib/qrPoster.ts → .uji/')
-  execFileSync('npx', [
-    'tsc', 'src/lib/qrPoster.ts', '--ignoreConfig', '--outDir', '.uji',
-    '--module', 'esnext', '--target', 'es2022', '--moduleResolution', 'bundler',
-    '--skipLibCheck', '--esModuleInterop',
-  ], { stdio: 'inherit' })
+//
+// SELALU transpile semula (bukan simpan cache): poster ini pernah lulus ujian
+// dari .uji/ yang basi. Kod yang diuji mesti kod yang dihantar ke pelayar.
+//
+// Node ESM perlukan sambungan fail eksplisit, tetapi kod sumber import
+// `'./qrPosterFonts'` (gaya bundler Vite). Jadi selepas transpile, import
+// relatif dalam .uji/ ditambah `.js`.
+console.log('[persediaan] transpile src/lib/*.ts → .uji/')
+rmSync('.uji', { recursive: true, force: true })
+execFileSync('npx', [
+  'tsc', 'src/lib/qrPoster.ts', 'src/lib/qrPosterFonts.ts', '--ignoreConfig', '--outDir', '.uji',
+  '--module', 'esnext', '--target', 'es2022', '--moduleResolution', 'bundler',
+  '--skipLibCheck', '--esModuleInterop',
+], { stdio: 'inherit' })
+for (const f of readdirSync('.uji')) {
+  const p = `.uji/${f}`
+  writeFileSync(p, readFileSync(p, 'utf8').replace(/(from '\.[^']*)'/g, "$1.js'"))
 }
 const { janaPdfQr, SAIZ, TEMA_CETAK } = await import('../.uji/qrPoster.js')
 
@@ -118,19 +133,25 @@ function jalurKosongMm({ data, width, height }, tinggiKertasMm) {
   return terbaik * mmPerPx
 }
 
-/** Warna paling tepu yang dominan = aksen tema. */
-function aksenDominan(data) {
-  const kira = new Map()
+/**
+ * Warna paling hampir dengan aksen tema, dikira dari SEMUA pixel yang cukup
+ * tepu — bukan dari pixel PALING tepu.
+ *
+ * KENAPA BUKAN "paling tepu": tema Minimalis aksennya kelabu hangat
+ * (#6f6659, tepu rendah) dan ia dilitupi oleh teks. Versi lama menapis tepu
+ * ≥25 lalu mengambil pixel tepu terbanyak — ia dapat warna jalur tema
+ * (#f1eee8 tidak, tapi bingkai #d9d4cb ya) dan ujian gagal walaupun poster
+ * betul. Sekarang: kumpul pixel yang dekat dengan aksen jangka (±30) dan
+ * pastikan ada cukup banyak — itu bukti tema betul-betul dicetak.
+ */
+function kiraAksen(data, hex) {
+  const t = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+  let dekat = 0
   for (let i = 0; i < data.length; i += 4) {
-    const r = data[i], g = data[i + 1], b = data[i + 2]
-    const maks = Math.max(r, g, b), min = Math.min(r, g, b)
-    if (maks - min < 25 || maks > 235 || maks < 45) continue // buang putih/hitam/kelabu
-    const kunci = `${r >> 4},${g >> 4},${b >> 4}`
-    kira.set(kunci, (kira.get(kunci) ?? 0) + 1)
+    const p = [data[i], data[i + 1], data[i + 2]]
+    if (Math.max(...p.map((v, j) => Math.abs(v - t[j]))) <= 30) dekat++
   }
-  let terbaik = null, n = 0
-  for (const [k, v] of kira) if (v > n) { n = v; terbaik = k }
-  return terbaik ? terbaik.split(',').map((x) => Number(x) * 16) : null
+  return { dekat, jumlah: data.length / 4 }
 }
 
 mkdirSync(KELUAR, { recursive: true })
@@ -139,8 +160,12 @@ for (const saiz of SAIZ) {
   for (const tema of TEMA_UJIAN) {
     const nama = `${saiz.id}-${tema}`
     console.log(`\n${saiz.id.toUpperCase()} · tema ${tema}`)
+    // Nama majlis panjang sengaja diuji pada setiap saiz: `muat()` mengecilkan
+    // teks, dan pada A6 nama 2 baris boleh menolak kad QR keluar dari bingkai.
+    // Poster sebenar klien selalunya begini (nama penuh + bin/binti).
+    const tajuk = saiz.id === 'a6' ? 'Nurul Aisyah binti Abdullah' : 'Ali & Abu'
     const bytes = await janaPdfQr(SLUG, saiz, {
-      tajuk: 'Ali & Abu',
+      tajuk,
       tema,
       jenis: 'Nikah / Akad',
       tarikh: '22 November 2026',
@@ -166,19 +191,31 @@ for (const saiz of SAIZ) {
     // 3. QR cukup besar di atas kertas.
     const qrMm = saizQrMm(lokasi, saiz.mm[0], px.width)
     semak('QR ≥ 35 mm di atas kertas', qrMm >= 35, `${qrMm.toFixed(1)} mm`)
+    // Kad mesti berada DI ATAS blok bawah. Kalau kad melimpah ke bawah, teks
+    // arahan akan dilukis atas kod QR dan ia jadi tak boleh diimbas — ini
+    // pepijat sebenar yang pernah berlaku pada A6 dengan nama dua baris.
+    const qrBawahMm = lokasi
+      ? (Math.max(lokasi.bottomLeftCorner.y, lokasi.bottomRightCorner.y) / px.height) * saiz.mm[1]
+      : saiz.mm[1]
+    semak(
+      'kad QR di atas blok bawah',
+      qrBawahMm < saiz.mm[1] - 30,
+      `QR tamat pada ${qrBawahMm.toFixed(1)} / ${saiz.mm[1]} mm`,
+    )
 
     // 4. Tiada lubang kosong besar — poster tak nampak "belum siap".
     const kosong = jalurKosongMm(px, saiz.mm[1])
     semak('tiada jalur kosong > 32 mm', kosong <= 32, `${kosong.toFixed(1)} mm`)
 
-    // 5. Aksen mesti padan palet tema (bukti tema betul-betul dipakai).
-    const aksen = aksenDominan(px.data)
+    // 5. Aksen tema mesti hadir dalam kuantiti yang munasabah (bukti tema
+    //    betul-betul dicetak, bukan cuma dinyatakan dalam metadata).
     const hex = TEMA_CETAK[tema].aksen
-    const rgbT = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+    const { dekat, jumlah } = kiraAksen(px.data, hex)
+    const nisbah = (dekat / jumlah) * 100
     semak(
-      'aksen tema betul',
-      !!aksen && aksen.every((v, i) => Math.abs(v - rgbT[i]) <= 40),
-      `dapat rgb(${aksen?.join(',') ?? '-'}) jangka ~rgb(${rgbT.join(',')})`,
+      'aksen tema hadir di atas kertas',
+      nisbah >= 0.05,
+      `${nisbah.toFixed(2)}% pixel ≈ ${hex}`,
     )
 
     rekod.push({ saiz: saiz.id, tema, qrMm: +qrMm.toFixed(1) })

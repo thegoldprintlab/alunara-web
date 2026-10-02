@@ -40,5 +40,7 @@ scripts/*
 !scripts/patch-vercel-config.mjs
 !scripts/prerender.mjs
 !scripts/uji-qr-poster.mjs
+# penjana font poster — perlu dijejak supaya font boleh dibina semula dari sumber
+!scripts/bina-font-poster.py
 !scripts/apply-fn-ucapan.mjs
 !scripts/fix-voice-mime.mjs

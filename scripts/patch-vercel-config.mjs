@@ -87,7 +87,11 @@ const ours = [
   ...REDIRECTS.map((r) => ({ ...r, status: 308 })),
   ...SPA_ROUTES.map((p) => ({ src: `^${p === '/' ? '/' : p}/?$`, dest: '/index.html' })),
   ...SPA_PATTERNS.map((src) => ({ src, dest: '/index.html' })),
-  { status: 404, src: '^(?!/api).*$', dest: '/404.html' },
+  // 404 betul untuk laluan yang tak wujud. /api/* DAN /_vercel/* mesti
+  // dikecualikan: /_vercel/insights/script.js disajikan oleh platform Vercel
+  // (bukan fail dalam output) — kalau ditelan di sini, Vercel Web Analytics
+  // senyap mati dan kita dapat 404 pada setiap pageview.
+  { status: 404, src: '^(?!/api|/_vercel/).*$', dest: '/404.html' },
   { handle: 'error' },
 ]
 

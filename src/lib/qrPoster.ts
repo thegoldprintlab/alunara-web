@@ -7,19 +7,35 @@
  *   pernah sahkan poster sebenarnya betul (saiz, tema, teks muat). Sekarang ia
  *   modul biasa: `node scripts/uji-qr-poster.mjs` boleh jana + semak PDF.
  *
- * PRINSIP
+ * KENAPA FONT DIBENAM, BUKAN Helvetica
+ *   Versi pertama guna StandardFonts (Helvetica). Helvetica ialah font
+ *   pengukur dokumen — ia buat poster nampak seperti resit, bukan kad majlis.
+ *   Laman ALUNARA guna Cormorant (serif) + Jost (sans); poster mesti sama
+ *   supaya cetakan dan laman nampak satu jenama. Font di-subset ke ASCII dan
+ *   dibenam dari src/lib/qrPosterFonts.ts (jana: scripts/bina-font-poster.py).
+ *
+ * PRINSIP SUSUN ATUR
  *   * PDF ditulis pada dimensi mm SEBENAR (A4 = 210×297 mm), QR dilukis pada
  *     saiz fizikal mm. Cetakan "100%" menghasilkan QR tepat — bukan skala kabur.
+ *   * Kepala = jalur tema (pastel, murah dakwat) + monogram ALUNARA.
+ *     Badan = bingkai garis dua, nama majlis dalam serif besar, hiasan permata,
+ *     kad QR putih bertepi, kemudian blok kaki yang diikat ke tepi bawah.
+ *   * QR ialah penyerap ruang: saiznya mengisi apa sahaja ruang antara teks
+ *     atas dan blok kaki, jadi tiada lubang kosong pada mana-mana saiz kertas.
  *   * Setiap tema ada palet CETAK sendiri (aksen lebih dalam, jalur pastel).
  *     Warna skrin terlalu cerah untuk dakwat dan memakan toner.
- *   * pdf-lib guna font Standard (WinAnsi, bukan Unicode) — semua teks melalui
- *     `bersih()` dulu supaya emoji/aksara luar set tak jadi "?" atau membaling.
+ *   * Semua teks melalui `bersih()` (ASCII) kerana font di-subset ke ASCII.
  */
 import QRCode from 'qrcode'
-import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib'
+import fontkit from '@pdf-lib/fontkit'
+import { PDFDocument, rgb } from 'pdf-lib'
 import type { PDFFont, PDFPage } from 'pdf-lib'
+import { FONT_B64, dariBase64 } from './qrPosterFonts'
 
 const MM = 72 / 25.4 // 1 mm dalam point PDF
+
+/** Warna rgb pdf-lib (ia tak eksport jenisnya). */
+type Warna = ReturnType<typeof rgb>
 
 export type SaizId = 'a4' | 'a5' | 'a6'
 
@@ -27,31 +43,42 @@ export type SaizKertas = {
   id: SaizId
   label: string
   mm: [number, number]
+  /** QR MAKSIMUM (mm) — ruang sebenar yang tinggal menentukan saiz akhir. */
   qrMm: number
 }
 
 export const SAIZ: SaizKertas[] = [
-  { id: 'a4', label: 'A4 — poster meja (210 × 297 mm)', mm: [210, 297], qrMm: 118 },
-  { id: 'a5', label: 'A5 — kad sederhana (148 × 210 mm)', mm: [148, 210], qrMm: 74 },
-  { id: 'a6', label: 'A6 — kad kecil (105 × 148 mm)', mm: [105, 148], qrMm: 44 },
+  { id: 'a4', label: 'A4 — poster meja (210 × 297 mm)', mm: [210, 297], qrMm: 128 },
+  { id: 'a5', label: 'A5 — kad sederhana (148 × 210 mm)', mm: [148, 210], qrMm: 84 },
+  { id: 'a6', label: 'A6 — kad kecil (105 × 148 mm)', mm: [105, 148], qrMm: 52 },
 ]
 
-type TemaCetak = { nama: string; aksen: string; jalur: string; teks: string }
+type TemaCetak = {
+  nama: string
+  /** Aksen utama — garis, monogram, pautan. Ini warna yang mengesahkan tema. */
+  aksen: string
+  /** Jalur kepala (pastel). */
+  jalur: string
+  /** Garis bingkai halus. */
+  bingkai: string
+  /** Warna teks utama. */
+  teks: string
+}
 
 /**
  * Palet cetak per tema. Kunci mesti padan dengan id tema dalam borang
  * self-serve (BukuTamuBuat.tsx) DAN atribut data-tema dalam BukuTamu.css.
  */
 export const TEMA_CETAK: Record<string, TemaCetak> = {
-  default: { nama: 'Klasik', aksen: '#9c7a36', jalur: '#f8f3e9', teks: '#1a1613' },
-  minimalis: { nama: 'Minimalis', aksen: '#7d7263', jalur: '#f2eee7', teks: '#2b2723' },
-  floral: { nama: 'Floral', aksen: '#a94f6d', jalur: '#fbeef3', teks: '#3d2029' },
-  rustic: { nama: 'Rustic', aksen: '#8a5a34', jalur: '#f7ecdd', teks: '#33241a' },
+  default: { nama: 'Klasik', aksen: '#9c7a36', jalur: '#f7f1e3', bingkai: '#ddd0b4', teks: '#241d14' },
+  minimalis: { nama: 'Minimalis', aksen: '#6f6659', jalur: '#f1eee8', bingkai: '#d9d4cb', teks: '#2b2723' },
+  floral: { nama: 'Floral', aksen: '#a94f6d', jalur: '#fbeef3', bingkai: '#eed2dc', teks: '#3d2029' },
+  rustic: { nama: 'Rustic', aksen: '#8a5a34', jalur: '#f7ecdd', bingkai: '#e2cbb1', teks: '#33241a' },
 }
 
 const temaCetak = (id: string): TemaCetak => TEMA_CETAK[id] ?? TEMA_CETAK.default
 
-function warna(hex: string) {
+function warna(hex: string): Warna {
   const h = hex.replace('#', '')
   return rgb(
     parseInt(h.slice(0, 2), 16) / 255,
@@ -60,7 +87,7 @@ function warna(hex: string) {
   )
 }
 
-/** Buang aksara yang font Standard tak boleh lukis + kemaskan ruang. */
+/** Buang aksara di luar ASCII (font di-subset) + kemaskan ruang. */
 export function bersih(s: string): string {
   return s
     .replace(/[\u2018\u2019\u201B]/g, "'")
@@ -99,30 +126,102 @@ function muat(
 ): { baris: string[]; saiz: number } {
   let saiz = saizMula
   let baris = bungkus(teks, font, saiz, maks)
-  while (baris.length > maksBaris && saiz > 7) {
+  while (baris.length > maksBaris && saiz > 6) {
     saiz -= 0.5
     baris = bungkus(teks, font, saiz, maks)
   }
   return { baris, saiz }
 }
 
-/** Teks tengah dengan jarak huruf (pdf-lib tak sokong letter-spacing). */
+/** Lebar teks termasuk jarak huruf (dalam em). */
+function lebarJarak(font: PDFFont, teks: string, saiz: number, em: number): number {
+  return font.widthOfTextAtSize(teks, saiz) + em * saiz * Math.max(teks.length - 1, 0)
+}
+
+/**
+ * Teks tengah dengan jarak huruf. pdf-lib tak sokong letter-spacing, jadi
+ * setiap aksara dilukis sendiri — inilah yang buat label seperti "BUKU TAMU"
+ * nampak seperti cetakan undangan, bukan teks lalai.
+ */
 function teksJarak(
   page: PDFPage,
   teks: string,
   font: PDFFont,
   saiz: number,
-  jarak: number,
+  em: number,
   tengahX: number,
   y: number,
-  color: ReturnType<typeof rgb>,
+  color: Warna,
 ) {
-  const lebar = font.widthOfTextAtSize(teks, saiz) + jarak * Math.max(teks.length - 1, 0)
-  let x = tengahX - lebar / 2
+  const jarak = em * saiz
+  let x = tengahX - lebarJarak(font, teks, saiz, em) / 2
   for (const c of teks) {
     page.drawText(c, { x, y, size: saiz, font, color })
     x += font.widthOfTextAtSize(c, saiz) + jarak
   }
+}
+
+/** Teks tengah biasa (tiada jarak huruf). */
+function teksTengah(
+  page: PDFPage,
+  teks: string,
+  font: PDFFont,
+  saiz: number,
+  tengahX: number,
+  y: number,
+  color: Warna,
+) {
+  page.drawText(teks, {
+    x: tengahX - font.widthOfTextAtSize(teks, saiz) / 2,
+    y,
+    size: saiz,
+    font,
+    color,
+  })
+}
+
+/**
+ * Permata berlian (4 bucu) — hiasan pemisah gaya undangan.
+ *
+ * pdf-lib `drawSvgPath` melukis dalam ruang SVG (y ke BAWAH) dari titik (x, y)
+ * yang diberi. Kita letak asalan di penjuru atas-kiri halaman, jadi koordinat
+ * PDF (y ke atas) perlu ditukar dulu — silap tukar di sini buat permata
+ * terkeluar dari bingkai.
+ */
+function permata(page: PDFPage, cx: number, cyPdf: number, r: number, color: Warna) {
+  const cy = page.getHeight() - cyPdf
+  page.drawSvgPath(
+    `M ${cx} ${cy - r} L ${cx + r} ${cy} L ${cx} ${cy + r} L ${cx - r} ${cy} Z`,
+    { x: 0, y: page.getHeight(), color },
+  )
+}
+
+/** Garis hiasan: garis — permata — garis. */
+function hiasan(
+  page: PDFPage,
+  tengahX: number,
+  y: number,
+  separuh: number,
+  jurang: number,
+  r: number,
+  aksen: Warna,
+  lembut: Warna,
+) {
+  page.drawLine({
+    start: { x: tengahX - separuh - jurang, y },
+    end: { x: tengahX - jurang, y },
+    thickness: 0.7,
+    color: aksen,
+  })
+  page.drawLine({
+    start: { x: tengahX + jurang, y },
+    end: { x: tengahX + separuh + jurang, y },
+    thickness: 0.7,
+    color: aksen,
+  })
+  permata(page, tengahX - separuh - jurang - r * 2.2, y, r * 0.6, lembut)
+  permata(page, tengahX + separuh + jurang + r * 2.2, y, r * 0.6, lembut)
+  permata(page, tengahX, y, r, aksen)
 }
 
 export function pautanMajlis(slug: string) {
@@ -145,10 +244,16 @@ export type QrMeta = {
 }
 
 /**
- * Susun atur (semua saiz skala dari lebar kertas, f = lebarMm / 210):
- *   jalur tema → "BUKU TAMU" berjarak → nama majlis (auto-kecil) →
- *   jenis · tarikh · venue → kad putih QR → arahan imbas →
- *   pautan taip-tangan → kaki ALUNARA + nama tema.
+ * Susun atur (semua ukuran menegak dalam mm dari ATAS kertas, skala f = lebarMm/210):
+ *
+ *   jalur tema + monogram ALUNARA        (0 … 30f)
+ *   bingkai garis dua                     (36f … tinggiMm-11f)
+ *     "BUKU TAMU" berjarak huruf
+ *     nama majlis (serif, auto-kecil, 2 baris)
+ *     hiasan permata
+ *     jenis · tarikh · venue
+ *     kad QR putih bertepi dua
+ *     arahan imbas · terima kasih · pautan · kaki tema
  */
 export async function janaPdfQr(
   slug: string,
@@ -160,181 +265,219 @@ export async function janaPdfQr(
   const tema = temaCetak(meta.tema)
 
   const pdf = await PDFDocument.create()
+  pdf.registerFontkit(fontkit)
   const page = pdf.addPage([lebarMm * MM, tinggiMm * MM])
-  const font = await pdf.embedFont(StandardFonts.HelveticaBold)
-  const font2 = await pdf.embedFont(StandardFonts.Helvetica)
-  const fontMiring = await pdf.embedFont(StandardFonts.HelveticaOblique)
+
+  // Setiap gaya hanya dibenam kalau dipakai — PDF yang dijana jadi lebih kecil.
+  const serif = await pdf.embedFont(dariBase64(FONT_B64['cormorant-600']), { subset: true })
+  const serifItalik = await pdf.embedFont(dariBase64(FONT_B64['cormorant-italic-400']), { subset: true })
+  const sans = await pdf.embedFont(dariBase64(FONT_B64['jost-400']), { subset: true })
+  const sansMedium = await pdf.embedFont(dariBase64(FONT_B64['jost-500']), { subset: true })
+  const sansTegas = await pdf.embedFont(dariBase64(FONT_B64['jost-600']), { subset: true })
+
+  const tajuk = bersih(meta.tajuk) || 'Majlis Kami'
+  pdf.setTitle(`Buku Tamu — ${tajuk}`)
+  pdf.setAuthor('ALUNARA')
+  pdf.setSubject('Poster QR Buku Tamu')
+  pdf.setCreator('alunara.my')
 
   const W = lebarMm * MM
   const H = tinggiMm * MM
-  const aksen = warna(tema.aksen)
-  const gelap = warna(tema.teks)
-  const jalur = warna(tema.jalur)
-  const kelabu = warna('#6f675c')
-
   const tengah = W / 2
-  /** Jarak dari ATAS kertas (mm) → koordinat PDF (dari bawah). */
+  /** mm dari ATAS kertas → koordinat PDF (dari bawah). */
   const Y = (mm: number) => H - mm * MM
 
-  // ---- jalur tema di atas + garis aksen ----
-  const tinggiJalur = 30 * f
+  const aksen = warna(tema.aksen)
+  const jalur = warna(tema.jalur)
+  const bingkai = warna(tema.bingkai)
+  const gelap = warna(tema.teks)
+  const lembut = warna('#6e675c')
+
+  // ---------------------------------------------------------------- 1. KEPALA
+  const bandH = Math.max(20, 30 * f)
+  page.drawRectangle({ x: 0, y: H - bandH * MM, width: W, height: bandH * MM, color: jalur })
   page.drawRectangle({
     x: 0,
-    y: H - tinggiJalur * MM,
+    y: H - (bandH + 1.4 * f) * MM,
     width: W,
-    height: tinggiJalur * MM,
-    color: jalur,
-  })
-  page.drawRectangle({
-    x: 0,
-    y: H - (tinggiJalur + 1.6) * MM,
-    width: W,
-    height: 1.6 * MM,
+    height: 1.4 * f * MM,
     color: aksen,
   })
 
-  // ---- bingkai halus ----
-  const margin = 6 * f
+  // Monogram: bukti jenama pada poster, dan ia mengunci tema warna kepala.
+  const saizMono = Math.max(8, 10.5 * f)
+  const emMono = 0.3
+  const yMono = bandH / 2 + Math.max(2.6, 3.2 * f)
+  teksJarak(page, 'ALUNARA', sansTegas, saizMono, emMono, tengah, Y(yMono), aksen)
+  const lebarMono = lebarJarak(sansTegas, 'ALUNARA', saizMono, emMono)
+  const yPermataMono = Y(yMono) + saizMono * 0.36
+  permata(page, tengah - lebarMono / 2 - 6.5 * f * MM, yPermataMono, 1.5 * f * MM, bingkai)
+  permata(page, tengah + lebarMono / 2 + 6.5 * f * MM, yPermataMono, 1.5 * f * MM, bingkai)
+
+  // --------------------------------------------------------------- 2. BINGKAI
+  const margin = 13 * f
+  const bingkaiAtasMm = bandH + Math.max(5, 6 * f)
+  const bingkaiBawahMm = tinggiMm - 11 * f
+  const mx = margin * MM
   page.drawRectangle({
-    x: margin * MM,
-    y: margin * MM,
-    width: W - 2 * margin * MM,
-    height: H - 2 * margin * MM,
-    borderColor: warna('#e2dbcd'),
-    borderWidth: 0.6,
+    x: mx,
+    y: Y(bingkaiBawahMm),
+    width: W - 2 * mx,
+    height: (bingkaiBawahMm - bingkaiAtasMm) * MM,
+    borderColor: aksen,
+    borderWidth: 0.9,
+  })
+  const inset = 2 * f
+  page.drawRectangle({
+    x: (margin + inset) * MM,
+    y: Y(bingkaiBawahMm - inset),
+    width: W - 2 * (margin + inset) * MM,
+    height: (bingkaiBawahMm - bingkaiAtasMm - 2 * inset) * MM,
+    borderColor: bingkai,
+    borderWidth: 0.5,
   })
 
-  // ---- "BUKU TAMU" berjarak huruf ----
-  teksJarak(page, 'BUKU TAMU', font2, 9 * f + 2, 2.2 * f + 0.6, tengah, Y(13 * f), aksen)
+  // ------------------------------------------------------- 3. SUSUN MENEGAK
+  //
+  // SATU-SATUNYA SUMBER KEBENARAN: ruang yang tinggal.
+  //
+  // Versi awal mengunci saiz kad pada minimum (`Math.max(qrMin, …)`) supaya QR
+  // tak pernah terlalu kecil. Itu SALAH: pada A6 dengan nama majlis dua baris,
+  // tiada ruang untuk minimum itu, jadi kad ditolak ke bawah — menindih teks
+  // arahan, dan teks itu dicetak ATAS kod QR. QR jadi tak boleh diimbas.
+  // (Tangkap oleh ujian: "QR diimbas dari pixel — TIADA" pada A6.)
+  //
+  // Sekarang kad TIDAK PERNAH melebihi ruang yang ada. Bila ruang terlalu
+  // ketat, kita longgarkan susunan dahulu (jurang → saiz nama), bukan
+  // membenarkan pertindihan. Kalau masih tak cukup, kad kekal kecil —
+  // lebih baik QR kecil daripada QR yang dicetak atas.
+  const padKadMm = 6 * f
+  const qrMin = 38 // bawah ini pengimbas telefon mula ragu-ragu
+  const kunciKad = Math.min(saiz.qrMm + 12 * f, lebarMm - 2 * margin - 6 * f)
+  const tinggiKadMaks = Math.min(saiz.qrMm, kunciKad - 2 * padKadMm) + 2 * padKadMm
 
-  // ---- nama majlis ----
-  const tajuk = bersih(meta.tajuk) || 'Majlis Kami'
-  const { baris, saiz: saizTajuk } = muat(tajuk, font, 34 * f, W - 26 * MM, 2)
-  // Tinggi baris dalam mm. JANGAN guna faktor 0.72 sebagai "penukar" pt→mm —
-  // 1 mm = 2.835 pt, jadi pekali itu meletakkan sub-baris ~15 mm terlalu jauh
-  // dan meninggalkan lubang kosong di bawah nama majlis.
-  const tinggiBarisTajukMm = (saizTajuk * 1.25) / MM
-  baris.forEach((b, i) => {
-    page.drawText(b, {
-      x: tengah - font.widthOfTextAtSize(b, saizTajuk) / 2,
-      y: Y(40 * f + i * tinggiBarisTajukMm),
-      size: saizTajuk,
-      font,
-      color: gelap,
-    })
-  })
+  /**
+   * Kira semua kedudukan menegak.
+   * @param k     faktor kuncupan jurang (1 = irama cetak penuh)
+   * @param kNama faktor saiz nama majlis — lever kedua bila kertas terlalu kecil
+   */
+  function susun(k: number, kNama: number) {
+    const jarak = (mm: number, skala: number) => Math.max(mm * k, skala * f)
+    const pad = jarak(8, 10)
+    const dalamAtas = bingkaiAtasMm + pad
+    const dalamBawah = bingkaiBawahMm - pad
+    const lebarTeks = W - 2 * (margin + pad) * MM
 
-  // ---- sub-baris: jenis majlis · tarikh · venue ----
-  const bahagian = [bersih(meta.jenis ?? ''), bersih(meta.tarikh ?? ''), bersih(meta.venue ?? '')]
-    .filter(Boolean)
-  // Dasar baris terakhir + turunan (descender) font.
-  let bawahTeks =
-    40 * f + (baris.length - 1) * tinggiBarisTajukMm + (saizTajuk * 0.32) / MM
-  if (bahagian.length) {
-    const sub = bahagian.join('  ·  ')
-    const { baris: bSub, saiz: sSub } = muat(sub, font2, 10.5 * f + 1.5, W - 30 * MM, 2)
-    const tinggiBarisMm = (sSub + 2) / MM
-    const atasSub = bawahTeks + 5 * f
-    bSub.forEach((b, i) => {
-      page.drawText(b, {
-        x: tengah - font2.widthOfTextAtSize(b, sSub) / 2,
-        y: Y(atasSub + i * tinggiBarisMm),
-        size: sSub,
-        font: font2,
-        color: kelabu,
-      })
-    })
-    bawahTeks = atasSub + (bSub.length - 1) * tinggiBarisMm + (sSub * 0.32) / MM
+    const saizEyebrow = 8.6 * f
+    const yEyebrow = dalamAtas + jarak(3, 4 * f)
+    const { baris: barisNama, saiz: saizNama } = muat(
+      tajuk, serif, Math.max(22 * f, 40 * f * kNama), lebarTeks, 2,
+    )
+    const tinggiBarisNamaMm = (saizNama * 1.08) / MM
+    const yNama1 = yEyebrow + jarak(8.5, 11 * f)
+    const bawahNama =
+      yNama1 + (barisNama.length - 1) * tinggiBarisNamaMm + (saizNama * 0.3) / MM
+
+    const yHiasan = bawahNama + jarak(7, 9 * f)
+
+    const bahagian = [bersih(meta.jenis ?? ''), bersih(meta.tarikh ?? ''), bersih(meta.venue ?? '')]
+      .filter(Boolean)
+    const sub = bahagian.join('   ·   ')
+    const { baris: bSub, saiz: sSub } = muat(sub, sans, 11.5 * f, lebarTeks, 2)
+    const tinggiBarisSubMm = (sSub * 1.5) / MM
+    const ySub1 = yHiasan + jarak(6.5, 8.5 * f)
+    const bawahTeks = bahagian.length
+      ? ySub1 + (bSub.length - 1) * tinggiBarisSubMm + (sSub * 0.3) / MM
+      : bawahNama
+
+    const saizArahan = 11 * f
+    const saizTerima = 12.5 * f
+    const saizPautan = 10.5 * f
+    const saizKaki = Math.max(6.8, 7.8 * f)
+    const arahan = bersih('Imbas kod di bawah untuk kongsi gambar anda di buku tamu majlis kami.')
+    const { baris: bArahan, saiz: sArahan } = muat(arahan, sansMedium, saizArahan, lebarTeks, 2)
+    const tinggiBarisArahanMm = (sArahan * 1.42) / MM
+
+    const yKaki = dalamBawah - jarak(1, 1 * f)
+    const yGarisKaki = yKaki - jarak(7, 9 * f)
+    const yPautan = yGarisKaki - jarak(9, 12 * f)
+    const yTerima = yPautan - jarak(10, 12.5 * f)
+    const yArahan1 = yTerima - jarak(11, 13.5 * f)
+    const yArahanAtas = yArahan1 - (sArahan * 0.78) / MM
+
+    const jurang = jarak(7, 9 * f)
+    const ruangTengah = Math.max(0, yArahanAtas - bawahTeks - 2 * jurang)
+    const kadHmm = Math.min(tinggiKadMaks, ruangTengah)
+    const lebih = Math.max(0, ruangTengah - kadHmm)
+    const kadAtasMm = bawahTeks + jurang + lebih * 0.5
+
+    return {
+      saizEyebrow, yEyebrow, barisNama, saizNama, yNama1,
+      tinggiBarisNamaMm, yHiasan, bSub, sSub, tinggiBarisSubMm, ySub1,
+      saizTerima, saizPautan, saizKaki, bArahan, sArahan,
+      tinggiBarisArahanMm, yKaki, yGarisKaki, yPautan, yTerima, yArahan1,
+      kadHmm, kadAtasMm, yArahanAtas,
+    }
   }
 
-  // ---- ukur blok dulu, baru letak ----
-  //
-  // KENAPA BUKAN SAIZ TETAP: poster versi awal mengunci saiz QR, jadi pada A4
-  // ia tinggal lubang ~36 mm di tengah (kandungan cuma ~217 mm dari 297 mm)
-  // dan pada A5 kad pula tenggelam. Sekarang QR diJADIKAN penyerap ruang:
-  // blok tengah (hiasan + kad) mengisi semua ruang antara sub-baris dan blok
-  // bawah, jadi poster sentiasa penuh tanpa lubang.
-  const padKadMm = 5 * f
-  const minQrMm = 38 // bawah ini pengimbas telefon mula ragu-ragu
-  const maxQrMm = Math.min(saiz.qrMm, lebarMm - 40)
+  // Cuba susunan paling lapang dahulu; longgarkan hanya bila QR tak cukup besar.
+  const calon: [number, number][] = [
+    [1, 1], [0.75, 1], [0.6, 1], [0.5, 0.92], [0.4, 0.85], [0.35, 0.78],
+  ]
+  let L = susun(...calon[0])
+  for (const [k, kNama] of calon) {
+    L = susun(k, kNama)
+    if (L.kadHmm - 2 * padKadMm >= qrMin) break
+  }
 
-  const arahan = bersih('Imbas QR ini untuk kongsi gambar anda di buku tamu majlis kami.')
-  const { baris: bArahan, saiz: sArahan } = muat(arahan, font2, 11 * f + 2, W - 30 * MM, 2)
-  const saizTerima = 10 * f + 1.5
-  const saizPautan = 8.5 * f + 2
+  const {
+    saizEyebrow, yEyebrow, barisNama, saizNama, yNama1,
+    tinggiBarisNamaMm, yHiasan, bSub, sSub, tinggiBarisSubMm, ySub1,
+    saizTerima, saizPautan, saizKaki, bArahan, sArahan,
+    tinggiBarisArahanMm, yKaki, yGarisKaki, yPautan, yTerima, yArahan1,
+    kadHmm, kadAtasMm,
+  } = L
 
-  // Blok bawah: semua dikira dalam mm dari TEPI BAWAH kertas, kemudian
-  // ditukar ke "mm dari atas" sekali sahaja. (Versi sebelum ini mencampur
-  // kedua-dua arah, jadi blok bawah tersasar ke atas dan QR mengecil sendiri.)
-  //
-  // Jarak guna `max(minimum mm, skala f)` — pada A6 skala f jadi terlalu
-  // kecil, dan URL + kaki nampak bertindih (ditegur selepas semakan visual kad).
-  const jarak = (mm: number, skala: number) => Math.max(mm, skala * f)
-  const yKakiB = Math.max(9, margin + 4.5) // mm dari bawah — beri margin cetak selamat
-  const yPautanB = yKakiB + (7.5 * f + 1.5) / MM + jarak(4, 3)
-  const yTerimaB = yPautanB + saizPautan / MM + jarak(6, 6)
-  const yArahanB = yTerimaB + saizTerima / MM + jarak(5, 5)
-  const yArahanAtasMm = tinggiMm - yArahanB // mm dari atas
+  // ------------------------------------------------------- 4. LUKIS: KEPALA TEKS
+  teksJarak(page, 'BUKU TAMU', sansMedium, saizEyebrow, 0.46, tengah, Y(yEyebrow), aksen)
+  barisNama.forEach((b, i) => {
+    teksTengah(page, b, serif, saizNama, tengah, Y(yNama1 + i * tinggiBarisNamaMm), gelap)
+  })
 
-  // Semua ukuran dalam mm dari ATAS kertas, supaya mudah dibandingkan.
-  const tinggiHiasanMm = 1.5 * f
-  const gapAsasA = 9 * f // teks → hiasan
-  const gapAsasB = 9 * f // hiasan → kad
-  const gapAsasC = 9 * f // kad → arahan
+  // --------------------------------------------------------- 5. HIASAN PEMISAH
+  hiasan(page, tengah, Y(yHiasan), 17 * f * MM, 3.4 * f * MM, 1.5 * f * MM, aksen, bingkai)
 
-  const tengahMm = yArahanAtasMm - bawahTeks
-  const kadHmm = Math.min(
-    maxQrMm + padKadMm * 2,
-    Math.max(minQrMm + padKadMm * 2, tengahMm - gapAsasA - tinggiHiasanMm - gapAsasB - gapAsasC),
-  )
-  const qrMm = kadHmm - padKadMm * 2
+  // -------------------------------------------- 6. JENIS · TARIKH · VENUE
+  bSub.forEach((b, i) => {
+    teksTengah(page, b, sans, sSub, tengah, Y(ySub1 + i * tinggiBarisSubMm), lembut)
+  })
 
-  // Lebihan dikongsi RATA antara tiga jurang sebenar: teks→hiasan,
-  // hiasan→kad, kad→arahan. (Versi sebelum ini memberi dua bahagian kepada
-  // satu jurang, jadi lubang 48 mm terkumpul di bawah nama majlis.)
-  const lebih = Math.max(0, tengahMm - kadHmm - gapAsasA - tinggiHiasanMm - gapAsasB - gapAsasC)
-  const kongsi = lebih / 3
-
-  const yHiasan = bawahTeks + gapAsasA + kongsi
-  const kadAtasMm = yHiasan + tinggiHiasanMm + gapAsasB + kongsi
+  // -------------------------------------------------------------- 7. KAD QR
   const kadW = kadHmm * MM
-  const qrPt = qrMm * MM
   const padKad = padKadMm * MM
+  const qrMm = kadHmm - 2 * padKadMm
+  const qrPt = qrMm * MM
   const kadY = H - kadAtasMm * MM - kadW
+  const kadX = tengah - kadW / 2
 
-  // ---- hiasan pemisah: dua garis pendek + permata kecil ----
-  const separuh = 16 * f * MM
-  const jarakOrn = 3 * f * MM
-  page.drawLine({
-    start: { x: tengah - separuh - jarakOrn, y: Y(yHiasan) },
-    end: { x: tengah - jarakOrn, y: Y(yHiasan) },
-    thickness: 0.7,
-    color: aksen,
-  })
-  page.drawLine({
-    start: { x: tengah + jarakOrn, y: Y(yHiasan) },
-    end: { x: tengah + separuh + jarakOrn, y: Y(yHiasan) },
-    thickness: 0.7,
-    color: aksen,
-  })
-  const rD = 1.5 * f * MM
+  // Kad putih bertepi dua: garis aksen luar + garis halus dalam.
+  page.drawRectangle({ x: kadX, y: kadY, width: kadW, height: kadW, color: rgb(1, 1, 1) })
   page.drawRectangle({
-    x: tengah - rD / 2,
-    y: Y(yHiasan) - rD / 2,
-    width: rD,
-    height: rD,
-    color: aksen,
-    rotate: degrees(45),
-  })
-
-  page.drawRectangle({
-    x: tengah - kadW / 2,
+    x: kadX,
     y: kadY,
     width: kadW,
     height: kadW,
-    color: rgb(1, 1, 1),
     borderColor: aksen,
-    borderWidth: saiz.id === 'a4' ? 1.4 : 1,
+    borderWidth: saiz.id === 'a4' ? 1.3 : 1,
+  })
+  const insetKad = 2.4 * f * MM
+  page.drawRectangle({
+    x: kadX + insetKad,
+    y: kadY + insetKad,
+    width: kadW - 2 * insetKad,
+    height: kadW - 2 * insetKad,
+    borderColor: bingkai,
+    borderWidth: 0.5,
   })
 
   const qrPng = await QRCode.toDataURL(pautanMajlis(slug), {
@@ -344,47 +487,56 @@ export async function janaPdfQr(
     color: { dark: '#1a1613', light: '#ffffff' },
   })
   const qrImg = await pdf.embedPng(qrPng)
-  page.drawImage(qrImg, { x: tengah - qrPt / 2, y: kadY + padKad, width: qrPt, height: qrPt })
+  page.drawImage(qrImg, {
+    x: tengah - qrPt / 2,
+    y: kadY + padKad,
+    width: qrPt,
+    height: qrPt,
+  })
 
-  // ---- arahan imbas (blok bawah, diikat ke tepi bawah) ----
+  // -------------------------------------------------------- 8. BLOK BAWAH
   bArahan.forEach((b, i) => {
-    page.drawText(b, {
-      x: tengah - font2.widthOfTextAtSize(b, sArahan) / 2,
-      y: Y(yArahanAtasMm) - i * (sArahan + 3),
-      size: sArahan,
-      font: font2,
-      color: gelap,
-    })
+    teksTengah(page, b, sansMedium, sArahan, tengah, Y(yArahan1 + i * tinggiBarisArahanMm), gelap)
   })
 
-  const terima = bersih('Terima kasih kerana hadir!')
-  page.drawText(terima, {
-    x: tengah - fontMiring.widthOfTextAtSize(terima, saizTerima) / 2,
-    y: yTerimaB,
-    size: saizTerima,
-    font: fontMiring,
-    color: kelabu,
-  })
+  teksTengah(
+    page,
+    bersih('Terima kasih kerana hadir!'),
+    serifItalik,
+    saizTerima,
+    tengah,
+    Y(yTerima),
+    lembut,
+  )
 
-  // ---- pautan taip-tangan ----
-  const pautanKecil = bersih(pautanMajlis(slug).replace('https://', ''))
-  page.drawText(pautanKecil, {
-    x: tengah - font2.widthOfTextAtSize(pautanKecil, saizPautan) / 2,
-    y: yPautanB,
-    size: saizPautan,
-    font: font2,
-    color: aksen,
-  })
+  teksJarak(
+    page,
+    bersih(pautanMajlis(slug).replace('https://', '')),
+    sans,
+    saizPautan,
+    0.06,
+    tengah,
+    Y(yPautan),
+    aksen,
+  )
 
-  // ---- kaki: nama tema (bukti ia ikut pilihan klien) ----
-  const kaki = bersih(`Tema ${tema.nama}  ·  Buku Tamu ALUNARA  ·  alunara.my`)
-  page.drawText(kaki, {
-    x: tengah - font2.widthOfTextAtSize(kaki, 7.5 * f + 1.5) / 2,
-    y: yKakiB,
-    size: 7.5 * f + 1.5,
-    font: font2,
-    color: kelabu,
+  // Garis halus + kaki: nama tema (bukti ia ikut pilihan klien).
+  page.drawLine({
+    start: { x: (margin + 8) * MM, y: Y(yGarisKaki) },
+    end: { x: W - (margin + 8) * MM, y: Y(yGarisKaki) },
+    thickness: 0.5,
+    color: bingkai,
   })
+  teksJarak(
+    page,
+    bersih(`TEMA ${tema.nama.toUpperCase()}  ·  BUKU TAMU  ·  ALUNARA.MY`),
+    sans,
+    saizKaki,
+    0.12,
+    tengah,
+    Y(yKaki),
+    lembut,
+  )
 
   return await pdf.save()
 }
