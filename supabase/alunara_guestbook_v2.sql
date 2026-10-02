@@ -68,6 +68,22 @@ alter table public.alunara_guestbook_events
 alter table public.alunara_guestbook_events
   add column if not exists label text;             -- label sub-event (cth. "Resepsi Wanita")
 
+-- Had VIDEO berasingan per tetamu.
+--   `max_uploads_per_guest` ialah siling KESELAMATAN untuk SEMUA media
+--   (foto + video + suara). Itu tidak cukup untuk video: satu klip boleh
+--   sampai 50MB, jadi 100 video seorang tetamu = 5GB — separuh kuota
+--   percuma Cloudflare R2 (10GB) dihabiskan oleh SATU orang, tanpa bos
+--   dapat apa-apa. Siling video berasingan ini yang menahan kos.
+--   Foto & suara takkan sentuh had ini.
+alter table public.alunara_guestbook_events
+  add column if not exists max_video_per_guest integer not null default 3;
+
+-- Siling saiz SATU video (bait). Selari dengan VIDEO_MAX_MB dalam
+-- src/pages/BukuTamu.tsx. Ini pertahanan sebenar: klien boleh hantar
+-- p_bytes apa-apa, jadi semakan di UI sahaja tidak cukup.
+alter table public.alunara_guestbook_events
+  add column if not exists max_video_bytes bigint not null default 52428800; -- 50 MB
+
 create index if not exists alunara_gb_events_gallery_idx
   on public.alunara_guestbook_events (gallery_id);
 
@@ -449,7 +465,11 @@ create or replace function public.alunara_gb_add_media(
   p_mime_type    text default null,
   p_width        integer default null,
   p_height       integer default null,
-  p_bytes        integer default null,
+  -- bigint, bukan integer: siling video 50MB muat dalam integer, tetapi
+  -- ujian/hantaran rosak boleh sampai melebihi 2GB dan `integer` akan
+  -- MELEMPAR ralat julat — jadi semakan saiz tak pernah jalan, dan tetamu
+  -- nampak mesej Postgres mentah. bigint buat semakan kita yang menjawab.
+  p_bytes        bigint default null,
   p_duration_sec numeric default null,
   p_stock        text default 'none',
   p_strength     numeric default 1.00
@@ -462,12 +482,16 @@ declare
   v_guest  uuid;
   v_event  uuid;
   v_had    integer;
+  v_had_video integer;
+  v_max_bytes bigint;
+  v_video  integer;
   v_kali   integer;
   v_stocks text[];
   v_id     uuid;
 begin
-  select g.id, g.event_id, e.max_uploads_per_guest, e.allowed_stocks
-    into v_guest, v_event, v_had, v_stocks
+  select g.id, g.event_id, e.max_uploads_per_guest, e.max_video_per_guest,
+         e.max_video_bytes, e.allowed_stocks
+    into v_guest, v_event, v_had, v_had_video, v_max_bytes, v_stocks
   from public.alunara_guestbook_guests g
   join public.alunara_guestbook_events e on e.id = g.event_id
   where g.session = p_session and e.active and now() < e.upload_until;
@@ -485,6 +509,27 @@ begin
   -- Semak jenis media dibenarkan
   if p_media_type not in ('photo','video','voice') then
     raise exception 'Jenis media tak sah';
+  end if;
+
+  -- ---- VIDEO: siling berasingan per tetamu + siling saiz ----
+  -- Foto & suara TIDAK dikira di sini. Ini yang menahan kos R2:
+  -- satu klip besar bukan sekadar bil, ia juga menolak kuota percuma.
+  if p_media_type = 'video' then
+    select count(*) into v_video
+    from public.alunara_guestbook_media
+    where guest_id = v_guest and media_type = 'video';
+    if v_video >= v_had_video then
+      raise exception 'Dah capai had % video untuk sesi ini', v_had_video;
+    end if;
+
+    if coalesce(p_bytes, 0) <= 0 then
+      raise exception 'Saiz video mesti dinyatakan';
+    end if;
+
+    if p_bytes > v_max_bytes then
+      raise exception 'Video terlalu besar — maksimum % MB',
+        (v_max_bytes / 1048576);
+    end if;
   end if;
 
   -- Filter film stock hanya untuk foto
@@ -518,8 +563,50 @@ begin
 end;
 $$;
 
-revoke all on function public.alunara_gb_add_media(uuid,text,text,text,integer,integer,integer,numeric,text,numeric) from public;
-grant execute on function public.alunara_gb_add_media(uuid,text,text,text,integer,integer,integer,numeric,text,numeric) to anon, authenticated;
+revoke all on function public.alunara_gb_add_media(uuid,text,text,text,integer,integer,bigint,numeric,text,numeric) from public;
+grant execute on function public.alunara_gb_add_media(uuid,text,text,text,integer,integer,bigint,numeric,text,numeric) to anon, authenticated;
+
+-- BUANG versi LAMA (p_bytes integer).
+--   `create or replace` memadankan ikut JENIS ARGUMEN. Bila p_bytes jadi
+--   bigint, Postgres cipta OVERLOAD — dua fungsi wujud serentak, dan
+--   PostgREST boleh pilih yang lama (yang TAK ada semakan saiz). Buang
+--   yang lama secara eksplisit, kalau tidak "fix" ini senyap tak berkesan.
+drop function if exists public.alunara_gb_add_media(uuid,text,text,text,integer,integer,integer,numeric,text,numeric);
+
+-- ---------------------------------------------------------------------------
+-- 11b. RPC AWAM — baki kuota sesi ini (video khasnya)
+--      Kenapa perlu: siling video berasingan hanya berguna kalau tetamu TAHU
+--      berapa lagi dia boleh hantar. Tanpa ini, dia pilih klip 60s, tunggu
+--      muat naik, baru ditolak — pengalaman buruk, dan dia ulang lagi.
+-- ---------------------------------------------------------------------------
+create or replace function public.alunara_gb_baki_saya(p_session uuid)
+returns table (
+  media_digunakan      integer,
+  media_maks           integer,
+  video_digunakan      integer,
+  video_maks           integer,
+  video_maks_bytes     bigint
+)
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select
+    (select count(*)::integer from public.alunara_guestbook_media m
+      where m.guest_id = g.id),
+    e.max_uploads_per_guest,
+    (select count(*)::integer from public.alunara_guestbook_media m
+      where m.guest_id = g.id and m.media_type = 'video'),
+    e.max_video_per_guest,
+    e.max_video_bytes
+  from public.alunara_guestbook_guests g
+  join public.alunara_guestbook_events e on e.id = g.event_id
+  where g.session = p_session and e.active and now() < e.upload_until;
+$$;
+
+revoke all on function public.alunara_gb_baki_saya(uuid) from public;
+grant execute on function public.alunara_gb_baki_saya(uuid) to anon, authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 12. RPC ADMIN — jana unlock code baru

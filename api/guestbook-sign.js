@@ -102,7 +102,7 @@ async function sesiSah(session) {
 
   const { ok, data } = await sb(
     `/rest/v1/alunara_guestbook_guests?session=eq.${session}` +
-      `&select=id,event_id,alunara_guestbook_events!inner(id,active,upload_until,max_uploads_per_guest,gallery_id)`
+      `&select=id,event_id,alunara_guestbook_events!inner(id,active,upload_until,max_uploads_per_guest,max_video_per_guest,max_video_bytes,gallery_id)`
   )
   if (!ok || !Array.isArray(data) || !data.length) return null
 
@@ -111,7 +111,13 @@ async function sesiSah(session) {
   if (!ev?.active) return null
   if (new Date(ev.upload_until).getTime() < Date.now()) return null
 
-  return { guest: baris.id, event: baris.event_id, had: ev.max_uploads_per_guest }
+  return {
+    guest: baris.id,
+    event: baris.event_id,
+    had: ev.max_uploads_per_guest,
+    hadVideo: ev.max_video_per_guest,
+    maxVideoBytes: ev.max_video_bytes,
+  }
 }
 
 /** Sahkan token admin guna token pengguna itu sendiri. */
@@ -282,6 +288,27 @@ export default async function handler(req, res) {
     const mediaType = ['photo', 'video', 'voice'].includes(body?.media_type)
       ? body.media_type
       : 'photo'
+
+    // Video ada siling SENDIRI (bilangan + saiz). Ini yang menahan kos R2:
+    // 100 video x 50MB = 5GB, separuh kuota percuma, dari seorang tetamu.
+    // RPC alunara_gb_add_media semak semula — ini cuma supaya tetamu
+    // dapat jawapan pantas sebelum muat naik puluhan MB.
+    if (mediaType === 'video') {
+      const { ok: okv, data: dv } = await sb(
+        `/rest/v1/alunara_guestbook_media?guest_id=eq.${sesi.guest}` +
+          `&media_type=eq.video&select=id`
+      )
+      const bilangan = okv && Array.isArray(dv) ? dv.length : 0
+      if (sesi.hadVideo != null && bilangan >= sesi.hadVideo) {
+        return res.status(409).json({ ralat: `Dah capai had ${sesi.hadVideo} video untuk sesi ini` })
+      }
+
+      const saiz = Number(body?.bytes) || 0
+      if (sesi.maxVideoBytes && saiz > Number(sesi.maxVideoBytes)) {
+        const mb = Math.round(Number(sesi.maxVideoBytes) / 1048576)
+        return res.status(413).json({ ralat: `Video terlalu besar — maksimum ${mb} MB` })
+      }
+    }
 
     // Tentukan sambungan & content-type ikut jenis.
     let sambungan = 'jpg'

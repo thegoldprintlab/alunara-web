@@ -40,10 +40,16 @@ const VOICE_MAX_SAAT = 30
 /**
  * Had video. Disimpan di SATU tempat supaya UI, pengesahan klien, dan
  * pengesahan server (RPC `alunara_gb_add_media`) tak boleh bercanggah.
- * Kalau tukar nilai ini, tukar juga di supabase/alunara_guestbook_v2.sql.
+ * Kalau tukar nilai ini, tukar juga di supabase/alunara_guestbook_v2.sql
+ * (lajur `max_video_bytes` / `max_video_per_guest` pada events).
+ *
+ * KENAPA 50MB, BUKAN 200MB: media disimpan di Cloudflare R2, kuota percuma
+ * 10GB-bulan untuk SEMUA media sekali. 200MB/klip bermakna 50 klip sahaja
+ * sebelum kena bayar, dan siling 100 upload/tetamu benarkan SATU orang
+ * simpan 20GB. 50MB cukup untuk klip 60 saat 1080p.
  */
 const VIDEO_MAX_SAAT = 60
-const VIDEO_MAX_MB = 200
+const VIDEO_MAX_MB = 50
 const VIDEO_MAX_BYTES = VIDEO_MAX_MB * 1024 * 1024
 const UCAPAN_MAX = 1000
 
@@ -193,6 +199,14 @@ export default function BukuTamu() {
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null)
   const [voiceSaat, setVoiceSaat] = useState(0)
 
+  // baki kuota sesi (video khasnya) — dari RPC alunara_gb_baki_saya
+  const [baki, setBaki] = useState<{
+    media_digunakan: number
+    media_maks: number
+    video_digunakan: number
+    video_maks: number
+  } | null>(null)
+
   // slideshow + realtime (polling)
   const [slaid, setSlaid] = useState(false)
   const [slaidIdx, setSlaidIdx] = useState(0)
@@ -267,6 +281,26 @@ export default function BukuTamu() {
     }
   }
 
+  /**
+   * Baki kuota sesi ini. Dipanggil bila sesi diketahui dan selepas setiap
+   * muat naik, supaya UI boleh tunjuk "2/3 video" — bukan biar tetamu
+   * pilih klip, tunggu naik, baru ditolak.
+   */
+  const muatBaki = useCallback(async () => {
+    if (!sesi) return
+    try {
+      const b = (await rpc('alunara_gb_baki_saya', { p_session: sesi })) as Array<{
+        media_digunakan: number
+        media_maks: number
+        video_digunakan: number
+        video_maks: number
+      }>
+      if (b?.length) setBaki(b[0])
+    } catch {
+      /* baki tak kritikal — upload tetap disemak server */
+    }
+  }, [sesi])
+
   async function muatGaleriV1() {
     try {
       const g = (await rpc('alunara_guestbook_gallery', {
@@ -320,6 +354,11 @@ export default function BukuTamu() {
       batal = true
     }
   }, [kodAtas, muatGaleri])
+
+  // ---- baki kuota (video) — muat bila sesi diketahui, muat semula selepas upload ----
+  useEffect(() => {
+    void muatBaki()
+  }, [muatBaki])
 
   // ---- muat media bila filter berubah ----
   useEffect(() => {
@@ -419,17 +458,26 @@ export default function BukuTamu() {
   }
 
   // ---- video ----
+  /** Baki video untuk sesi ini (null = belum diketahui). */
+  const bakiVideo = baki ? Math.max(baki.video_maks - baki.video_digunakan, 0) : null
+  const videoPenuh = bakiVideo !== null && bakiVideo <= 0
+
   /**
-   * Sahkan video SEBELUM ia diterima: saiz + durasi.
+   * Sahkan video SEBELUM ia diterima: baki kuota + saiz + durasi.
    *
-   * Had durasi di sini penting untuk UX (bagi tahu awal, bukan selepas muat
-   * naik 200MB), tetapi ia BUKAN pertahanan sebenar — pelanggan boleh tipu
-   * `duration_sec` masa panggil RPC. RPC `alunara_gb_add_media` juga semak
-   * nilai itu, jadi dua-dua hujung bersetuju pada had yang sama.
+   * Had di sini penting untuk UX (bagi tahu awal, bukan selepas muat naik
+   * 50MB), tetapi ia BUKAN pertahanan sebenar — tetamu boleh tipu
+   * `duration_sec`/`bytes` masa panggil RPC. RPC `alunara_gb_add_media`
+   * dan `/api/guestbook-sign` semak semula, jadi tiga hujung bersetuju
+   * pada had yang sama.
    */
   async function pilihVideo(f: File | null) {
     if (!f) return
     setRalat('')
+    if (videoPenuh) {
+      setRalat(`Dah capai had ${baki?.video_maks} video untuk sesi ini.`)
+      return
+    }
     if (f.size > VIDEO_MAX_BYTES) {
       setRalat(`Video terlalu besar (maksimum ${VIDEO_MAX_MB}MB).`)
       return
@@ -589,6 +637,7 @@ export default function BukuTamu() {
       const inp = document.getElementById('bt-fail') as HTMLInputElement | null
       if (inp) inp.value = ''
       await muatGaleri()
+      await muatBaki()
     } catch (e) {
       setRalat(e instanceof Error ? e.message : 'Gagal simpan gambar')
     } finally {
@@ -606,7 +655,15 @@ export default function BukuTamu() {
       const r1 = await fetch('/api/guestbook-sign', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action: 'upload', session: sesi, nama: f.name, media_type: 'video' }),
+        body: JSON.stringify({
+          action: 'upload',
+          session: sesi,
+          nama: f.name,
+          media_type: 'video',
+          // Hantar saiz sebenar supaya server boleh tolak SEBELUM tetamu
+          // muat naik 50MB. RPC semak semula bila daftar media.
+          bytes: f.size,
+        }),
       })
       const j1 = await r1.json()
       if (!r1.ok) throw new Error(j1.ralat || 'Gagal minta kebenaran')
@@ -634,6 +691,7 @@ export default function BukuTamu() {
       const inp = document.getElementById('bt-video') as HTMLInputElement | null
       if (inp) inp.value = ''
       await muatGaleri()
+      await muatBaki()
     } catch (e) {
       setRalat(e instanceof Error ? e.message : 'Gagal simpan video')
     } finally {
@@ -688,6 +746,7 @@ export default function BukuTamu() {
       setVoiceSaat(0)
       setTab('foto')
       await muatGaleri()
+      await muatBaki()
     } catch (e) {
       setRalat(e instanceof Error ? e.message : 'Gagal simpan nota suara')
     } finally {
@@ -893,7 +952,12 @@ export default function BukuTamu() {
           {/* --- VIDEO --- */}
           {isV2 && tab === 'video' && (
             <>
-              {!videoFail ? (
+              {videoPenuh ? (
+                <p className="bt-info">
+                  Dah capai had {baki?.video_maks} video untuk sesi ini. Terima kasih — video hang
+                  dah masuk!
+                </p>
+              ) : !videoFail ? (
                 <>
                   <input
                     id="bt-video"
@@ -905,7 +969,12 @@ export default function BukuTamu() {
                   <label htmlFor="bt-video" className="bt-btn bt-btn--pilih">
                     Pilih video
                   </label>
-                  <p className="bt-info bt-info--kecil">Maksimum {VIDEO_MAX_SAAT} saat ({VIDEO_MAX_MB}MB).</p>
+                  <p className="bt-info bt-info--kecil">
+                    Maksimum {VIDEO_MAX_SAAT} saat ({VIDEO_MAX_MB}MB).
+                    {bakiVideo !== null && (
+                      <> Baki untuk hang: {bakiVideo} daripada {baki?.video_maks} video.</>
+                    )}
+                  </p>
                 </>
               ) : (
                 <>
