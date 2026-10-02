@@ -4,6 +4,7 @@ import Nav from './components/Nav'
 import Footer from './components/Footer'
 import StickyWa from './components/StickyWa'
 import Seo from './components/Seo'
+import AnalyticsTracker from './components/AnalyticsTracker'
 import Home from './pages/Home'
 import { TemaIndex, TemaDetail } from './pages/Tema'
 import Pakej from './pages/Pakej'
@@ -71,6 +72,7 @@ export default function App() {
     <BrowserRouter>
       <ScrollTop />
       <Seo />
+      <AnalyticsTracker />
       <SusunAtur>
         <Routes>
           <Route path="/" element={<Home />} />
