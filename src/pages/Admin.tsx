@@ -11,7 +11,20 @@ import {
   sesiSah,
   tarikhSibukSet,
 } from '../lib/admin'
-import type { Booking, Klien, Lead, Majlis, Media, Tetamu, UnlockCode, Galeri } from '../lib/admin'
+import type {
+  Booking,
+  Klien,
+  Lead,
+  Majlis,
+  Media,
+  Tetamu,
+  UnlockCode,
+  Galeri,
+  Bayaran,
+  Belanja,
+  JenisBayaran,
+} from '../lib/admin'
+import { JENIS_BAYARAN, KAEDAH_BAYARAN, KATEGORI_BELANJA, KATEGORI_MODAL } from '../lib/admin'
 import { PAKEJ } from '../content'
 import { IconWhatsApp } from '../components/Icons'
 
@@ -20,6 +33,12 @@ import { IconWhatsApp } from '../components/Icons'
  *
  * Batasan yang disengajakan: ini alat DALAMAN. Ia bergantung pada RLS
  * (profiles.role = 'admin') untuk perlindungan data, bukan pada UI ini.
+ *
+ * PENTING — medan "Dah Bayar" pada tempahan ialah PAPARAN, bukan input.
+ *   `alunara_bookings.paid_amount` dikira oleh trigger DB dari jadual
+ *   `alunara_payments`. Jangan hantar `paid_amount` dalam PATCH tempahan:
+ *   ia akan menulis ganti nilai yang trigger dah kira. Rekod duit masuk
+ *   guna butang "Rekod Bayaran" sahaja.
  * ------------------------------------------------------------------------- */
 
 const STATUS: Record<string, string> = {
@@ -173,7 +192,6 @@ type BorangTempahan = {
   setup_time: string
   status: string
   deposit_amount: number
-  paid_amount: number
   notes: string
 }
 
@@ -191,8 +209,23 @@ const BORANG_KOSONG: BorangTempahan = {
   setup_time: '',
   status: 'confirmed',
   deposit_amount: DEPOSIT_PIAWAI,
-  paid_amount: 0,
   notes: '',
+}
+
+/** Borang "Rekod Bayaran" — satu peristiwa duit masuk. */
+type BorangBayaran = {
+  booking_id: string
+  kind: JenisBayaran
+  amount: number
+  paid_at: string
+  kaedah: string
+  nota: string
+}
+
+/** Tarikh hari ini ikut zon Malaysia (bukan UTC). */
+function hariIniKL(): string {
+  const d = new Date(Date.now() + 8 * 3600 * 1000)
+  return d.toISOString().slice(0, 10)
 }
 
 function TabTempahan({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
@@ -204,6 +237,8 @@ function TabTempahan({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> 
   const [tapisan, setTapisan] = useState('aktif')
   const [cari, setCari] = useState('')
   const [borang, setBorang] = useState<BorangTempahan | null>(null)
+  const [bayar, setBayar] = useState<BorangBayaran | null>(null)
+  const [bayarSibuk, setBayarSibuk] = useState(false)
 
   const muatSemula = useCallback(async () => {
     setMuat(true)
@@ -273,9 +308,48 @@ function TabTempahan({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> 
       setup_time: b.setup_time ?? '',
       status: b.status,
       deposit_amount: Number(b.deposit_amount || 0),
-      paid_amount: Number(b.paid_amount || 0),
       notes: b.notes ?? '',
     })
+  }
+
+  /** Buka borang bayaran, isi secara pintar ikut keadaan tempahan. */
+  function bukaBayar(b: Booking) {
+    setPesan('')
+    const jumlah = Number(b.total_amount || 0)
+    const dahBayar = Number(b.paid_amount || 0)
+    const baki = Math.max(0, jumlah - dahBayar)
+    const deposit = Number(b.deposit_amount || 0)
+    // Belum bayar apa-apa → syorkan deposit. Dah ada bayaran → syorkan baki.
+    const kind: JenisBayaran = dahBayar <= 0 ? 'deposit' : 'baki'
+    const amount = dahBayar <= 0 ? (deposit > 0 ? deposit : baki) : baki
+    setBayar({
+      booking_id: b.id,
+      kind,
+      amount: Number(amount.toFixed(2)),
+      paid_at: hariIniKL(),
+      kaedah: 'Tunai',
+      nota: '',
+    })
+  }
+
+  async function simpanBayar(e: React.FormEvent) {
+    e.preventDefault()
+    if (!bayar) return
+    if (!(bayar.amount > 0)) return setPesan('Jumlah bayaran kena lebih dari 0.')
+    setBayarSibuk(true)
+    const res = await db.tambahBayaran(sesi, {
+      booking_id: bayar.booking_id,
+      kind: bayar.kind,
+      amount: bayar.amount,
+      paid_at: bayar.paid_at,
+      kaedah: bayar.kaedah,
+      nota: bayar.nota.trim() || null,
+    })
+    setBayarSibuk(false)
+    if (!res.ok) return setPesan(res.ralat ?? 'Gagal rekod bayaran.')
+    setPesan('Bayaran direkod.')
+    setBayar(null)
+    await muatSemula()
   }
 
   async function simpan(e: React.FormEvent) {
@@ -305,7 +379,6 @@ function TabTempahan({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> 
       status: borang.status,
       total_amount: jumlah,
       deposit_amount: Number(borang.deposit_amount || 0),
-      paid_amount: Number(borang.paid_amount || 0),
       notes: borang.notes.trim() || null,
     }
 
@@ -558,12 +631,15 @@ function TabTempahan({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> 
             </div>
             <div className="field">
               <label htmlFor="b-bayar">Dah Bayar (RM)</label>
+              {/* Paparan sahaja — dikira oleh trigger dari jadual alunara_payments.
+                  Rekod duit masuk guna butang "Rekod Bayaran" dalam senarai. */}
               <input
                 id="b-bayar"
                 type="number"
-                min={0}
-                value={borang.paid_amount}
-                onChange={(e) => setBorang({ ...borang, paid_amount: Number(e.target.value) })}
+                value={borang.id ? (senarai.find((x) => x.id === borang.id)?.paid_amount ?? 0) : 0}
+                readOnly
+                disabled
+                title="Dikira automatik dari rekod bayaran"
               />
             </div>
           </div>
@@ -599,6 +675,104 @@ function TabTempahan({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> 
               Simpan
             </button>
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => setBorang(null)}>
+              Batal
+            </button>
+          </div>
+        </form>
+      )}
+
+      {bayar && (
+        <form className="adm__kad" onSubmit={simpanBayar}>
+          <h3>Rekod Bayaran</h3>
+          <p className="adm__hint">
+            {(() => {
+              const b = senarai.find((x) => x.id === bayar.booking_id)
+              if (!b) return 'Tempahan tidak dijumpai.'
+              const bakiB = Math.max(0, Number(b.total_amount || 0) - Number(b.paid_amount || 0))
+              return `${b.customer_name} · ${tarikhMs(b.event_date)} · Jumlah ${rm(b.total_amount)} · Baki ${rm(bakiB)}`
+            })()}
+          </p>
+          <div className="adm__grid">
+            <div className="field">
+              <label htmlFor="y-jenis">Jenis</label>
+              <select
+                id="y-jenis"
+                value={bayar.kind}
+                onChange={(e) => {
+                  const k = e.target.value as JenisBayaran
+                  const b = senarai.find((x) => x.id === bayar.booking_id)
+                  // Cadang jumlah bila pilih jenis — tetap boleh ubah.
+                  let cadang = bayar.amount
+                  if (b) {
+                    const bakiB = Math.max(0, Number(b.total_amount || 0) - Number(b.paid_amount || 0))
+                    if (k === 'deposit') cadang = Number(b.deposit_amount || 0) || bakiB
+                    else if (k === 'baki') cadang = bakiB
+                  }
+                  setBayar({ ...bayar, kind: k, amount: Number(cadang.toFixed(2)) })
+                }}
+              >
+                {Object.entries(JENIS_BAYARAN).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="y-jumlah">Jumlah (RM) *</label>
+              <input
+                id="y-jumlah"
+                type="number"
+                min={0}
+                step="0.01"
+                value={bayar.amount}
+                onChange={(e) => setBayar({ ...bayar, amount: Number(e.target.value) })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="y-tarikh">Tarikh duit masuk *</label>
+              <input
+                id="y-tarikh"
+                type="date"
+                value={bayar.paid_at}
+                onChange={(e) => setBayar({ ...bayar, paid_at: e.target.value })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="y-kaedah">Kaedah</label>
+              <select
+                id="y-kaedah"
+                value={bayar.kaedah}
+                onChange={(e) => setBayar({ ...bayar, kaedah: e.target.value })}
+              >
+                {KAEDAH_BAYARAN.map((k) => (
+                  <option key={k} value={k}>
+                    {k}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="field">
+            <label htmlFor="y-nota">Nota</label>
+            <input
+              id="y-nota"
+              value={bayar.nota}
+              placeholder="cth. deposit via DuitNow, baki masa setup"
+              onChange={(e) => setBayar({ ...bayar, nota: e.target.value })}
+            />
+          </div>
+          <p className="adm__hint">
+            Tarikh ini tarikh DUIT BERGERAK, bukan tarikh majlis. Hanya jenis{' '}
+            <strong>Pulangan (refund)</strong> ditolak dalam kiraan.
+          </p>
+          <div className="adm__aksi">
+            <button type="submit" className="btn btn--solid btn--sm" disabled={bayarSibuk}>
+              {bayarSibuk ? 'Menyimpan…' : 'Simpan Bayaran'}
+            </button>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => setBayar(null)}>
               Batal
             </button>
           </div>
@@ -675,6 +849,13 @@ function TabTempahan({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> 
                       </select>
                     </td>
                     <td className="adm__aksi-sel">
+                      <button
+                        className="adm__pautan"
+                        onClick={() => bukaBayar(b)}
+                        title="Rekod duit masuk untuk tempahan ini"
+                      >
+                        + Bayaran
+                      </button>
                       <button className="adm__pautan" onClick={() => bukaEdit(b)}>
                         Edit
                       </button>
@@ -707,6 +888,442 @@ function TabTempahan({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> 
       <p className="adm__nota">
         Tarikh yang dipakai tempahan aktif ({sibukTarikh.size} tarikh) akan dipaparkan sebagai penuh
         di kalendar awam /tempah.
+      </p>
+    </>
+  )
+}
+
+/* ------------------------------ TAB: DUIT -------------------------------
+ * Buku tunai ringkas: duit MASUK (bayaran) + duit KELUAR (belanja).
+ *
+ * Reka bentuk sengaja minimal — tujuannya bos isi belanja dalam <10 saat
+ * dari telefon. Kalau borang leceh, dia berhenti isi dan sistem ni mati.
+ *
+ * Nama metrik JUJUR: "aliran tunai bersih", bukan "untung".
+ *   - Deposit majlis bulan depan masuk bulan ini (duit dah masuk).
+ *   - Modal (props/kerusi) dilupus penuh pada bulan beli.
+ *   - Margin ikut pakej hanya bermakna bila kos khusus majlis direkod
+ *     konsisten — dan dengan <10 tempahan, angka itu belum bermakna.
+ * ---------------------------------------------------------------------- */
+
+type BorangBelanja = {
+  tarikh: string
+  jumlah: number
+  kategori: string
+  kaedah: string
+  booking_id: string
+  is_capex: boolean
+  nota: string
+}
+
+function bulanLabel(iso: string): string {
+  const d = new Date(iso.slice(0, 10) + 'T00:00:00')
+  return d.toLocaleDateString('ms-MY', { month: 'long', year: 'numeric' })
+}
+
+/** Bulan semasa dalam format YYYY-MM (zon KL). */
+function bulanIniKL(): string {
+  return hariIniKL().slice(0, 7)
+}
+
+function TabDuit({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
+  const [belanja, setBelanja] = useState<Belanja[]>([])
+  const [bayaran, setBayaran] = useState<Bayaran[]>([])
+  const [tempahan, setTempahan] = useState<Booking[]>([])
+  const [muat, setMuat] = useState(true)
+  const [ralat, setRalat] = useState('')
+  const [pesan, setPesan] = useState('')
+  const [sub, setSub] = useState<'belanja' | 'bayaran'>('belanja')
+  const [bulan, setBulan] = useState<string>(bulanIniKL())
+  const [borang, setBorang] = useState<BorangBelanja | null>(null)
+  const [sibuk, setSibuk] = useState(false)
+
+  const muatSemula = useCallback(async () => {
+    setMuat(true)
+    const [b, y, t] = await Promise.all([db.belanja(sesi), db.bayaran(sesi), db.tempahan(sesi)])
+    setMuat(false)
+    if (!b.ok) return setRalat(b.ralat ?? 'Gagal muat belanja.')
+    if (!y.ok) return setRalat(y.ralat ?? 'Gagal muat bayaran.')
+    setBelanja(b.data ?? [])
+    setBayaran(y.data ?? [])
+    setTempahan(t.ok ? (t.data ?? []) : [])
+    setRalat('')
+  }, [sesi])
+
+  useEffect(() => {
+    void muatSemula()
+  }, [muatSemula])
+
+  const namaTempat = useMemo(() => {
+    const m: Record<string, Booking> = {}
+    for (const t of tempahan) m[t.id] = t
+    return m
+  }, [tempahan])
+
+  /** Senarai bulan yang ada data (untuk penapis). */
+  const senaraiBulan = useMemo(() => {
+    const set = new Set<string>()
+    for (const b of belanja) set.add(b.tarikh.slice(0, 7))
+    for (const y of bayaran) set.add(y.paid_at.slice(0, 7))
+    set.add(bulanIniKL())
+    return [...set].sort().reverse()
+  }, [belanja, bayaran])
+
+  const bulanTapis = bulan === 'semua' ? null : bulan
+
+  const belanjaBulan = useMemo(
+    () => belanja.filter((b) => !bulanTapis || b.tarikh.slice(0, 7) === bulanTapis),
+    [belanja, bulanTapis],
+  )
+  const bayaranBulan = useMemo(
+    () => bayaran.filter((y) => !bulanTapis || y.paid_at.slice(0, 7) === bulanTapis),
+    [bayaran, bulanTapis],
+  )
+
+  const ringkas = useMemo(() => {
+    const masuk = bayaranBulan.reduce(
+      (a, y) => a + (y.kind === 'refund' ? -Number(y.amount) : Number(y.amount)),
+      0,
+    )
+    const keluarOp = belanjaBulan.filter((b) => !b.is_capex).reduce((a, b) => a + Number(b.jumlah), 0)
+    const keluarCapex = belanjaBulan.filter((b) => b.is_capex).reduce((a, b) => a + Number(b.jumlah), 0)
+    return { masuk, keluarOp, keluarCapex, bersih: masuk - keluarOp - keluarCapex }
+  }, [bayaranBulan, belanjaBulan])
+
+  function bukaBelanja() {
+    setPesan('')
+    setBorang({
+      tarikh: hariIniKL(),
+      jumlah: 0,
+      kategori: 'Props / Deco',
+      kaedah: 'Tunai',
+      booking_id: '',
+      is_capex: false,
+      nota: '',
+    })
+  }
+
+  async function simpanBelanja(e: React.FormEvent) {
+    e.preventDefault()
+    if (!borang) return
+    if (!(borang.jumlah > 0)) return setPesan('Jumlah kena lebih dari 0.')
+    setSibuk(true)
+    const res = await db.tambahBelanja(sesi, {
+      tarikh: borang.tarikh,
+      jumlah: borang.jumlah,
+      kategori: borang.kategori.trim() || 'Lain-lain',
+      kaedah: borang.kaedah,
+      booking_id: borang.booking_id || null,
+      is_capex: borang.is_capex,
+      nota: borang.nota.trim() || null,
+    })
+    setSibuk(false)
+    if (!res.ok) return setPesan(res.ralat ?? 'Gagal simpan belanja.')
+    setPesan('Belanja direkod.')
+    setBorang(null)
+    await muatSemula()
+  }
+
+  async function buangBelanja(b: Belanja) {
+    if (!confirm(`Padam belanja ${b.kategori} ${rm(b.jumlah)}?`)) return
+    const res = await db.buangBelanja(sesi, b.id)
+    if (!res.ok) return setPesan(res.ralat ?? 'Gagal padam.')
+    await muatSemula()
+  }
+
+  async function buangBayaran(y: Bayaran) {
+    const b = y.booking_id ? namaTempat[y.booking_id] : null
+    if (!confirm(`Padam bayaran ${rm(y.amount)}${b ? ` (${b.customer_name})` : ''}?`)) return
+    const res = await db.buangBayaran(sesi, y.id)
+    if (!res.ok) return setPesan(res.ralat ?? 'Gagal padam.')
+    await muatSemula()
+  }
+
+  return (
+    <>
+      <div className="adm__strip">
+        <div className="adm__kpi">
+          <span className={'adm__kpi-angka' + (ringkas.bersih < 0 ? ' adm__kpi-angka--minus' : '')}>
+            {rm(ringkas.bersih)}
+          </span>
+          <span className="adm__kpi-label">Tunai Bersih</span>
+        </div>
+        <div className="adm__kpi">
+          <span className="adm__kpi-angka">{rm(ringkas.masuk)}</span>
+          <span className="adm__kpi-label">Duit Masuk</span>
+        </div>
+        <div className="adm__kpi">
+          <span className="adm__kpi-angka">{rm(ringkas.keluarOp)}</span>
+          <span className="adm__kpi-label">Belanja Operasi</span>
+        </div>
+        <div className="adm__kpi">
+          <span className="adm__kpi-angka">{rm(ringkas.keluarCapex)}</span>
+          <span className="adm__kpi-label">Modal</span>
+        </div>
+      </div>
+
+      <p className="adm__nota">
+        Ini <strong>aliran tunai</strong>, bukan untung penuh. Deposit majlis bulan depan masuk bulan
+        ini, dan modal (props/kerusi) dilupus pada bulan beli. Modal diasingkan supaya margin bulan
+        pertama tak nampak rugi palsu.
+      </p>
+
+      <div className="adm__bar">
+        <select value={bulan} onChange={(e) => setBulan(e.target.value)} className="adm__tapisan">
+          <option value="semua">Semua bulan</option>
+          {senaraiBulan.map((b) => (
+            <option key={b} value={b}>
+              {bulanLabel(b + '-01')}
+            </option>
+          ))}
+        </select>
+        <div className="adm__tab adm__tab--kecil">
+          <button
+            className={`adm__tab-btn${sub === 'belanja' ? ' adm__tab-btn--aktif' : ''}`}
+            onClick={() => setSub('belanja')}
+          >
+            Belanja ({belanjaBulan.length})
+          </button>
+          <button
+            className={`adm__tab-btn${sub === 'bayaran' ? ' adm__tab-btn--aktif' : ''}`}
+            onClick={() => setSub('bayaran')}
+          >
+            Bayaran Masuk ({bayaranBulan.length})
+          </button>
+        </div>
+        {sub === 'belanja' && (
+          <button className="btn btn--gold btn--sm" onClick={bukaBelanja}>
+            + Belanja
+          </button>
+        )}
+      </div>
+
+      {pesan && <p className="adm__pesan">{pesan}</p>}
+      {ralat && <p className="adm__ralat">{ralat}</p>}
+
+      {borang && (
+        <form className="adm__kad" onSubmit={simpanBelanja}>
+          <h3>Belanja Baru</h3>
+          <div className="adm__grid">
+            <div className="field">
+              <label htmlFor="z-jumlah">Jumlah (RM) *</label>
+              <input
+                id="z-jumlah"
+                type="number"
+                min={0}
+                step="0.01"
+                autoFocus
+                value={borang.jumlah || ''}
+                onChange={(e) => setBorang({ ...borang, jumlah: Number(e.target.value) })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="z-kategori">Kategori</label>
+              <input
+                id="z-kategori"
+                list="senarai-kategori"
+                value={borang.kategori}
+                onChange={(e) => {
+                  const kat = e.target.value
+                  setBorang({
+                    ...borang,
+                    kategori: kat,
+                    // Auto-tanda modal ikut kategori, tetap boleh ubah.
+                    is_capex: KATEGORI_MODAL.includes(kat) ? true : borang.is_capex,
+                  })
+                }}
+              />
+              <datalist id="senarai-kategori">
+                {KATEGORI_BELANJA.map((k) => (
+                  <option key={k} value={k} />
+                ))}
+              </datalist>
+            </div>
+            <div className="field">
+              <label htmlFor="z-tarikh">Tarikh</label>
+              <input
+                id="z-tarikh"
+                type="date"
+                value={borang.tarikh}
+                onChange={(e) => setBorang({ ...borang, tarikh: e.target.value })}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="z-kaedah">Kaedah</label>
+              <select
+                id="z-kaedah"
+                value={borang.kaedah}
+                onChange={(e) => setBorang({ ...borang, kaedah: e.target.value })}
+              >
+                {KAEDAH_BAYARAN.map((k) => (
+                  <option key={k} value={k}>
+                    {k}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="z-majlis">Untuk majlis (pilihan)</label>
+              <select
+                id="z-majlis"
+                value={borang.booking_id}
+                onChange={(e) => setBorang({ ...borang, booking_id: e.target.value })}
+              >
+                <option value="">— belanja am —</option>
+                {tempahan.slice(0, 60).map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {tarikhMs(t.event_date)} · {t.customer_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="z-nota">Nota</label>
+              <input
+                id="z-nota"
+                value={borang.nota}
+                placeholder="cth. petrol hantar 2 trip"
+                onChange={(e) => setBorang({ ...borang, nota: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <label className="adm__semak">
+            <input
+              type="checkbox"
+              checked={borang.is_capex}
+              onChange={(e) => setBorang({ ...borang, is_capex: e.target.checked })}
+            />
+            <span>Modal (props, kerusi, meja) — bukan kos operasi bulanan</span>
+          </label>
+
+          <div className="adm__aksi">
+            <button type="submit" className="btn btn--solid btn--sm" disabled={sibuk}>
+              {sibuk ? 'Menyimpan…' : 'Simpan Belanja'}
+            </button>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => setBorang(null)}>
+              Batal
+            </button>
+          </div>
+        </form>
+      )}
+
+      {muat ? (
+        <p className="muted">Memuat…</p>
+      ) : sub === 'belanja' ? (
+        belanjaBulan.length === 0 ? (
+          <p className="muted">Tiada belanja direkod untuk bulan ini.</p>
+        ) : (
+          <div className="adm__jadual-bungkus">
+            <table className="adm__jadual">
+              <thead>
+                <tr>
+                  <th>Tarikh</th>
+                  <th>Kategori</th>
+                  <th>Untuk majlis</th>
+                  <th>Kaedah</th>
+                  <th>Jumlah</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {belanjaBulan.map((b) => {
+                  const t = b.booking_id ? namaTempat[b.booking_id] : null
+                  return (
+                    <tr key={b.id}>
+                      <td>{tarikhMs(b.tarikh)}</td>
+                      <td>
+                        <div>{b.kategori}</div>
+                        {b.is_capex && <div className="adm__kecil">Modal</div>}
+                      </td>
+                      <td>
+                        {t ? (
+                          <>
+                            <div className="adm__nama">{t.customer_name}</div>
+                            <div className="adm__kecil">{tarikhMs(t.event_date)}</div>
+                          </>
+                        ) : (
+                          <span className="adm__kecil">Am</span>
+                        )}
+                      </td>
+                      <td className="adm__kecil">
+                        {b.kaedah}
+                        {b.nota ? ` · ${b.nota}` : ''}
+                      </td>
+                      <td>{rm(b.jumlah)}</td>
+                      <td className="adm__aksi-sel">
+                        <button className="adm__pautan adm__pautan--bahaya" onClick={() => buangBelanja(b)}>
+                          Padam
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )
+      ) : bayaranBulan.length === 0 ? (
+        <p className="muted">Tiada bayaran direkod untuk bulan ini.</p>
+      ) : (
+        <div className="adm__jadual-bungkus">
+          <table className="adm__jadual">
+            <thead>
+              <tr>
+                <th>Tarikh</th>
+                <th>Jenis</th>
+                <th>Tempahan</th>
+                <th>Kaedah</th>
+                <th>Jumlah</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {bayaranBulan.map((y) => {
+                const t = y.booking_id ? namaTempat[y.booking_id] : null
+                return (
+                  <tr key={y.id}>
+                    <td>{tarikhMs(y.paid_at)}</td>
+                    <td>
+                      <span className={y.kind === 'refund' ? 'adm__baki' : ''}>
+                        {JENIS_BAYARAN[y.kind]}
+                      </span>
+                    </td>
+                    <td>
+                      {t ? (
+                        <>
+                          <div className="adm__nama">{t.customer_name}</div>
+                          <div className="adm__kecil">{tarikhMs(t.event_date)}</div>
+                        </>
+                      ) : (
+                        <span className="adm__kecil">—</span>
+                      )}
+                    </td>
+                    <td className="adm__kecil">
+                      {y.kaedah}
+                      {y.nota ? ` · ${y.nota}` : ''}
+                    </td>
+                    <td className={y.kind === 'refund' ? 'adm__baki' : ''}>
+                      {y.kind === 'refund' ? `−${rm(y.amount)}` : rm(y.amount)}
+                    </td>
+                    <td className="adm__aksi-sel">
+                      <button className="adm__pautan adm__pautan--bahaya" onClick={() => buangBayaran(y)}>
+                        Padam
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <p className="adm__nota">
+        Bayaran masuk direkod dari tab <strong>Tempahan</strong> (butang “+ Bayaran” pada setiap
+        baris) supaya duit sentiasa terpaut ke majlisnya. Padam bayaran di sini akan tarik balik
+        angka “Dah Bayar” pada tempahan itu.
       </p>
     </>
   )
@@ -1690,7 +2307,7 @@ function TabTamu({ sesi }: { sesi: Sesi }) {
   )
 }
 
-type Tab = 'tempahan' | 'klien' | 'lead' | 'tamu'
+type Tab = 'tempahan' | 'duit' | 'klien' | 'lead' | 'tamu'
 
 export default function Admin() {
   const [sesi, setSesi] = useState(bacaSesi())
@@ -1766,6 +2383,7 @@ export default function Admin() {
           {(
             [
               ['tempahan', 'Tempahan'],
+              ['duit', 'Duit'],
               ['klien', 'Klien'],
               ['lead', 'Lead Web'],
               ['tamu', 'Buku Tamu'],
@@ -1782,6 +2400,7 @@ export default function Admin() {
         </nav>
 
         {tab === 'tempahan' && <TabTempahan sesi={sesi} />}
+        {tab === 'duit' && <TabDuit sesi={sesi} />}
         {tab === 'klien' && <TabKlien sesi={sesi} />}
         {tab === 'lead' && <TabLead sesi={sesi} />}
         {tab === 'tamu' && <TabTamu sesi={sesi} />}

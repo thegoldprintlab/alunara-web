@@ -181,6 +181,80 @@ export type Lead = {
   created_at: string
 }
 
+/* ------------------------------- DUIT -------------------------------
+ * Dua buku: bayaran masuk + belanja keluar. Lihat supabase/alunara_duit.sql
+ * untuk sebab reka bentuk (tiada jadual accounts/categories, kenapa tiada
+ * auto-jana dari status tempahan, kenapa `alunara_payments` jadi sumber
+ * kebenaran untuk `paid_amount`).
+ * ------------------------------------------------------------------ */
+
+export type JenisBayaran = 'deposit' | 'baki' | 'tambahan' | 'refund' | 'lain'
+
+export type Bayaran = {
+  id: string
+  booking_id: string | null
+  kind: JenisBayaran
+  amount: number
+  /** Tarikh duit bergerak (zon KL), bukan tarikh majlis. */
+  paid_at: string
+  kaedah: string
+  nota: string | null
+  created_at: string
+}
+
+export type Belanja = {
+  id: string
+  tarikh: string
+  jumlah: number
+  kategori: string
+  kaedah: string
+  booking_id: string | null
+  /** Modal (props/kerusi/meja), bukan kos operasi bulanan. */
+  is_capex: boolean
+  nota: string | null
+  resit_url: string | null
+  created_at: string
+}
+
+/** Satu baris dari view `alunara_duit_bulanan`. Nama sengaja jujur. */
+export type RingkasanBulan = {
+  bulan: string
+  masuk: number
+  keluar_op: number
+  keluar_capex: number
+  tunai_bersih: number
+}
+
+export const JENIS_BAYARAN: Record<JenisBayaran, string> = {
+  deposit: 'Deposit',
+  baki: 'Baki',
+  tambahan: 'Tambahan',
+  refund: 'Pulangan (refund)',
+  lain: 'Lain-lain',
+}
+
+export const KAEDAH_BAYARAN = ['Tunai', 'DuitNow', 'Bank Transfer', 'FPX', 'E-Wallet', 'Lain-lain']
+
+/**
+ * Senarai cadangan kategori belanja. SENGAJA bukan jadual DB — kategori
+ * bebas ditaip, ini cadangan dalam UI (datalist) sahaja. Jangan paksa bos
+ * jalankan migrasi SQL setiap kali dia nak kategori baru.
+ */
+export const KATEGORI_BELANJA = [
+  'Props / Deco',
+  'Sewa Tapak',
+  'Pengangkutan / Petrol',
+  'Printing / Kad',
+  'Upah Pekerja',
+  'Marketing / Ads',
+  'Peralatan (modal)',
+  'Utiliti',
+  'Lain-lain',
+]
+
+/** Kategori yang biasanya modal, bukan kos operasi bulanan. */
+export const KATEGORI_MODAL = ['Peralatan (modal)']
+
 /* ------------------------------ SESI ------------------------------ */
 
 export function bacaSesi(): Sesi | null {
@@ -518,6 +592,58 @@ export const db = {
     return minta<Media[]>(
       s,
       `alunara_guestbook_media?select=*,alunara_guestbook_guests(name,wish)&order=created_at.desc&limit=500`,
+    )
+  },
+
+  /* -------------------------------- DUIT --------------------------------
+   * Bayaran masuk + belanja keluar. Lihat supabase/alunara_duit.sql.
+   * -------------------------------------------------------------------- */
+
+  async bayaran(s: Sesi, had = 500) {
+    return minta<Bayaran[]>(
+      s,
+      `alunara_payments?select=*&order=paid_at.desc,created_at.desc&limit=${had}`,
+    )
+  },
+  async tambahBayaran(s: Sesi, b: Partial<Bayaran>) {
+    return minta<Bayaran[]>(s, 'alunara_payments', {
+      method: 'POST',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify(b),
+    })
+  },
+  async buangBayaran(s: Sesi, id: string) {
+    return minta<void>(s, `alunara_payments?id=eq.${id}`, { method: 'DELETE' })
+  },
+
+  async belanja(s: Sesi, had = 500) {
+    return minta<Belanja[]>(
+      s,
+      `alunara_expenses?select=*&order=tarikh.desc,created_at.desc&limit=${had}`,
+    )
+  },
+  async tambahBelanja(s: Sesi, b: Partial<Belanja>) {
+    return minta<Belanja[]>(s, 'alunara_expenses', {
+      method: 'POST',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify(b),
+    })
+  },
+  async kemasBelanja(s: Sesi, id: string, b: Partial<Belanja>) {
+    return minta<Belanja[]>(s, `alunara_expenses?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify(b),
+    })
+  },
+  async buangBelanja(s: Sesi, id: string) {
+    return minta<void>(s, `alunara_expenses?id=eq.${id}`, { method: 'DELETE' })
+  },
+  /** View bulanan — aliran tunai bersih, BUKAN "untung". */
+  async duitBulanan(s: Sesi) {
+    return minta<RingkasanBulan[]>(
+      s,
+      'alunara_duit_bulanan?select=*&order=bulan.desc&limit=24',
     )
   },
 }

@@ -212,6 +212,19 @@
 }
 .adm__baki { color: #a5332f; font-weight: 600; }
 .adm__lunas { color: #2f6b3f; font-weight: 600; }
+/* Aliran tunai negatif — jangan sembunyi, tapi jangan bagi nampak macam ralat. */
+.adm__kpi-angka--minus { color: #a5332f; }
+
+/* Sub-tab kecil (dalam tab Duit) — bukan navigasi utama, jadi lebih halus. */
+.adm__tab--kecil {
+  border-bottom: 0;
+  margin-bottom: 0;
+  gap: 2px;
+}
+.adm__tab--kecil .adm__tab-btn {
+  font-size: 0.82rem;
+  padding: 5px 10px;
+}
 
 .adm__status {
   width: auto;
