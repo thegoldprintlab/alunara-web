@@ -19,7 +19,9 @@ Laman statik sepenuhnya — React + Vite SPA yang **di-prerender** jadi HTML sta
 
 ## Panel admin — `/admin`
 
-Tempat bos daftar klien dan tarikh majlis. Tiga tab: **Tempahan · Klien · Lead Web**.
+Tempat bos daftar klien, tarikh majlis, duit dan barang. Tujuh tab:
+**Prestasi** (dashboard) · **Tempahan** · **Duit** · **Barang** · **Klien** ·
+**Lead Web** · **Buku Tamu**.
 
 Log masuk guna Supabase Auth (email + password). Akaun admin mesti ada
 `role = 'admin'` dalam jadual `profiles`. Untuk jadikan akaun admin:
@@ -117,15 +119,24 @@ tapi SEO rosak).
 
 Tanpa langkah ni, Google mungkin ambil minggu/bulan untuk jumpa laman ini.
 
-## Supabase — DIPAKAI SEMULA (2026-09-23)
+## Supabase — project ALUNARA
 
-Panel `/admin` guna project Supabase **Gold Plan** (`gtblmwijohoetczqngpr`) —
-bukan project ALUNARA lama yang dah mati (`sdzjlekydkwtxjjtrwrh`).
+> [!warning] Nota lama di sini SALAH
+> Sebelum ini fail ini kata `/admin` guna project **Gold Plan**
+> (`gtblmwijohoetczqngpr`) dan project ALUNARA lama `sdzjlekydkwtxjjtrwrh`
+> "dah mati". **Kedua-duanya tidak benar.** Disemak 2026-10-11:
+> bundle live `alunara.my` guna `https://sdzjlekydkwtxjjtrwrh.supabase.co`,
+> dan kedua-dua project masih hidup (HTTP 401 tanpa kunci = hidup).
+> Skema tab Duit/Barang (Okt 2026) dijalankan pada `sdzjlekydkwtxjjtrwrh`.
+
+Panel `/admin` guna project ALUNARA **`sdzjlekydkwtxjjtrwrh`**.
 
 - Jadual ALUNARA: `alunara_bookings`, `alunara_clients`, `alunara_leads`,
-  `alunara_gallery`, `alunara_settings`
-- Skema penuh: `supabase/alunara_admin.sql` (idempotent, boleh jalankan semula)
-- Admin guna `public.profiles.role = 'admin'` (kongsi dengan Gold Plan)
+  `alunara_gallery`, `alunara_settings`, `alunara_guestbook_*`
+- Buku tunai: `alunara_payments`, `alunara_expenses` → `supabase/alunara_duit.sql`
+- Inventori + prestasi: `alunara_items` → `supabase/alunara_barang.sql`
+- Skema pengenalan: `supabase/alunara_admin.sql` (idempotent, boleh jalankan semula)
+- Admin guna `public.profiles.role = 'admin'` dalam project yang sama
 - Lead → `api/lead.js` → Telegram **dan** jadual `alunara_leads`
 - Tarikh lock → DB (`alunara_bookings`) + `TARIKH_LOCK` (manual, digabung)
 
