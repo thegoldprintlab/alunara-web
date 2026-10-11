@@ -335,11 +335,12 @@ export const KATALOG = [
   { nama: 'Semua Tema', fail: '/katalog/Alunara-Katalog.pdf' },
 ]
 
-/* Checklist lead magnet — 4 muka setiap satu, percuma */
+/* Checklist lead magnet — PDF pelan penuh (4 fasa), percuma */
 export const CHECKLIST = [
   { nama: 'Birthday', fail: '/katalog/Alunara-Checklist-Birthday.pdf', tema: 'Tema Floral' },
   { nama: 'Tunang', fail: '/katalog/Alunara-Checklist-Tunang.pdf', tema: 'Tema Minimalist' },
   { nama: 'Kenduri', fail: '/katalog/Alunara-Checklist-Kenduri.pdf', tema: 'Tema Rustic' },
+  { nama: 'Majlis Biasa', fail: '/katalog/Alunara-Checklist-Majlis-Biasa.pdf', tema: 'Tema Rustic' },
 ]
 
 /* ---------------------------------------------------------------------------
@@ -383,15 +384,17 @@ export const CHECKLIST_META: ChecklistMeta[] = [
     lede:
       'Hari jadi kecil pun nak kena teratur. Satu benda lupa, habis kecoh hari tu. Checklist ni susun ikut urutan — dari tetapkan tarikh sampai hari majlis.',
     ada:
-      'Dari tetapkan tarikh, senarai tetamu, tempah kek, sampai hiasan dan backup plan hujan. Semua dijejak — takde benda tertinggal.',
+      'Dari tetapkan bajet, senarai tetamu, tempah kek, sampai hiasan dan backup plan hujan. Semua dijejak — takde benda tertinggal.',
     tip:
       'Meja hidangan tema Floral — letak kek di tengah dan goodie bag beratur. Nampak penuh dan kemas dalam gambar.',
     langkah: [
+      'Tetapkan bajet & had bilangan tetamu',
       'Tetapkan tarikh & masa majlis',
       'Senaraikan tetamu (kira bilangan orang)',
       'Tentukan lokasi — rumah, dewan atau kafe',
       'Pilih tema & warna (Rustic / Floral / Minimalist)',
       'Hantar jemputan (WhatsApp / e-card)',
+      'Dapatkan RSVP & confirm bilangan kepala',
       'Tempah kek mengikut tema',
       'Rancang menu — makanan & minuman',
       'Tempah meja & kerusi ikut bilangan tetamu',
@@ -400,9 +403,11 @@ export const CHECKLIST_META: ChecklistMeta[] = [
       'Goodie bag / door gift untuk tetamu',
       'Rancang aktiviti atau games',
       'Lantik siapa ambil gambar / video',
+      'Sediakan kit hari-H (pisau & spatula kek, lilin, ais, tisu, tape, extension)',
       'Pakaian tema untuk keluarga terdekat',
       'Backup plan kalau hujan',
-      'Semak semula butiran majlis dengan tuan rumah',
+      'Susun tugasan AJK hari majlis',
+      'Kemas & simpan semula selepas majlis',
     ],
   },
   {
@@ -419,21 +424,26 @@ export const CHECKLIST_META: ChecklistMeta[] = [
     tip:
       'Meja hidangan tema Minimalist paling kuat untuk sesi bergambar dulang hantaran — nampak elegan dan tak mengganggu fokus.',
     langkah: [
+      'Tetapkan bajet & had bilangan tetamu',
       'Tetapkan tarikh & masa (semak kalendar keluarga)',
       'Tempah lokasi / dewan',
       'Senaraikan tetamu',
+      'Dapatkan RSVP & confirm bilangan rombongan',
       'Sediakan dulang hantaran (bilangan ikut adat)',
       'Pilih tema & warna dewan',
-      'Tempah katering / makanan',
+      'Tempah katering / makanan (confirm meja & khemah terpisah)',
       'Tempah meja & kerusi bersarung tema',
       'Sediakan meja hidangan untuk hantaran & kek',
       'Pelamin / backdrop untuk sesi bergambar',
       'Doorgift untuk tetamu',
       'Tempah jurugambar',
       'Sediakan cincin tunang',
+      'Atur inai / cucuk sanggul / solek & pakaian',
       'Susun agenda — merisik → tunang → makan',
       'Senarai wakil / jurucakap kedua-dua pihak',
-      'Atur pakej solek & pakaian',
+      'Sediakan tepak sirih & doa pembuka/penutup majlis',
+      'Susun tugasan AJK hari majlis',
+      'Kemas & simpan semula selepas majlis',
     ],
   },
   {
@@ -446,13 +456,15 @@ export const CHECKLIST_META: ChecklistMeta[] = [
     lede:
       'Tahlil, doa selamat atau syukuran — tetamu ramai, urusan jangan tunggang. Checklist ni susun dari menu sampai agenda doa.',
     ada:
-      'Dari tentukan jenis majlis, menu, meja hidangan buffet, sampai tempah dewan dan hubungi ustaz. Semua siap sebelum tetamu sampai.',
+      'Dari tentukan bajet, jenis majlis, menu, meja hidangan buffet, sampai tempah dewan dan hubungi ustaz. Semua siap sebelum tetamu sampai.',
     tip:
       'Tema Rustic sesuai untuk majlis santai — nampak mesra dan homey. Padan dengan kenduri di halaman rumah.',
     langkah: [
+      'Tetapkan bajet & had bilangan tetamu',
       'Tetapkan tarikh & masa',
       'Tentukan jenis majlis — tahlil, doa selamat, syukuran',
       'Senaraikan tetamu',
+      'Dapatkan RSVP & confirm bilangan kepala',
       'Rancang menu — nasi+lauk, BBQ atau potluck',
       'Tempah meja & kerusi',
       'Sediakan meja hidangan (buffet style)',
@@ -465,6 +477,41 @@ export const CHECKLIST_META: ChecklistMeta[] = [
       'Atur tempat letak kereta & aliran tetamu',
       'Sediakan bekas tapau untuk lebihan makanan',
       'Senarai tugasan keluarga / AJK',
+      'Sediakan kit cuci & tong sampah semasa majlis',
+      'Kemas & pulangkan barang sewaan selepas majlis',
+      'Ucap terima kasih kepada tetamu & AJK',
+    ],
+  },
+  {
+    id: 'majlis-biasa',
+    nama: 'Checklist Majlis Biasa',
+    sub: 'Rumah Terbuka · Makan-Makan · Kesyukuran',
+    temaId: 'rustic',
+    temaNama: 'Rustic',
+    sesuai:
+      'Rumah terbuka · Makan-makan santai · Kesyukuran rumah baru · Cukur rambut · Gathering keluarga',
+    lede:
+      'Majlis santai pun elok ada senarai. Rumah terbuka, kesyukuran rumah baru, makan-makan keluarga — checklist ni ringkas, cukup untuk pastikan takde benda tertinggal.',
+    ada:
+      'Dari bajet, tetamu, menu, meja & kerusi, sampai kemas selepas majlis. Padat dan mudah — tak kira jenis majlis santai awak.',
+    tip:
+      'Tema Rustic paling fleksibel untuk majlis santai — nampak mesra, padan dengan rumah terbuka luar rumah atau dalam dewan kecil.',
+    langkah: [
+      'Tetapkan bajet & bilangan tetamu',
+      'Tetapkan tarikh, masa & lokasi',
+      'Tentukan jenis majlis (rumah terbuka / makan-makan / kesyukuran)',
+      'Hantar jemputan & dapatkan RSVP',
+      'Rancang menu (potluck / katering / masak sendiri)',
+      'Tempah meja & kerusi',
+      'Sediakan meja hidangan',
+      'Pinggan mangkuk / pakai buang',
+      'Minuman & ais',
+      'Susun tempat duduk & aliran tetamu',
+      'Parking & tandas',
+      'Tong sampah & kutipan pinggan',
+      'Bekas tapau lebihan',
+      'AJK / tugasan keluarga',
+      'Kemas & simpan semula selepas majlis',
     ],
   },
 ]

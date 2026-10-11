@@ -72,7 +72,7 @@ export default function Galeri() {
                 />
               </div>
               <div>
-                <p className="katalog__label">Checklist pelan majlis · 4 muka · percuma</p>
+                <p className="katalog__label">Checklist pelan majlis · percuma</p>
                 <MuatGate senarai={CHECKLIST} jenis="checklist" />
               </div>
             </div>

@@ -1259,7 +1259,7 @@ main { flex: 1; }
 /* ------------------------------ CHECKLIST ------------------------------- */
 .ck-tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   margin-bottom: 28px;
 }
@@ -1595,6 +1595,7 @@ main { flex: 1; }
 
 @media (max-width: 900px) {
   .ck { grid-template-columns: 1fr; gap: 26px; }
+  .ck-tabs { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 700px) {
   .ck-tabs { grid-template-columns: 1fr; }

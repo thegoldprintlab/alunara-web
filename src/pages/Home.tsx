@@ -336,17 +336,17 @@ export default function Home() {
               <h2>Checklist pelan majlis</h2>
               <hr className="divider" />
               <p>
-                Tiga senarai semak siap susun — birthday, tunang dan kenduri. Isi nama, no.
-                WhatsApp &amp; tarikh majlis untuk buka semua langkah, kemudian tanda satu-satu
-                dalam browser atau muat turun PDF. Senang awak tak lupa benda penting sebelum
-                hari majlis.
+                Empat senarai semak siap susun — birthday, tunang, kenduri dan majlis biasa. Isi
+                nama, no. WhatsApp &amp; tarikh majlis untuk buka semua langkah, kemudian tanda
+                satu-satu dalam browser atau muat turun PDF penuh. Senang awak tak lupa benda
+                penting sebelum hari majlis.
               </p>
             </div>
             <div className="ck-promo__side">
               <Link to="/checklist" className="btn btn--gold btn--block">
                 Buka Checklist <IconArrow />
               </Link>
-              <span className="ck-promo__nota">3 jenis majlis · 46 langkah semuanya</span>
+              <span className="ck-promo__nota">4 jenis majlis · 75 langkah semuanya</span>
             </div>
           </div>
         </div>

@@ -13,10 +13,10 @@ import KunciKandungan from '../components/KunciKandungan'
 import { IconCheck, IconArrow, IconWhatsApp, IconSparkle, IconPlus, IconMinus } from '../components/Icons'
 
 /**
- * Halaman /checklist — senarai semak pelan majlis (Birthday / Tunang / Kenduri).
+ * Halaman /checklist — senarai semak pelan majlis (Birthday / Tunang / Kenduri / Majlis Biasa).
  *
  * Satu halaman khas supaya senang promote di bio IG/TikTok: satu link,
- * tiga checklist, boleh tanda terus dalam browser (disimpan dalam localStorage),
+ * empat checklist, boleh tanda terus dalam browser (disimpan dalam localStorage),
  * plus butang muat turun PDF (via MuatGate → lead ke Telegram bos).
  *
  * Kandungan datang dari CHECKLIST_META / CHECKLIST_COUNTDOWN dalam content.ts.
@@ -118,10 +118,10 @@ export default function Checklist() {
             <h1>Checklist pelan majlis</h1>
             <hr className="divider" />
             <p className="lead">
-              Tiga senarai semak siap susun ikut urutan — birthday, tunang dan kenduri. Tiga
-              langkah pertama terbuka terus; isi nama, no. WhatsApp &amp; tarikh majlis untuk
-              buka semua. Boleh tanda satu-satu dalam browser (auto simpan), atau muat turun
-              versi PDF.
+              Empat senarai semak siap susun ikut urutan — birthday, tunang, kenduri dan majlis
+              biasa. Tiga langkah pertama terbuka terus; isi nama, no. WhatsApp &amp; tarikh majlis
+              untuk buka semua. Boleh tanda satu-satu dalam browser (auto simpan), atau muat turun
+              versi PDF penuh.
             </p>
           </div>
 
@@ -236,15 +236,16 @@ export default function Checklist() {
                 <div className="eyebrow">Simpan &amp; tunjuk</div>
                 <h3>Muat turun {aktif.nama} (PDF)</h3>
                 <p className="muted ck__card-ayat">
-                  4 muka surat — senarai semak, countdown, dan ruang butiran majlis. Senang
-                  tunjuk pada pasangan atau orang rumah.
+                  Versi penuh — plan 4 fasa (4 minggu sebelum sampai kemas selepas majlis),
+                  countdown, dan ruang butiran majlis. Lebih lengkap dari senarai di atas.
+                  Senang tunjuk pada pasangan atau orang rumah.
                 </p>
                 {pdf && (
                   <MuatGate
                     senarai={[pdf]}
                     jenis="checklist"
                     eyebrow="Checklist Percuma"
-                    meta={() => 'PDF · 4 muka'}
+                    meta={() => 'PDF · plan penuh'}
                   />
                 )}
                 <p className="ck__nota">
