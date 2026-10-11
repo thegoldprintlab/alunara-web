@@ -4,8 +4,12 @@ Sewa meja & kerusi bertema, **Melaka sahaja**. Tagline: **"1 Tarikh, 1 Majlis"**
 React + Vite SPA, di-prerender jadi HTML statik. Deploy Vercel.
 Repo: `thegoldprintlab/alunara-web` · Branch: `main`
 
-## Status (kemas kini 2026-10-02)
-- Laman + **buku tamu LIVE**. `/admin` berfungsi.
+## Status (kemas kini 2026-10-11)
+- Laman + **buku tamu LIVE**. `/admin` berfungsi (5 tab: Tempahan · Duit · Klien · Lead Web · Buku Tamu).
+- **Tab Duit (11 Okt)**: buku tunai — `alunara_payments` + `alunara_expenses`,
+  view `alunara_duit_bulanan`. `paid_amount` pada tempahan dikira trigger dari
+  payments (jangan PATCH). JANGAN auto-jana bayaran dari status `confirmed`.
+  Skema: `supabase/alunara_duit.sql`.
 - Buku tamu: poster QR ikut tema, dinding ucapan, had video 60 saat (UI + server).
 - **Poster QR ditulis semula (2 Okt)**: font jenama sebenar (Cormorant + Jost)
   dibenam, susun atur majalah (monogram, bingkai garis dua, kad QR bertepi).
