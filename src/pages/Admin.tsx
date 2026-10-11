@@ -1583,12 +1583,24 @@ const BARANG_KOSONG: BorangBarang = {
   nota: '',
 }
 
+/** Tambah stok pada baris sedia ada — kuantiti naik, bukan rekod baru. */
+type BorangStok = {
+  id: string
+  nama: string
+  kategori: string
+  kini: number
+  tambah: number
+  nilai_seunit: number
+  tarikh_beli: string
+}
+
 function TabBarang({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
   const [senarai, setSenarai] = useState<Barang[]>([])
   const [muat, setMuat] = useState(true)
   const [ralat, setRalat] = useState('')
   const [pesan, setPesan] = useState('')
   const [borang, setBorang] = useState<BorangBarang | null>(null)
+  const [stok, setStok] = useState<BorangStok | null>(null)
   const [sibuk, setSibuk] = useState(false)
   const [cari, setCari] = useState('')
   const [tapisan, setTapisan] = useState('aktif')
@@ -1683,6 +1695,40 @@ function TabBarang({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> })
     if (!confirm(`Padam barang "${b.nama}"? Untuk barang yang dah dibuang, tukar keadaan jadi "Dah lupus" — itu kekalkan sejarah.`)) return
     const res = await db.buangBarang(sesi, b.id)
     if (!res.ok) return setPesan(res.ralat ?? 'Gagal padam.')
+    await muatSemula()
+  }
+
+  /** Tambah stok laju — beli 12 kerusi lagi? kuantiti naik, bukan rekod baru. */
+  function bukaStok(b: Barang) {
+    setPesan('')
+    setStok({
+      id: b.id,
+      nama: b.nama,
+      kategori: b.kategori,
+      kini: Number(b.kuantiti || 0),
+      tambah: 1,
+      nilai_seunit: Number(b.nilai_seunit || 0),
+      tarikh_beli: hariIniKL(),
+    })
+  }
+
+  async function simpanStok(e: React.FormEvent) {
+    e.preventDefault()
+    if (!stok) return
+    if (!(stok.tambah > 0)) return setPesan('Jumlah tambah kena lebih dari 0.')
+    setSibuk(true)
+    // Nilai seunit diperbarui HANYA jika bos isi — supaya tambah stok tanpa
+    // harga tak memadam harga lama.
+    const muatan: Partial<Barang> = {
+      kuantiti: stok.kini + stok.tambah,
+      tarikh_beli: stok.tarikh_beli || null,
+    }
+    if (stok.nilai_seunit > 0) muatan.nilai_seunit = stok.nilai_seunit
+    const res = await db.kemasBarang(sesi, stok.id, muatan)
+    setSibuk(false)
+    if (!res.ok) return setPesan(res.ralat ?? 'Gagal tambah stok.')
+    setPesan(`Stok ditambah: ${stok.nama} → ${stok.kini + stok.tambah} unit.`)
+    setStok(null)
     await muatSemula()
   }
 
@@ -1837,6 +1883,65 @@ function TabBarang({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> })
         </form>
       )}
 
+      {stok && (
+        <form className="adm__kad" onSubmit={simpanStok}>
+          <h3>Tambah Stok — {stok.nama}</h3>
+          <p className="adm__hint">
+            Sekarang <strong>{stok.kini} unit</strong>. Beli lagi? Kuantiti naik, rekod kekal sama.
+            Belanja sebenar rekod dalam tab <strong>Duit</strong> (kategori “Peralatan (modal)”, tanda
+            Modal) — jangan taip harga di sini melainkan nak kemas kini nilai seunit.
+          </p>
+          <div className="adm__grid">
+            <div className="field">
+              <label htmlFor="t-tambah">Tambah berapa unit *</label>
+              <input
+                id="t-tambah"
+                type="number"
+                min={1}
+                autoFocus
+                value={stok.tambah}
+                onChange={(e) => setStok({ ...stok, tambah: Number(e.target.value) })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="t-tarikh">Tarikh beli</label>
+              <input
+                id="t-tarikh"
+                type="date"
+                value={stok.tarikh_beli}
+                onChange={(e) => setStok({ ...stok, tarikh_beli: e.target.value })}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="t-nilai">Nilai seunit baru (RM)</label>
+              <input
+                id="t-nilai"
+                type="number"
+                min={0}
+                step="0.01"
+                value={stok.nilai_seunit}
+                onChange={(e) => setStok({ ...stok, nilai_seunit: Number(e.target.value) })}
+              />
+              <span className="adm__kecil">
+                0 = kekalkan harga lama. Isi hanya kalau harga belian berubah.
+              </span>
+            </div>
+          </div>
+          <p className="adm__hint">
+            Lepas simpan: <strong>{stok.kini + stok.tambah} unit</strong>.
+          </p>
+          <div className="adm__aksi">
+            <button type="submit" className="btn btn--solid btn--sm" disabled={sibuk}>
+              {sibuk ? 'Menyimpan…' : 'Tambah Stok'}
+            </button>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => setStok(null)}>
+              Batal
+            </button>
+          </div>
+        </form>
+      )}
+
       {muat ? (
         <p className="muted">Memuat…</p>
       ) : tapis.length === 0 ? (
@@ -1874,6 +1979,13 @@ function TabBarang({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> })
                       </span>
                     </td>
                     <td className="adm__aksi-sel">
+                      <button
+                        className="adm__pautan"
+                        onClick={() => bukaStok(b)}
+                        title="Tambah stok (beli lagi)"
+                      >
+                        + Stok
+                      </button>
                       {b.keadaan !== 'lupus' && (
                         <button
                           className="adm__pautan"
