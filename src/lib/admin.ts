@@ -255,6 +255,73 @@ export const KATEGORI_BELANJA = [
 /** Kategori yang biasanya modal, bukan kos operasi bulanan. */
 export const KATEGORI_MODAL = ['Peralatan (modal)']
 
+/* --------------------------- INVENTORI (BARANG) ---------------------------
+ * Rekod aset, BUKAN kawalan stok automatik. Unique index `event_date` pada
+ * tempahan dah jaga "1 Tarikh, 1 Majlis" — jadual ini jawab soalan lain:
+ * berapa nilai aset, barang mana rosak, bila kali terakhir beli.
+ * ------------------------------------------------------------------------ */
+
+export type KeadaanBarang = 'baik' | 'rosak' | 'lupus'
+
+export type Barang = {
+  id: string
+  nama: string
+  kategori: string
+  kuantiti: number
+  /** Nilai belian seunit. 0 = belum diisi, bukan bermakna percuma. */
+  nilai_seunit: number
+  tarikh_beli: string | null
+  keadaan: KeadaanBarang
+  lokasi: string | null
+  nota: string | null
+  created_at: string
+  updated_at: string
+}
+
+export const KATEGORI_BARANG = [
+  'Meja',
+  'Kerusi',
+  'Meja Hidangan',
+  'Props / Deco',
+  'Kain / Sarung',
+  'Peralatan',
+  'Lain-lain',
+]
+
+export const KEADAAN_BARANG: Record<KeadaanBarang, string> = {
+  baik: 'Baik',
+  rosak: 'Rosak',
+  lupus: 'Dah lupus',
+}
+
+/* ------------------------------- PRESTASI -------------------------------
+ * Semua angka dari view DB, bukan dikira dalam pelayar — elak dua punca
+ * kebenaran yang boleh lari. Nama metrik sengaja jujur (lihat SQL).
+ * ------------------------------------------------------------------------ */
+
+export type MarginPakej = {
+  package_id: string | null
+  bilangan: number
+  /** Majlis yang ADA kos khusus direkod. 0 = margin belum boleh dipercayai. */
+  bilangan_ada_kos: number
+  hasil: number
+  kos: number
+  margin: number
+}
+
+export type AsetKategori = {
+  kategori: string
+  kuantiti: number
+  nilai: number
+  baris_rosak: number
+}
+
+export type RingkasanTempahan = {
+  akan_datang: number
+  belum_kutip: number
+  nilai_bakal: number
+}
+
 /* ------------------------------ SESI ------------------------------ */
 
 export function bacaSesi(): Sesi | null {
@@ -645,6 +712,44 @@ export const db = {
       s,
       'alunara_duit_bulanan?select=*&order=bulan.desc&limit=24',
     )
+  },
+
+  /* ----------------------------- INVENTORI ----------------------------- */
+
+  async barang(s: Sesi) {
+    return minta<Barang[]>(
+      s,
+      'alunara_items?select=*&order=kategori.asc,nama.asc&limit=500',
+    )
+  },
+  async tambahBarang(s: Sesi, b: Partial<Barang>) {
+    return minta<Barang[]>(s, 'alunara_items', {
+      method: 'POST',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify(b),
+    })
+  },
+  async kemasBarang(s: Sesi, id: string, b: Partial<Barang>) {
+    return minta<Barang[]>(s, `alunara_items?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({ ...b, updated_at: new Date().toISOString() }),
+    })
+  },
+  async buangBarang(s: Sesi, id: string) {
+    return minta<void>(s, `alunara_items?id=eq.${id}`, { method: 'DELETE' })
+  },
+
+  /* ------------------------------ PRESTASI ------------------------------ */
+
+  async marginPakej(s: Sesi) {
+    return minta<MarginPakej[]>(s, 'alunara_margin_pakej?select=*&order=bilangan.desc')
+  },
+  async aset(s: Sesi) {
+    return minta<AsetKategori[]>(s, 'alunara_aset?select=*&order=nilai.desc')
+  },
+  async ringkasanTempahan(s: Sesi) {
+    return minta<RingkasanTempahan[]>(s, 'alunara_ringkasan_tempahan?select=*')
   },
 }
 

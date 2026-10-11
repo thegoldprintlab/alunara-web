@@ -23,8 +23,20 @@ import type {
   Bayaran,
   Belanja,
   JenisBayaran,
+  Barang,
+  KeadaanBarang,
+  MarginPakej,
+  AsetKategori,
+  RingkasanBulan,
 } from '../lib/admin'
-import { JENIS_BAYARAN, KAEDAH_BAYARAN, KATEGORI_BELANJA, KATEGORI_MODAL } from '../lib/admin'
+import {
+  JENIS_BAYARAN,
+  KAEDAH_BAYARAN,
+  KATEGORI_BELANJA,
+  KATEGORI_MODAL,
+  KATEGORI_BARANG,
+  KEADAAN_BARANG,
+} from '../lib/admin'
 import { PAKEJ } from '../content'
 import { IconWhatsApp } from '../components/Icons'
 
@@ -1329,6 +1341,566 @@ function TabDuit({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
   )
 }
 
+/* ---------------------------- TAB: PRESTASI ----------------------------
+ * Dashboard. SEMUA angka datang dari view DB (alunara_duit_bulanan,
+ * alunara_margin_pakej, alunara_aset, alunara_ringkasan_tempahan) — bukan
+ * dikira dalam pelayar. Dua punca kebenaran akan lari antara satu sama lain.
+ *
+ * Nama metrik sengaja jujur. "Margin ikut pakej" bukan untung sebenar
+ * selagi kos khusus setiap majlis tak direkod — sebab itu bilangan_ada_kos
+ * ditunjuk SEBELAH margin, bukan disembunyikan.
+ * ---------------------------------------------------------------------- */
+
+function BarBanding({ label, nilai, maks }: { label: string; nilai: number; maks: number }) {
+  const pct = maks > 0 ? Math.max(3, Math.round((Math.abs(nilai) / maks) * 100)) : 0
+  return (
+    <div className="adm__bar-baris">
+      <span className="adm__bar-label">{label}</span>
+      <span className="adm__bar-trek">
+        <span
+          className="adm__bar-isi"
+          style={{ width: `${pct}%`, background: nilai < 0 ? '#a5332f' : 'var(--champagne)' }}
+        />
+      </span>
+      <span className="adm__bar-nilai">{rm(nilai)}</span>
+    </div>
+  )
+}
+
+function TabPrestasi({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
+  const [bulanan, setBulanan] = useState<RingkasanBulan[]>([])
+  const [margin, setMargin] = useState<MarginPakej[]>([])
+  const [aset, setAset] = useState<AsetKategori[]>([])
+  const [ringkas, setRingkas] = useState<{ akan_datang: number; belum_kutip: number; nilai_bakal: number } | null>(null)
+  const [muat, setMuat] = useState(true)
+  const [ralat, setRalat] = useState('')
+
+  const muatSemula = useCallback(async () => {
+    setMuat(true)
+    const [b, m, a, r] = await Promise.all([
+      db.duitBulanan(sesi),
+      db.marginPakej(sesi),
+      db.aset(sesi),
+      db.ringkasanTempahan(sesi),
+    ])
+    setMuat(false)
+    if (!b.ok) return setRalat(b.ralat ?? 'Gagal muat ringkasan bulanan.')
+    setBulanan(b.data ?? [])
+    setMargin(m.ok ? (m.data ?? []) : [])
+    setAset(a.ok ? (a.data ?? []) : [])
+    setRingkas(r.ok ? (r.data?.[0] ?? null) : null)
+    setRalat('')
+  }, [sesi])
+
+  useEffect(() => {
+    void muatSemula()
+  }, [muatSemula])
+
+  /** 6 bulan terakhir, susun lama → baru (untuk BarBanding). */
+  const tren = useMemo(() => [...bulanan].slice(0, 6).reverse(), [bulanan])
+  const maksTren = useMemo(
+    () => Math.max(1, ...tren.flatMap((t) => [Number(t.masuk), Number(t.keluar_op) + Number(t.keluar_capex)])),
+    [tren],
+  )
+
+  const bulanIni = bulanan[0]
+  const jumlahAset = aset.reduce((a, x) => a + Number(x.nilai), 0)
+  const barisRosak = aset.reduce((a, x) => a + Number(x.baris_rosak), 0)
+  const jumlahMargin = margin.reduce((a, x) => a + Number(x.margin), 0)
+  const adaKosSemua = margin.every((x) => x.bilangan_ada_kos === 0)
+
+  if (muat) return <p className="muted">Memuat…</p>
+
+  return (
+    <>
+      {ralat && <p className="adm__ralat">{ralat}</p>}
+
+      <div className="adm__strip">
+        <div className="adm__kpi">
+          <span className="adm__kpi-angka">{ringkas?.akan_datang ?? 0}</span>
+          <span className="adm__kpi-label">Majlis Akan Datang</span>
+        </div>
+        <div className="adm__kpi">
+          <span className="adm__kpi-angka">{rm(ringkas?.belum_kutip ?? 0)}</span>
+          <span className="adm__kpi-label">Belum Kutip</span>
+        </div>
+        <div className="adm__kpi">
+          <span className="adm__kpi-angka">{rm(ringkas?.nilai_bakal ?? 0)}</span>
+          <span className="adm__kpi-label">Nilai Bakal</span>
+        </div>
+        <div className="adm__kpi">
+          <span className="adm__kpi-angka">{rm(jumlahAset)}</span>
+          <span className="adm__kpi-label">Nilai Aset</span>
+        </div>
+      </div>
+
+      {barisRosak > 0 && (
+        <p className="adm__ralat">
+          {barisRosak} rekod barang bertanda <strong>rosak</strong> — semak tab Barang.
+        </p>
+      )}
+
+      <div className="adm__kad">
+        <h3>Aliran Tunai — 6 Bulan</h3>
+        {tren.length === 0 ? (
+          <p className="muted">Belum ada data.</p>
+        ) : (
+          <>
+            {tren.map((t) => (
+              <div key={t.bulan} className="adm__bar-kumpulan">
+                <div className="adm__bar-tajuk">{bulanLabel(t.bulan)}</div>
+                <BarBanding label="Masuk" nilai={Number(t.masuk)} maks={maksTren} />
+                <BarBanding
+                  label="Keluar"
+                  nilai={Number(t.keluar_op) + Number(t.keluar_capex)}
+                  maks={maksTren}
+                />
+                <div className="adm__bar-baris adm__bar-baris--jumlah">
+                  <span className="adm__bar-label">Tunai bersih</span>
+                  <span className={'adm__bar-nilai' + (Number(t.tunai_bersih) < 0 ? ' adm__baki' : '')}>
+                    {rm(t.tunai_bersih)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+
+      <div className="adm__kad">
+        <h3>Margin Ikut Pakej</h3>
+        <p className="adm__hint">
+          Hasil <strong>dipersetujui</strong> (bukan duit dah masuk) tolak kos khusus majlis. Modal
+          (props/kerusi) dikecualikan — ia diguna berkali-kali.
+        </p>
+        {margin.length === 0 ? (
+          <p className="muted">Belum ada tempahan bernilai.</p>
+        ) : (
+          <div className="adm__jadual-bungkus">
+            <table className="adm__jadual">
+              <thead>
+                <tr>
+                  <th>Pakej</th>
+                  <th>Majlis</th>
+                  <th>Ada kos direkod</th>
+                  <th>Hasil</th>
+                  <th>Kos</th>
+                  <th>Margin</th>
+                </tr>
+              </thead>
+              <tbody>
+                {margin.map((m) => {
+                  const p = kosPakej(m.package_id)
+                  return (
+                    <tr key={m.package_id ?? 'kosong'}>
+                      <td>
+                        <div className="adm__nama">{p.nama}</div>
+                      </td>
+                      <td>{m.bilangan}</td>
+                      <td className={m.bilangan_ada_kos === 0 ? 'adm__baki' : ''}>
+                        {m.bilangan_ada_kos}/{m.bilangan}
+                      </td>
+                      <td>{rm(m.hasil)}</td>
+                      <td>{rm(m.kos)}</td>
+                      <td className="adm__nama">{rm(m.margin)}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {adaKosSemua && margin.length > 0 && (
+          <p className="adm__ralat">
+            Tiada satu pun majlis ada kos direkod. Angka margin di atas{' '}
+            <strong>tidak boleh dipercayai</strong> — ia cuma hasil, bukan untung. Rekod belanja
+            dalam tab Duit (pilih tempahan yang berkaitan) dulu.
+          </p>
+        )}
+        {!adaKosSemua && margin.length > 0 && (
+          <p className="adm__hint">Jumlah margin direkod: {rm(jumlahMargin)}</p>
+        )}
+      </div>
+
+      <div className="adm__kad">
+        <h3>Nilai Aset Ikut Kategori</h3>
+        {aset.length === 0 ? (
+          <p className="muted">Belum ada barang direkod.</p>
+        ) : (
+          <>
+            <p className="adm__hint">
+              Nilai aset hanya tepat bila nilai seunit diisi. Barang bernilai RM0 bermakna{' '}
+              <strong>belum diisi</strong>, bukan percuma.
+            </p>
+            {aset.map((a) => (
+              <BarBanding
+                key={a.kategori}
+                label={`${a.kategori} (${a.kuantiti})`}
+                nilai={Number(a.nilai)}
+                maks={Math.max(1, ...aset.map((x) => Number(x.nilai)))}
+              />
+            ))}
+          </>
+        )}
+      </div>
+
+      <p className="adm__nota">
+        Ringkasan bulan semasa: masuk {rm(bulanIni?.masuk ?? 0)} · keluar{' '}
+        {rm(Number(bulanIni?.keluar_op ?? 0) + Number(bulanIni?.keluar_capex ?? 0))} · tunai bersih{' '}
+        {rm(bulanIni?.tunai_bersih ?? 0)}. Semua angka dari view DB, dikemas kini setiap muat.
+      </p>
+    </>
+  )
+}
+
+/* ----------------------------- TAB: BARANG -----------------------------
+ * Inventori. SENGAJA bukan kawalan stok: unique index `event_date` pada
+ * tempahan dah jaga "1 Tarikh, 1 Majlis", dan 3 meja takkan habis sehari.
+ * Yang direkod di sini ialah ASET — berapa nilainya, mana rosak, apa dah
+ * lupus. Menolak stok automatik akan jadi kerja tak berbayar.
+ * ---------------------------------------------------------------------- */
+
+type BorangBarang = {
+  id?: string
+  nama: string
+  kategori: string
+  kuantiti: number
+  nilai_seunit: number
+  tarikh_beli: string
+  keadaan: KeadaanBarang
+  lokasi: string
+  nota: string
+}
+
+const BARANG_KOSONG: BorangBarang = {
+  nama: '',
+  kategori: 'Meja',
+  kuantiti: 1,
+  nilai_seunit: 0,
+  tarikh_beli: '',
+  keadaan: 'baik',
+  lokasi: '',
+  nota: '',
+}
+
+function TabBarang({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
+  const [senarai, setSenarai] = useState<Barang[]>([])
+  const [muat, setMuat] = useState(true)
+  const [ralat, setRalat] = useState('')
+  const [pesan, setPesan] = useState('')
+  const [borang, setBorang] = useState<BorangBarang | null>(null)
+  const [sibuk, setSibuk] = useState(false)
+  const [cari, setCari] = useState('')
+  const [tapisan, setTapisan] = useState('aktif')
+
+  const muatSemula = useCallback(async () => {
+    setMuat(true)
+    const r = await db.barang(sesi)
+    setMuat(false)
+    if (!r.ok) return setRalat(r.ralat ?? 'Gagal muat barang.')
+    setSenarai(r.data ?? [])
+    setRalat('')
+  }, [sesi])
+
+  useEffect(() => {
+    void muatSemula()
+  }, [muatSemula])
+
+  const tapis = useMemo(() => {
+    const q = cari.trim().toLowerCase()
+    return senarai.filter((b) => {
+      if (tapisan === 'aktif' && b.keadaan === 'lupus') return false
+      if (tapisan !== 'aktif' && tapisan !== 'semua' && b.keadaan !== tapisan) return false
+      if (!q) return true
+      return b.nama.toLowerCase().includes(q) || b.kategori.toLowerCase().includes(q)
+    })
+  }, [senarai, tapisan, cari])
+
+  const ringkas = useMemo(() => {
+    const hidup = senarai.filter((b) => b.keadaan !== 'lupus')
+    return {
+      unit: hidup.reduce((a, b) => a + Number(b.kuantiti || 0), 0),
+      nilai: hidup.reduce((a, b) => a + Number(b.kuantiti || 0) * Number(b.nilai_seunit || 0), 0),
+      rosak: senarai.filter((b) => b.keadaan === 'rosak').length,
+      belumNilai: hidup.filter((b) => Number(b.nilai_seunit || 0) === 0).length,
+    }
+  }, [senarai])
+
+  function bukaBaru() {
+    setPesan('')
+    setBorang({ ...BARANG_KOSONG })
+  }
+
+  function bukaEdit(b: Barang) {
+    setPesan('')
+    setBorang({
+      id: b.id,
+      nama: b.nama,
+      kategori: b.kategori,
+      kuantiti: Number(b.kuantiti || 0),
+      nilai_seunit: Number(b.nilai_seunit || 0),
+      tarikh_beli: (b.tarikh_beli ?? '').slice(0, 10),
+      keadaan: b.keadaan,
+      lokasi: b.lokasi ?? '',
+      nota: b.nota ?? '',
+    })
+  }
+
+  async function simpan(e: React.FormEvent) {
+    e.preventDefault()
+    if (!borang) return
+    if (borang.nama.trim().length < 2) return setPesan('Nama barang terlalu pendek.')
+    setSibuk(true)
+    const muatan = {
+      nama: borang.nama.trim(),
+      kategori: borang.kategori.trim() || 'Lain-lain',
+      kuantiti: Number(borang.kuantiti || 0),
+      nilai_seunit: Number(borang.nilai_seunit || 0),
+      tarikh_beli: borang.tarikh_beli || null,
+      keadaan: borang.keadaan,
+      lokasi: borang.lokasi.trim() || null,
+      nota: borang.nota.trim() || null,
+    }
+    const res = borang.id
+      ? await db.kemasBarang(sesi, borang.id, muatan)
+      : await db.tambahBarang(sesi, muatan)
+    setSibuk(false)
+    if (!res.ok) return setPesan(res.ralat ?? 'Gagal simpan barang.')
+    setPesan('Disimpan.')
+    setBorang(null)
+    await muatSemula()
+  }
+
+  /** Ubah keadaan laju dari jadual (baik ↔ rosak) tanpa buka borang. */
+  async function tandaRosak(b: Barang) {
+    const baru: KeadaanBarang = b.keadaan === 'rosak' ? 'baik' : 'rosak'
+    const res = await db.kemasBarang(sesi, b.id, { keadaan: baru })
+    if (!res.ok) return setPesan(res.ralat ?? 'Gagal tukar keadaan.')
+    await muatSemula()
+  }
+
+  async function buang(b: Barang) {
+    if (!confirm(`Padam barang "${b.nama}"? Untuk barang yang dah dibuang, tukar keadaan jadi "Dah lupus" — itu kekalkan sejarah.`)) return
+    const res = await db.buangBarang(sesi, b.id)
+    if (!res.ok) return setPesan(res.ralat ?? 'Gagal padam.')
+    await muatSemula()
+  }
+
+  return (
+    <>
+      <div className="adm__strip">
+        <div className="adm__kpi">
+          <span className="adm__kpi-angka">{ringkas.unit}</span>
+          <span className="adm__kpi-label">Unit (bukan lupus)</span>
+        </div>
+        <div className="adm__kpi">
+          <span className="adm__kpi-angka">{rm(ringkas.nilai)}</span>
+          <span className="adm__kpi-label">Nilai Aset</span>
+        </div>
+        <div className="adm__kpi">
+          <span className={'adm__kpi-angka' + (ringkas.rosak > 0 ? ' adm__kpi-angka--minus' : '')}>
+            {ringkas.rosak}
+          </span>
+          <span className="adm__kpi-label">Rekod Rosak</span>
+        </div>
+        <div className="adm__kpi">
+          <span className="adm__kpi-angka">{ringkas.belumNilai}</span>
+          <span className="adm__kpi-label">Belum Isi Nilai</span>
+        </div>
+      </div>
+
+      <p className="adm__nota">
+        Ini rekod <strong>aset</strong>, bukan kawalan stok. “1 Tarikh, 1 Majlis” dah dijaga oleh
+        kalendar tempahan, jadi sistem ni tak tolak stok automatik — ia jawab soalan lain: berapa
+        nilai barang Alunara, mana yang rosak, bila kali terakhir beli.
+      </p>
+
+      <div className="adm__bar">
+        <button className="btn btn--gold btn--sm" onClick={bukaBaru}>
+          + Barang
+        </button>
+        <input
+          className="adm__cari"
+          placeholder="Cari nama / kategori…"
+          value={cari}
+          onChange={(e) => setCari(e.target.value)}
+        />
+        <select value={tapisan} onChange={(e) => setTapisan(e.target.value)} className="adm__tapisan">
+          <option value="aktif">Aktif (bukan lupus)</option>
+          <option value="semua">Semua</option>
+          <option value="baik">Baik sahaja</option>
+          <option value="rosak">Rosak sahaja</option>
+          <option value="lupus">Dah lupus</option>
+        </select>
+      </div>
+
+      {pesan && <p className="adm__pesan">{pesan}</p>}
+      {ralat && <p className="adm__ralat">{ralat}</p>}
+
+      {borang && (
+        <form className="adm__kad" onSubmit={simpan}>
+          <h3>{borang.id ? 'Kemas Barang' : 'Barang Baru'}</h3>
+          <div className="adm__grid">
+            <div className="field">
+              <label htmlFor="i-nama">Nama *</label>
+              <input
+                id="i-nama"
+                value={borang.nama}
+                onChange={(e) => setBorang({ ...borang, nama: e.target.value })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="i-kategori">Kategori</label>
+              <input
+                id="i-kategori"
+                list="senarai-kategori-barang"
+                value={borang.kategori}
+                onChange={(e) => setBorang({ ...borang, kategori: e.target.value })}
+              />
+              <datalist id="senarai-kategori-barang">
+                {KATEGORI_BARANG.map((k) => (
+                  <option key={k} value={k} />
+                ))}
+              </datalist>
+            </div>
+            <div className="field">
+              <label htmlFor="i-kuantiti">Kuantiti</label>
+              <input
+                id="i-kuantiti"
+                type="number"
+                min={0}
+                value={borang.kuantiti}
+                onChange={(e) => setBorang({ ...borang, kuantiti: Number(e.target.value) })}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="i-nilai">Nilai seunit (RM)</label>
+              <input
+                id="i-nilai"
+                type="number"
+                min={0}
+                step="0.01"
+                value={borang.nilai_seunit}
+                onChange={(e) => setBorang({ ...borang, nilai_seunit: Number(e.target.value) })}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="i-tarikh">Tarikh beli</label>
+              <input
+                id="i-tarikh"
+                type="date"
+                value={borang.tarikh_beli}
+                onChange={(e) => setBorang({ ...borang, tarikh_beli: e.target.value })}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="i-keadaan">Keadaan</label>
+              <select
+                id="i-keadaan"
+                value={borang.keadaan}
+                onChange={(e) => setBorang({ ...borang, keadaan: e.target.value as KeadaanBarang })}
+              >
+                {Object.entries(KEADAAN_BARANG).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="i-lokasi">Lokasi simpan</label>
+              <input
+                id="i-lokasi"
+                value={borang.lokasi}
+                placeholder="cth. stor belakang rumah"
+                onChange={(e) => setBorang({ ...borang, lokasi: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="field">
+            <label htmlFor="i-nota">Nota</label>
+            <input
+              id="i-nota"
+              value={borang.nota}
+              onChange={(e) => setBorang({ ...borang, nota: e.target.value })}
+            />
+          </div>
+          <div className="adm__aksi">
+            <button type="submit" className="btn btn--solid btn--sm" disabled={sibuk}>
+              {sibuk ? 'Menyimpan…' : 'Simpan'}
+            </button>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => setBorang(null)}>
+              Batal
+            </button>
+          </div>
+        </form>
+      )}
+
+      {muat ? (
+        <p className="muted">Memuat…</p>
+      ) : tapis.length === 0 ? (
+        <p className="muted">Tiada barang untuk tapisan ini.</p>
+      ) : (
+        <div className="adm__jadual-bungkus">
+          <table className="adm__jadual">
+            <thead>
+              <tr>
+                <th>Nama</th>
+                <th>Kategori</th>
+                <th>Kuantiti</th>
+                <th>Nilai seunit</th>
+                <th>Jumlah nilai</th>
+                <th>Keadaan</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {tapis.map((b) => {
+                const jum = Number(b.kuantiti || 0) * Number(b.nilai_seunit || 0)
+                return (
+                  <tr key={b.id} className={b.keadaan === 'lupus' ? 'adm__baris--mati' : ''}>
+                    <td>
+                      <div className="adm__nama">{b.nama}</div>
+                      {b.lokasi && <div className="adm__kecil">{b.lokasi}</div>}
+                    </td>
+                    <td className="adm__kecil">{b.kategori}</td>
+                    <td>{b.kuantiti}</td>
+                    <td className="adm__kecil">{rm(b.nilai_seunit)}</td>
+                    <td>{rm(jum)}</td>
+                    <td>
+                      <span className={b.keadaan === 'rosak' ? 'adm__baki' : b.keadaan === 'baik' ? 'adm__lunas' : ''}>
+                        {KEADAAN_BARANG[b.keadaan]}
+                      </span>
+                    </td>
+                    <td className="adm__aksi-sel">
+                      {b.keadaan !== 'lupus' && (
+                        <button
+                          className="adm__pautan"
+                          onClick={() => tandaRosak(b)}
+                          title="Tanda rosak / pulihkan"
+                        >
+                          {b.keadaan === 'rosak' ? 'Pulih' : 'Rosak'}
+                        </button>
+                      )}
+                      <button className="adm__pautan" onClick={() => bukaEdit(b)}>
+                        Edit
+                      </button>
+                      <button className="adm__pautan adm__pautan--bahaya" onClick={() => buang(b)}>
+                        Padam
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
+  )
+}
+
 /* ------------------------------ TAB: KLIEN ------------------------------ */
 
 type BorangKlien = {
@@ -2307,13 +2879,13 @@ function TabTamu({ sesi }: { sesi: Sesi }) {
   )
 }
 
-type Tab = 'tempahan' | 'duit' | 'klien' | 'lead' | 'tamu'
+type Tab = 'prestasi' | 'tempahan' | 'duit' | 'barang' | 'klien' | 'lead' | 'tamu'
 
 export default function Admin() {
   const [sesi, setSesi] = useState(bacaSesi())
   const [sedia, setSedia] = useState(false)
   const [ralat, setRalat] = useState('')
-  const [tab, setTab] = useState<Tab>('tempahan')
+  const [tab, setTab] = useState<Tab>('prestasi')
 
   useEffect(() => {
     // Semak sesi tersimpan pada muat pertama: segarkan token kalau perlu dan
@@ -2382,8 +2954,10 @@ export default function Admin() {
         <nav className="adm__tab">
           {(
             [
+              ['prestasi', 'Prestasi'],
               ['tempahan', 'Tempahan'],
               ['duit', 'Duit'],
+              ['barang', 'Barang'],
               ['klien', 'Klien'],
               ['lead', 'Lead Web'],
               ['tamu', 'Buku Tamu'],
@@ -2399,8 +2973,10 @@ export default function Admin() {
           ))}
         </nav>
 
+        {tab === 'prestasi' && <TabPrestasi sesi={sesi} />}
         {tab === 'tempahan' && <TabTempahan sesi={sesi} />}
         {tab === 'duit' && <TabDuit sesi={sesi} />}
+        {tab === 'barang' && <TabBarang sesi={sesi} />}
         {tab === 'klien' && <TabKlien sesi={sesi} />}
         {tab === 'lead' && <TabLead sesi={sesi} />}
         {tab === 'tamu' && <TabTamu sesi={sesi} />}

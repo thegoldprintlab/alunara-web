@@ -226,6 +226,63 @@
   padding: 5px 10px;
 }
 
+/* --------------------------- BAR BANDING (dashboard) ---------------------
+ * Bar CSS mudah, bukan library carta. Dashboard ni dibaca dari telefon —
+ * bar berlabel lebih berguna daripada graf yang perlu dicubit.
+ * ------------------------------------------------------------------------ */
+.adm__bar-kumpulan {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.adm__bar-kumpulan:last-child { border-bottom: 0; }
+.adm__bar-tajuk {
+  font-weight: 600;
+  font-size: 0.86rem;
+  margin-bottom: 5px;
+}
+.adm__bar-baris {
+  display: grid;
+  grid-template-columns: 92px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.84rem;
+  padding: 2px 0;
+}
+.adm__bar-label {
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adm__bar-trek {
+  background: var(--cream-warm);
+  border-radius: 2px;
+  height: 9px;
+  overflow: hidden;
+}
+.adm__bar-isi {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s var(--ease);
+}
+.adm__bar-nilai {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.adm__bar-baris--jumlah {
+  grid-template-columns: 92px 1fr auto;
+  margin-top: 3px;
+}
+.adm__bar-baris--jumlah .adm__bar-nilai {
+  font-weight: 600;
+  grid-column: 2 / 4;
+  text-align: right;
+}
+@media (max-width: 560px) {
+  .adm__bar-baris { grid-template-columns: 74px 1fr auto; font-size: 0.8rem; }
+}
+
 .adm__status {
   width: auto;
   min-width: 150px;
