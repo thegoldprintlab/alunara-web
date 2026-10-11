@@ -5,6 +5,7 @@ import Footer from './components/Footer'
 import StickyWa from './components/StickyWa'
 import Seo from './components/Seo'
 import AnalyticsTracker from './components/AnalyticsTracker'
+import { tangkapSaluran } from './lib/attribution'
 import Home from './pages/Home'
 import { TemaIndex, TemaDetail } from './pages/Tema'
 import Pakej from './pages/Pakej'
@@ -68,6 +69,12 @@ function SusunAtur({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
+  // Tangkap saluran (?s=threads / ?utm_source=ig) dari URL semasa muatan dan
+  // simpan — supaya lead borang boleh dijejak ke platform asal.
+  useEffect(() => {
+    tangkapSaluran()
+  }, [])
+
   return (
     <BrowserRouter>
       <ScrollTop />

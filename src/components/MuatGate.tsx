@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { IconWhatsApp, IconX, IconCheck } from './Icons'
 import { hantarLead, telefonSah, hariIni, tarikhMesra } from '../lib/lead'
+import { saluranTersimpan } from '../lib/attribution'
 import { waLink } from '../content'
 import './MuatGate.css'
 
@@ -74,6 +75,7 @@ export default function MuatGate({ senarai, jenis, eyebrow, meta }: Props) {
       checklist: aktif ? `${kata} ${aktif.nama}${aktif.tema ? ` (${aktif.tema})` : ''}` : '-',
       sumber: jenis,
       asal: typeof window !== 'undefined' ? window.location.pathname : '/',
+      saluran: saluranTersimpan(),
     })
     // Terus buka PDF (masih dalam gesture klik user, jadi popup blocker tak halang).
     window.open(aktif!.fail, '_blank', 'noopener')

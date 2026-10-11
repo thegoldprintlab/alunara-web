@@ -1,6 +1,8 @@
 // ALUNARA — kandungan laman. SEMUA harga/teks bisnes ada di sini sahaja.
 // Bos edit fail ni untuk tukar harga / pakej / teks.
 
+import { KOD, type Saluran } from './lib/attribution'
+
 /* ---------------------------------------------------------------------------
  * NOMBOR WHATSAPP: 018-956 4604 (60189564604).
  * Dikonfirmasi oleh bos 2026-09-20. Nombor 018-256 4604 dalam jadual
@@ -42,6 +44,23 @@ export function waLink(msg?: string): string {
   return msg
     ? `https://wa.me/${WA}?text=${encodeURIComponent(msg)}`
     : `https://wa.me/${WA}`
+}
+
+/**
+ * Link WhatsApp BERTAG saluran — untuk diedar di Threads/IG/TikTok dsb.
+ *
+ * Tag `[TH]` / `[IG]` / `[TT]` diletak di AWAL mesej. Customer nampak ayat
+ * biasa; bos terus tahu lead datang dari saluran mana masa buka WhatsApp.
+ * Ini satu-satunya cara attribusi yang berfungsi untuk link WA langsung
+ * (customer tak melalui laman web, jadi UTM tak sampai).
+ *
+ * Contoh:
+ *   waLinkTag('threads', MSG.am)
+ *   → "https://wa.me/60189564604?text=%5BTH%5D%20Hi%20ALUNARA!..."
+ */
+export function waLinkTag(saluran: Saluran, msg?: string): string {
+  const tag = `[${KOD[saluran]}]`
+  return waLink(msg ? `${tag} ${msg}` : tag)
 }
 
 export const MSG = {
@@ -328,6 +347,37 @@ export const SOSIAL = [
   { nama: 'TikTok', url: 'https://tiktok.com/@alunara_melaka', handle: '@alunara_melaka' },
   { nama: 'Threads', url: 'https://threads.net/@alunara_melaka', handle: '@alunara_melaka' },
 ]
+
+/**
+ * PAUTAN BERTAG SIAP-PAKAI — satu per platform.
+ *
+ * Kenapa perlu: satu nombor WhatsApp, satu laman web, tapi lead masuk dari
+ * banyak tempat. Tanpa tag, bos tak tahu saluran mana berbaloi. Guna pautan
+ * ikut tempat ia diedar:
+ *
+ *   Threads      → PAUTAN.threadsWa / PAUTAN.threadsBio
+ *   Instagram    → PAUTAN.igWa / PAUTAN.igBio
+ *   TikTok       → PAUTAN.tiktokWa / PAUTAN.tiktokBio
+ *
+ * `*Wa`   = pautan WhatsApp terus (untuk letak dalam tetingkap Tajuk/Bio WA,
+ *           komen, atau butang). Mesej sudah bawa tag [TH]/[IG]/[TT].
+ * `*Bio`  = pautan laman web untuk letak dalam bio/platform (bawa ?s=…,
+ *           lead borang akan dijejak ke platform itu).
+ *
+ * JANGAN guna pautan sama merata — kalau tidak, attribusi mati.
+ */
+const LAMAN = 'https://alunara.my'
+
+export const PAUTAN = {
+  threadsWa: waLinkTag('threads', MSG.am),
+  igWa: waLinkTag('ig', MSG.am),
+  tiktokWa: waLinkTag('tiktok', MSG.am),
+  fbWa: waLinkTag('fb', MSG.am),
+  threadsBio: `${LAMAN}/checklist?s=threads`,
+  igBio: `${LAMAN}/checklist?s=ig`,
+  tiktokBio: `${LAMAN}/checklist?s=tiktok`,
+  fbBio: `${LAMAN}/checklist?s=fb`,
+} as const
 
 export const KATALOG = [
   { nama: 'Rustic', fail: '/katalog/Alunara-Katalog-Rustic.pdf' },

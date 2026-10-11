@@ -95,8 +95,21 @@ export default async function handler(req, res) {
   const tajuk =
     b.sumber === 'katalog' ? '📗 LEAD KATALOG (ALUNARA)' : '📄 LEAD CHECKLIST (ALUNARA)';
 
+  // Saluran asal lead (threads/ig/tiktok/…). Kosong = tak diketahui.
+  const saluran = String(b.saluran ?? '').slice(0, 20).trim().toLowerCase();
+  const emojiSaluran = {
+    threads: '🧵', ig: '📸', instagram: '📸', tiktok: '🎵',
+    fb: '👥', facebook: '👥', youtube: '▶️', yt: '▶️',
+  }[saluran] ?? '🌐';
+  const namaSaluran = {
+    threads: 'Threads', ig: 'Instagram', instagram: 'Instagram', tiktok: 'TikTok',
+    fb: 'Facebook', facebook: 'Facebook', youtube: 'YouTube', yt: 'YouTube',
+    web: 'Laman web', langsung: 'Terus',
+  }[saluran] ?? (saluran || 'Tak diketahui');
+
   const teks = [
     `<b>${tajuk}</b>`,
+    `${emojiSaluran} <b>Dari:</b> ${esc(namaSaluran)}`,
     '',
     baris('Nama', nama),
     baris('WhatsApp', tele, true),
@@ -179,7 +192,7 @@ async function simpanLead(b, nama, tele) {
         p_event_date: tarikh,
         p_event_type: String(b.jenis ?? 'Belum pasti').slice(0, 60),
         p_interest: String(b.checklist ?? '').slice(0, 120) || null,
-        p_source: String(b.sumber ?? 'web').slice(0, 40),
+        p_source: String(b.saluran ?? b.sumber ?? 'web').slice(0, 40),
         p_source_page: String(b.asal ?? '').slice(0, 200) || null,
       }),
     });

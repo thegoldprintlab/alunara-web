@@ -21,6 +21,8 @@ export type Lead = {
   checklist: string
   /** 'checklist' | 'katalog' */
   sumber?: string
+  /** Saluran asal: 'threads' | 'ig' | 'tiktok' | 'fb' | 'web' | 'langsung'. */
+  saluran?: string
   asal: string
   masa: string
 }

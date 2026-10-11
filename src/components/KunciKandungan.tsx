@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { hantarLead, telefonSah, hariIni } from '../lib/lead'
+import { saluranTersimpan } from '../lib/attribution'
 import { IconWhatsApp, IconCheck } from './Icons'
 import { waLink, MSG } from '../content'
 
@@ -52,6 +53,7 @@ export default function KunciKandungan({ nama, percuma, jumlah, onBuka }: Props)
       checklist: nama,
       sumber: 'checklist_web',
       asal: typeof window !== 'undefined' ? window.location.pathname : '/checklist',
+      saluran: saluranTersimpan(),
     })
 
     onBuka(namaOrang.trim())
