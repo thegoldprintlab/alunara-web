@@ -378,7 +378,8 @@ main { flex: 1; }
 .compare__src { font-size: 0.78rem; margin-top: 26px; color: rgba(250, 245, 238, 0.45) !important; }
 
 /* -------------------------------- PAKEJ --------------------------------- */
-.pkg-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; align-items: start; }
+.pkg-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; align-items: stretch; }
+.pkg-grid > .pkg-card { height: 100%; }
 .pkg-card {
   background: var(--white);
   border: 1px solid var(--line);
@@ -393,10 +394,10 @@ main { flex: 1; }
 .pkg-card:hover { box-shadow: var(--shadow-m); transform: translateY(-3px); }
 .pkg-card--featured {
   border-color: var(--champagne);
+  border-width: 2px;
   box-shadow: 0 12px 44px rgba(201, 162, 75, 0.2);
-  transform: translateY(-6px);
 }
-.pkg-card--featured:hover { transform: translateY(-9px); }
+.pkg-card--featured:hover { transform: translateY(-3px); }
 .pkg-card__badge {
   position: absolute;
   top: -11px;
