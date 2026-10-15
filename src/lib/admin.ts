@@ -281,7 +281,7 @@ export type Barang = {
 export const KATEGORI_BARANG = [
   'Meja',
   'Kerusi',
-  'Meja Hidangan',
+  'Meja Hidangan / Dessert Table',
   'Props / Deco',
   'Kain / Sarung',
   'Peralatan',

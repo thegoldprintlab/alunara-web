@@ -25,7 +25,7 @@ import './pages/Admin.css'
  * Scroll ke atas setiap kali tukar halaman.
  *
  * `key` (bukan `pathname`) — sebab klik pautan footer ke halaman yang SAMA
- * (cth. di /pakej, klik "Sari · RM109" yang juga pergi ke /pakej) tak ubah
+ * (cth. di /pakej, klik "Sari · RM89" yang juga pergi ke /pakej) tak ubah
  * pathname, jadi skrin kekal di bawah dan orang sangka butang tak berfungsi.
  * location.key berubah pada setiap navigasi, jadi kes itu pun di-scroll atas.
  */

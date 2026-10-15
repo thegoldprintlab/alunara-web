@@ -5,6 +5,7 @@ import {
   SEBAB,
   PITCH,
   ADDON,
+  LOOSE_ITEMS,
   WA_DISPLAY,
   MSG,
   waLink,
@@ -44,9 +45,9 @@ export default function Home() {
               digayakan — rustic, minimalist, floral — dan kami uruskan hantar, susun, kemas.
             </p>
             <div className="hero__prices">
-              <span>Dari <strong>RM 109</strong></span>
+              <span>Dari <strong>RM 89</strong></span>
               <span className="hero__dot" aria-hidden="true">·</span>
-              <span>Meja hidangan <strong>percuma</strong></span>
+              <span>Basic dessert table <strong>(Bayu ke atas)</strong></span>
               <span className="hero__dot" aria-hidden="true">·</span>
               <span>Deposit <strong>RM 50</strong></span>
             </div>
@@ -91,8 +92,8 @@ export default function Home() {
             <div className="strip__item">
               <IconCheck />
               <div>
-                <strong>Meja hidangan percuma</strong>
-                <span>Semua pakej</span>
+                <strong>Basic dessert table</strong>
+                <span>Bayu, Anggun & Purnama</span>
               </div>
             </div>
             <div className="strip__item">
@@ -221,8 +222,9 @@ export default function Home() {
             <h2>Pilih ikut saiz majlis</h2>
             <hr className="divider" />
             <p className="lead">
-              Semua pakej sudah termasuk meja hidangan, hiasan bertema, riben dan setup.
-              Kami cuma ada 3 meja &amp; 18 kerusi — sebab itu satu tarikh satu majlis.
+              Empat pakej, semua termasuk meja beriben, hiasan bertema dan setup. Bayu ke
+              atas dapat basic dessert table. Kami cuma ada 3 meja &amp; 18 kerusi — sebab itu
+              satu tarikh satu majlis.
             </p>
           </div>
 
@@ -271,6 +273,24 @@ export default function Home() {
             >
               Tambah <IconArrow />
             </a>
+          </div>
+
+          <div className="notes">
+            <h3>Sewa item berasingan</h3>
+            <p className="muted">Nak tambah welcome board, gazebo, kerusi atau meja tanpa ambil pakej lengkap? Boleh.</p>
+            <div className="loose-grid">
+              {LOOSE_ITEMS.map((item) => (
+                <div className="loose-item" key={item.id}>
+                  <div>
+                    <strong>{item.nama}</strong>
+                    {item.unit && <small>{item.unit}</small>}
+                  </div>
+                  <a href={waLink(MSG.looseItem(item.nama, item.harga))} target="_blank" rel="noreferrer noopener">
+                    RM{item.harga} <IconArrow />
+                  </a>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

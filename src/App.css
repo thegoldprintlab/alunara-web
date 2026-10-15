@@ -378,7 +378,7 @@ main { flex: 1; }
 .compare__src { font-size: 0.78rem; margin-top: 26px; color: rgba(250, 245, 238, 0.45) !important; }
 
 /* -------------------------------- PAKEJ --------------------------------- */
-.pkg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; align-items: start; }
+.pkg-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; align-items: start; }
 .pkg-card {
   background: var(--white);
   border: 1px solid var(--line);
@@ -485,6 +485,36 @@ main { flex: 1; }
 }
 .addon h3 { margin-bottom: 4px; }
 .addon p { margin: 0; font-size: 0.89rem; }
+
+/* ---------------------------- LOOSE ITEMS ------------------------------- */
+.loose-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 18px;
+}
+.loose-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.loose-item strong { display: block; font-size: 0.86rem; font-weight: 500; color: var(--ink); }
+.loose-item small { display: block; font-size: 0.72rem; color: var(--ink-soft); margin-top: 2px; }
+.loose-item a {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--maroon);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.loose-item a svg { width: 14px; height: 14px; }
 
 /* -------------------------------- SEBAB --------------------------------- */
 .sebab-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
@@ -1203,6 +1233,7 @@ main { flex: 1; }
   .nav__burger { display: grid; }
   .nav__cta { padding: 11px 14px; }
   .nav__cta span { display: none; }
+  .pkg-grid { grid-template-columns: repeat(2, 1fr); }
   .sebab-grid { grid-template-columns: repeat(2, 1fr); }
   .steps { grid-template-columns: repeat(2, 1fr); }
   .footer__grid { grid-template-columns: 1fr 1fr; gap: 30px; }
@@ -1229,6 +1260,7 @@ main { flex: 1; }
   .pkg-grid { grid-template-columns: 1fr; }
   .pkg-card--featured { transform: none; }
   .pkg-card--featured:hover { transform: translateY(-3px); }
+  .loose-grid { grid-template-columns: 1fr 1fr; }
   .sebab-grid, .steps { grid-template-columns: 1fr; }
   .steps { gap: 22px; }
   .tempah-steps { grid-template-columns: 1fr; }

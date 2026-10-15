@@ -10,12 +10,12 @@ type Meta = { title: string; desc: string }
 
 const META: Record<string, Meta> = {
   '/': {
-    title: 'ALUNARA · Sewa Meja & Kerusi Bertema Melaka | Pakej dari RM109',
-    desc: 'Sewa meja & kerusi bertema di Melaka. Pakej dari RM109 termasuk meja hidangan, sarung kerusi, hantar & setup. Tema Rustic, Minimalist, Floral. 1 Tarikh, 1 Majlis.',
+    title: 'ALUNARA · Sewa Meja & Kerusi Bertema Melaka | Pakej dari RM89',
+    desc: 'Sewa meja & kerusi bertema di Melaka. Pakej dari RM89 termasuk sarung kerusi beriben, alas & hiasan meja, hantar & setup. Tema Rustic, Minimalist, Floral. 1 Tarikh, 1 Majlis.',
   },
   '/pakej': {
     title: 'Pakej & Harga Sewa Meja Kerusi Melaka | ALUNARA',
-    desc: 'Pakej Sari RM109 (1 meja + 6 kerusi), Bayu RM149 (2 meja + 12 kerusi), Anggun RM199 (3 meja + 18 kerusi). Meja hidangan percuma, hantar & setup termasuk.',
+    desc: 'Pakej Sari RM89 (1 meja + 6 kerusi), Bayu RM149 (2 meja + 12 kerusi), Anggun RM199 (3 meja + 18 kerusi + welcome board), Purnama RM299 (+ gazebo 3x4m). Hantar & setup termasuk.',
   },
   '/tema': {
     title: 'Tema Rustic, Minimalist & Floral | ALUNARA Melaka',
@@ -23,7 +23,7 @@ const META: Record<string, Meta> = {
   },
   '/tema/rustic': {
     title: 'Tema Rustic — Sewa Meja Kerusi Kenduri Melaka | ALUNARA',
-    desc: 'Tema Rustic ALUNARA — ton bumi hangat untuk kenduri, majlis keluarga dan makan-makan santai di Melaka. Pakej dari RM109.',
+    desc: 'Tema Rustic ALUNARA — ton bumi hangat untuk kenduri, majlis keluarga dan makan-makan santai di Melaka. Pakej dari RM89.',
   },
   '/tema/minimalist': {
     title: 'Tema Minimalist — Sewa Meja Kerusi Majlis Formal Melaka | ALUNARA',

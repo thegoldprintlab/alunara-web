@@ -72,6 +72,8 @@ export const MSG = {
     `Hi ALUNARA! Saya suka tema ${nama}. Boleh tunjuk contoh setup yang dah siap?`,
   tarikh: (t: string) => `Hi ALUNARA! Tarikh majlis saya ${t}. Tarikh tu masih kosong?`,
   katalog: 'Hi ALUNARA! Saya nak katalog penuh 3 tema (PDF) dengan harga sekali.',
+  looseItem: (nama: string, harga: number) =>
+    `Hi ALUNARA! Saya nak sewa ${nama} (RM${harga}) tambahan untuk majlis saya.`,
   checklist: 'Hi ALUNARA! Saya nak checklist pelan majlis (PDF percuma). Saya tengah plan majlis jenis: ',
   lokasi: (k: string, caj: string) =>
     `Hi ALUNARA! Majlis saya di ${k}. Caj penghantaran ${caj} — boleh confirm?`,
@@ -99,15 +101,14 @@ export const PAKEJ: Pakej[] = [
   {
     id: 'sari',
     nama: 'Sari',
-    harga: 'RM 109',
-    hargaNum: 109,
+    harga: 'RM 89',
+    hargaNum: 89,
     meja: 1,
     kerusi: 6,
     blurb: 'Untuk majlis kecil — cukup untuk satu meja utama yang nampak mahal.',
     dapat: [
-      '1 meja + 6 kerusi bersarung bertema',
-      'Meja hidangan PERCUMA',
-      'Hiasan meja + riben percuma',
+      '1 meja + 6 kerusi beriben bertema',
+      'Alas meja + hiasan percuma',
       'Hantar & setup kemas',
     ],
   },
@@ -121,9 +122,9 @@ export const PAKEJ: Pakej[] = [
     blurb: 'Pilihan paling ramai ambil — cukup untuk majlis hari jadi & tunang.',
     popular: true,
     dapat: [
-      '2 meja + 12 kerusi bersarung bertema',
-      'Meja hidangan PERCUMA',
-      'Hiasan meja + riben percuma',
+      '2 meja + 12 kerusi beriben bertema',
+      '1 basic dessert table',
+      'Alas meja + hiasan percuma',
       'Hantar & setup kemas',
     ],
   },
@@ -134,11 +135,29 @@ export const PAKEJ: Pakej[] = [
     hargaNum: 199,
     meja: 3,
     kerusi: 18,
-    blurb: 'Set penuh kami — semua stok, satu majlis, tiada kompromi.',
+    blurb: 'Set penuh kami — semua stok meja & kerusi, satu majlis.',
     dapat: [
-      '3 meja + 18 kerusi bersarung bertema',
-      'Meja hidangan PERCUMA',
-      'Hiasan meja + riben percuma',
+      '3 meja + 18 kerusi beriben bertema',
+      '1 basic dessert table',
+      '1 welcome board',
+      'Alas meja + hiasan percuma',
+      'Hantar & setup kemas',
+    ],
+  },
+  {
+    id: 'purnama',
+    nama: 'Purnama',
+    harga: 'RM 299',
+    hargaNum: 299,
+    meja: 3,
+    kerusi: 18,
+    blurb: 'Pakej lengkap dengan khemah gazebo — majlis luar pun nampak siap.',
+    dapat: [
+      '3 meja + 18 kerusi beriben bertema',
+      'Alas meja + hiasan percuma',
+      '1 welcome board',
+      '1 basic dessert table',
+      '1 khemah gazebo 3m x 4m',
       'Hantar & setup kemas',
     ],
   },
@@ -149,6 +168,27 @@ export const ADDON = {
   harga: 'RM 59',
   isi: ['Tapak kek', 'Bekas air', 'Kipas + extension'],
 }
+
+export interface LooseItem {
+  id: string
+  nama: string
+  harga: number
+  unit?: string
+  desc?: string
+}
+
+export const LOOSE_ITEMS: LooseItem[] = [
+  { id: 'welcome-board', nama: 'Welcome board (template)', harga: 50, unit: '"Selamat Datang" — tanpa nama' },
+  { id: 'welcome-board-custom', nama: 'Welcome board (custom)', harga: 110, unit: 'nama & design sendiri' },
+  { id: 'gazebo', nama: 'Khemah gazebo 3m x 4m', harga: 100 },
+  { id: 'kerusi', nama: 'Kerusi', harga: 5, unit: '/unit' },
+  { id: 'riben-kerusi', nama: 'Riben kerusi', harga: 1, unit: '/unit' },
+  { id: 'meja', nama: 'Meja', harga: 30, unit: '/unit' },
+  { id: 'kipas-ext', nama: 'Kipas + extension 10m', harga: 35 },
+  { id: 'bekas-air', nama: 'Bekas air 10L x2', harga: 30 },
+]
+
+export const rm = (n: number) => `RM ${n}`
 
 /* -------------------------------- TEMA ---------------------------------- */
 export interface Tema {
@@ -214,9 +254,9 @@ export const SEBAB = [
       'Kami sengaja tak beli lebih. Sebab itu satu tarikh hanya untuk satu majlis, dan setiap majlis dapat perhatian penuh.',
   },
   {
-    tajuk: 'Meja hidangan percuma',
+    tajuk: 'Basic dessert table percuma',
     ayat:
-      'Semua pakej sudah termasuk meja hidangan. Kedai lain biasanya caj berasingan — kami masukkan sekali.',
+      'Pakej Bayu, Anggun & Purnama sudah termasuk basic dessert table. Kedai lain biasanya caj berasingan — kami masukkan sekali.',
   },
   {
     tajuk: 'Hantar & setup kami uruskan',
@@ -237,12 +277,12 @@ export const PITCH = {
     { label: '18 kerusi', nilai: 'RM 172.80' },
     { label: 'Meja', nilai: 'belum kira' },
     { label: 'Hiasan meja', nilai: 'belum kira' },
-    { label: 'Meja hidangan', nilai: 'belum kira' },
+    { label: 'Basic dessert table', nilai: 'belum kira' },
   ],
   kita: [
     { label: '18 kerusi bersarung bertema', nilai: 'termasuk' },
     { label: '3 meja berhias', nilai: 'termasuk' },
-    { label: 'Meja hidangan', nilai: 'percuma' },
+    { label: 'Basic dessert table', nilai: 'termasuk' },
     { label: 'Hiasan + riben', nilai: 'termasuk' },
     { label: 'Hantar & setup', nilai: 'termasuk' },
   ],
@@ -281,7 +321,7 @@ export const FAQ = [
   },
   {
     q: 'Ada tambahan lain tak?',
-    a: 'Ada — Tapak Kek + Bekas Air + Kipas & extension, RM59 untuk satu set.',
+    a: 'Ada. Pakej Pelengkap (RM59): Tapak Kek + Bekas Air + Kipas & extension. Atau sewa item berasingan: Welcome board (RM50/110), Kerusi (RM5/unit), Meja (RM30/unit), Gazebo 3x4m (RM100), dan lagi.',
   },
 ]
 

@@ -319,7 +319,7 @@ export default function Checklist() {
 
       <CtaBand
         tajuk="Checklist dah siap — setup biar kami uruskan"
-        ayat="Meja & kerusi bersarung bertema, meja hidangan percuma, hantar dan pasang sebelum tetamu tiba."
+        ayat="Meja & kerusi bersarung bertema, basic dessert table (Bayu ke atas), hantar dan pasang sebelum tetamu tiba."
         btnText="Semak Tarikh Kosong"
       />
     </>

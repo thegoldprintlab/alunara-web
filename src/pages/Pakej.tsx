@@ -1,14 +1,28 @@
 import { Link } from 'react-router-dom'
-import { PAKEJ, TEMA, WA_DISPLAY, MSG, waLink } from '../content'
+import { PAKEJ, TEMA, WA_DISPLAY, MSG, waLink, LOOSE_ITEMS } from '../content'
 import CtaBand from '../components/CtaBand'
 import { IconWhatsApp, IconArrow } from '../components/Icons'
 
 const BANDING: { label: string; nilai: string[]; jenis: 'text' | 'bil' }[] = [
   { label: 'Harga', nilai: PAKEJ.map((p) => p.harga), jenis: 'text' },
   { label: 'Meja', nilai: PAKEJ.map((p) => `${p.meja} meja`), jenis: 'bil' },
-  { label: 'Kerusi bersarung', nilai: PAKEJ.map((p) => `${p.kerusi} kerusi`), jenis: 'bil' },
-  { label: 'Meja hidangan', nilai: PAKEJ.map(() => 'Percuma'), jenis: 'text' },
-  { label: 'Hiasan meja + riben', nilai: PAKEJ.map(() => 'Termasuk'), jenis: 'text' },
+  { label: 'Kerusi beriben', nilai: PAKEJ.map((p) => `${p.kerusi} kerusi`), jenis: 'bil' },
+  { label: 'Alas meja + hiasan', nilai: PAKEJ.map(() => 'Termasuk'), jenis: 'text' },
+  {
+    label: 'Basic dessert table',
+    nilai: PAKEJ.map((p) => (p.id === 'sari' ? 'Tidak termasuk' : 'Termasuk')),
+    jenis: 'text',
+  },
+  {
+    label: 'Welcome board',
+    nilai: PAKEJ.map((p) => (p.id === 'anggun' || p.id === 'purnama' ? 'Termasuk' : '—')),
+    jenis: 'text',
+  },
+  {
+    label: 'Khemah gazebo 3m x 4m',
+    nilai: PAKEJ.map((p) => (p.id === 'purnama' ? 'Termasuk' : '—')),
+    jenis: 'text',
+  },
   { label: 'Hantar & setup', nilai: PAKEJ.map(() => 'Termasuk'), jenis: 'text' },
 ]
 
@@ -22,9 +36,10 @@ export default function Pakej() {
             <h1>Semua pakej, semua termasuk</h1>
             <hr className="divider" />
             <p className="lead">
-              Tiada caj tersembunyi. Setiap pakej sudah ada meja hidangan, hiasan bertema,
-              riben dan setup. Yang berubah cuma berapa meja dan kerusi.
-            </p>
+            Tiada caj tersembunyi. Pakej Sari, Bayu, Anggun & Purnama sudah termasuk meja
+            beriben, hiasan meja dan setup. Basic dessert table & welcome board bergantung
+            pada pakej yang dipilih.
+          </p>
           </div>
 
           <div className="pkg-grid pkg-grid--page">
@@ -100,6 +115,21 @@ export default function Pakej() {
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <div className="notes">
+            <h3>Sewa loose item</h3>
+            <p className="muted">Nak tambah item tanpa ambil dalam pakej? Semua boleh disewa berasingan.</p>
+            <div className="loose-grid">
+              {LOOSE_ITEMS.map((item) => (
+                <div className="loose-item" key={item.id}>
+                  <div><strong>{item.nama}</strong>{item.unit && <small>{item.unit}</small>}</div>
+                  <a href={waLink(MSG.looseItem(item.nama, item.harga))} target="_blank" rel="noreferrer noopener">
+                    RM{item.harga} <IconArrow />
+                  </a>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="notes">
