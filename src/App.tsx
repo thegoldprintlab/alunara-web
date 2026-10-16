@@ -9,6 +9,7 @@ import { tangkapSaluran } from './lib/attribution'
 import Home from './pages/Home'
 import { TemaIndex, TemaDetail } from './pages/Tema'
 import Pakej from './pages/Pakej'
+import SewaItem from './pages/SewaItem'
 import Galeri from './pages/Galeri'
 import HargaHantar from './pages/HargaHantar'
 import Hubungi from './pages/Hubungi'
@@ -86,6 +87,7 @@ export default function App() {
           <Route path="/tema" element={<TemaIndex />} />
           <Route path="/tema/:id" element={<TemaDetail />} />
           <Route path="/pakej" element={<Pakej />} />
+          <Route path="/sewa-item" element={<SewaItem />} />
           <Route path="/galeri" element={<Galeri />} />
           <Route path="/harga-hantar" element={<HargaHantar />} />
           <Route path="/checklist" element={<Checklist />} />

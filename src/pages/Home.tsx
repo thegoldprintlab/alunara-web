@@ -5,7 +5,6 @@ import {
   SEBAB,
   PITCH,
   ADDON,
-  LOOSE_ITEMS,
   WA_DISPLAY,
   MSG,
   waLink,
@@ -230,8 +229,15 @@ export default function Home() {
 
           <div className="pkg-grid">
             {PAKEJ.map((p) => (
-              <div className={'pkg-card' + (p.popular ? ' pkg-card--featured' : '')} key={p.id}>
-                {p.popular && <div className="pkg-card__badge">Paling Popular</div>}
+              <div
+                className={'pkg-card' + (p.popular || p.lengkap ? ' pkg-card--featured' : '')}
+                key={p.id}
+              >
+                {(p.lengkap || p.popular) && (
+                  <div className="pkg-card__badge">
+                    {p.lengkap ? 'Pakej Lengkap' : 'Paling Popular'}
+                  </div>
+                )}
                 <div className="pkg-card__name">{p.nama}</div>
                 <div className="pkg-card__price">
                   <span className="pkg-card__rm">RM</span>
@@ -246,7 +252,7 @@ export default function Home() {
                   ))}
                 </ul>
                 <a
-                  className={'btn ' + (p.popular ? 'btn--gold' : 'btn--ghost') + ' btn--block'}
+                  className={'btn ' + (p.popular || p.lengkap ? 'btn--gold' : 'btn--ghost') + ' btn--block'}
                   href={waLink(MSG.pakej(p.nama, p.harga))}
                   target="_blank"
                   rel="noreferrer noopener"
@@ -275,22 +281,18 @@ export default function Home() {
             </a>
           </div>
 
-          <div className="notes">
-            <h3>Sewa item berasingan</h3>
-            <p className="muted">Nak tambah welcome board, gazebo, kerusi atau meja tanpa ambil pakej lengkap? Boleh.</p>
-            <div className="loose-grid">
-              {LOOSE_ITEMS.map((item) => (
-                <div className="loose-item" key={item.id}>
-                  <div>
-                    <strong>{item.nama}</strong>
-                    {item.unit && <small>{item.unit}</small>}
-                  </div>
-                  <a href={waLink(MSG.looseItem(item.nama, item.harga))} target="_blank" rel="noreferrer noopener">
-                    RM{item.harga} <IconArrow />
-                  </a>
-                </div>
-              ))}
+          <div className="addon addon--link">
+            <div>
+              <div className="eyebrow">Sewa Item</div>
+              <h3>Sewa item berasingan</h3>
+              <p className="muted">
+                Welcome board, gazebo, kerusi, meja dan lagi — semua ada harga sewa sendiri,
+                tanpa perlu ambil pakej.
+              </p>
             </div>
+            <Link to="/sewa-item" className="btn btn--ghost btn--sm">
+              Lihat Harga Sewa <IconArrow />
+            </Link>
           </div>
         </div>
       </section>

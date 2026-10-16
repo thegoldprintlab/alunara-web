@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { PAKEJ, TEMA, WA_DISPLAY, MSG, waLink, LOOSE_ITEMS } from '../content'
+import { PAKEJ, TEMA, WA_DISPLAY, MSG, waLink } from '../content'
 import CtaBand from '../components/CtaBand'
 import { IconWhatsApp, IconArrow } from '../components/Icons'
 
@@ -46,10 +46,14 @@ export default function Pakej() {
             {PAKEJ.map((p) => (
               <div
                 id={`pakej-${p.id}`}
-                className={'pkg-card pkg-card--tall' + (p.popular ? ' pkg-card--featured' : '')}
+                className={'pkg-card pkg-card--tall' + (p.popular || p.lengkap ? ' pkg-card--featured' : '')}
                 key={p.id}
               >
-                {p.popular && <div className="pkg-card__badge">Paling Popular</div>}
+                {(p.lengkap || p.popular) && (
+                  <div className="pkg-card__badge">
+                    {p.lengkap ? 'Pakej Lengkap' : 'Paling Popular'}
+                  </div>
+                )}
                 <div className="pkg-card__name">{p.nama}</div>
                 <div className="pkg-card__price">
                   <span className="pkg-card__rm">RM</span>
@@ -69,7 +73,7 @@ export default function Pakej() {
                 </ul>
 
                 <a
-                  className={'btn ' + (p.popular ? 'btn--gold' : 'btn--ghost') + ' btn--block'}
+                  className={'btn ' + (p.popular || p.lengkap ? 'btn--gold' : 'btn--ghost') + ' btn--block'}
                   href={waLink(MSG.pakej(p.nama, p.harga))}
                   target="_blank"
                   rel="noreferrer noopener"
@@ -118,21 +122,6 @@ export default function Pakej() {
           </div>
 
           <div className="notes">
-            <h3>Sewa loose item</h3>
-            <p className="muted">Nak tambah item tanpa ambil dalam pakej? Semua boleh disewa berasingan.</p>
-            <div className="loose-grid">
-              {LOOSE_ITEMS.map((item) => (
-                <div className="loose-item" key={item.id}>
-                  <div><strong>{item.nama}</strong>{item.unit && <small>{item.unit}</small>}</div>
-                  <a href={waLink(MSG.looseItem(item.nama, item.harga))} target="_blank" rel="noreferrer noopener">
-                    RM{item.harga} <IconArrow />
-                  </a>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="notes">
             <h3>Perkara yang ramai tanya</h3>
             <ul>
               <li>
@@ -152,6 +141,20 @@ export default function Pakej() {
                 Tempah awal supaya tarikh awak tak diambil.
               </li>
             </ul>
+          </div>
+
+          <div className="addon">
+            <div>
+              <div className="eyebrow">Sewa Item</div>
+              <h3>Sewa item berasingan</h3>
+              <p className="muted">
+                Welcome board, gazebo, kerusi, meja dan lagi — semua ada harga sewa sendiri,
+                tanpa perlu ambil pakej.
+              </p>
+            </div>
+            <Link to="/sewa-item" className="btn btn--ghost btn--sm">
+              Lihat Harga Sewa <IconArrow />
+            </Link>
           </div>
 
           <div className="page__cta-row">

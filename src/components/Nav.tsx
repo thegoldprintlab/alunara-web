@@ -7,6 +7,7 @@ const LINKS = [
   { to: '/', label: 'Utama' },
   { to: '/tema', label: 'Tema' },
   { to: '/pakej', label: 'Pakej' },
+  { to: '/sewa-item', label: 'Sewa Item' },
   { to: '/galeri', label: 'Galeri' },
   { to: '/buku-tamu', label: 'Buku Tamu' },
   { to: '/checklist', label: 'Checklist' },

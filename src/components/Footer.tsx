@@ -53,6 +53,7 @@ export default function Footer() {
               {p.nama} · {p.harga}
             </Link>
           ))}
+          <Link to="/sewa-item">Sewa Item Berasingan</Link>
           <Link to="/harga-hantar">Caj Penghantaran</Link>
         </div>
 

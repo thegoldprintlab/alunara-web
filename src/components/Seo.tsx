@@ -17,6 +17,10 @@ const META: Record<string, Meta> = {
     title: 'Pakej & Harga Sewa Meja Kerusi Melaka | ALUNARA',
     desc: 'Pakej Sari RM89 (1 meja + 6 kerusi), Bayu RM149 (2 meja + 12 kerusi), Anggun RM199 (3 meja + 18 kerusi + welcome board), Purnama RM299 (+ gazebo 3x4m). Hantar & setup termasuk.',
   },
+  '/sewa-item': {
+    title: 'Sewa Item Berasingan — Welcome Board, Gazebo, Kerusi | ALUNARA',
+    desc: 'Sewa welcome board (RM50/110), khemah gazebo 3x4m (RM100), kerusi (RM5), meja (RM30), kipas + extension (RM35) dan bekas air di Melaka — tanpa ambil pakej penuh.',
+  },
   '/tema': {
     title: 'Tema Rustic, Minimalist & Floral | ALUNARA Melaka',
     desc: 'Tiga tema meja & kerusi siap digayakan untuk majlis anda di Melaka — Rustic, Minimalist dan Floral. Lihat contoh setup sebenar.',

@@ -494,6 +494,11 @@ main { flex: 1; }
   gap: 12px;
   margin-top: 18px;
 }
+.loose-grid--page {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 32px;
+}
 .loose-item {
   display: flex;
   flex-direction: column;

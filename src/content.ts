@@ -95,6 +95,7 @@ export interface Pakej {
   blurb: string
   dapat: string[]
   popular?: boolean
+  lengkap?: boolean
 }
 
 export const PAKEJ: Pakej[] = [
@@ -119,8 +120,7 @@ export const PAKEJ: Pakej[] = [
     hargaNum: 149,
     meja: 2,
     kerusi: 12,
-    blurb: 'Pilihan paling ramai ambil — cukup untuk majlis hari jadi & tunang.',
-    popular: true,
+    blurb: 'Untuk majlis sederhana — 2 meja, 12 kerusi, siap bergaya.',
     dapat: [
       '2 meja + 12 kerusi beriben bertema',
       '1 basic dessert table',
@@ -135,7 +135,8 @@ export const PAKEJ: Pakej[] = [
     hargaNum: 199,
     meja: 3,
     kerusi: 18,
-    blurb: 'Set penuh kami — semua stok meja & kerusi, satu majlis.',
+    blurb: 'Set paling popular kami — lengkap untuk majlis dengan semua meja & kerusi.',
+    popular: true,
     dapat: [
       '3 meja + 18 kerusi beriben bertema',
       '1 basic dessert table',
@@ -151,7 +152,8 @@ export const PAKEJ: Pakej[] = [
     hargaNum: 299,
     meja: 3,
     kerusi: 18,
-    blurb: 'Pakej lengkap dengan khemah gazebo — majlis luar pun nampak siap.',
+    blurb: 'Pakej paling lengkap dengan khemah gazebo — majlis luar pun nampak siap.',
+    lengkap: true,
     dapat: [
       '3 meja + 18 kerusi beriben bertema',
       'Alas meja + hiasan percuma',
