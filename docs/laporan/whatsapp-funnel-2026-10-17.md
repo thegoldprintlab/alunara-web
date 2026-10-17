@@ -1,6 +1,6 @@
 # Laporan WhatsApp - Alunara
 
-2026-10-17 18:50 | 46 chat | bisnes: Alunara Sewa Kerusi Meja Melaka
+2026-10-17 20:07 | 46 chat | bisnes: Alunara Sewa Kerusi Meja Melaka
 
 ## Papan skor
 
@@ -18,7 +18,7 @@
 | Balas <=30 min | 34/45 |
 | Balas >2 jam | 6/45 |
 | Nilai disebut (min/median/max) | RM20 / RM219 / RM650 |
-| **Nilai quoted tapi tak tutup** | **RM1,412** |
+| **Nilai quoted tapi tak tutup (ghost: senyap + dikejar)** | **RM3,355** |
 
 ## 1. BOCOR KRITIKAL - CS tak jawab mesej terakhir
 
@@ -34,7 +34,7 @@ _Ni paling menarik: chat habis elok, customer happy, tapi deal tak pernah tutup.
   - terakhir: "okey cikk.inshallah amin.terima kasih yee"
 - **@daniaaarisya** - 22 hari · 47 mesej · RM220
   - terakhir: "Aminn insyaAllahhh, terima kasih yaa lagi sekali😄😄😄"
-- **@farahfirah** - 8 hari · 17 mesej
+- **@farahfirah** - 9 hari · 17 mesej
   - terakhir: "alaa hahah okayy"
 
 ## 3. Customer senyap, kita tak kejar
@@ -46,7 +46,7 @@ _Kita balas, dia tak jawab, kita pun berhenti. Ni 43% funnel._
 - **@nradhh** - 26 hari · kita 13x, customer 9x
 - **+60 10-226 4321** - 23 hari · RM199 · kita 2x, customer 2x
 - **+60 11-1797 9297** - 22 hari · kita 6x, customer 5x
-- **+60 11-2671 7273** - 17 hari · kita 7x, customer 12x
+- **+60 11-2671 7273** - 18 hari · kita 7x, customer 12x
 - **+60 10-985 2028** - 15 hari · RM230 · kita 25x, customer 19x
 - **@cinnnnda** - 15 hari · kita 26x, customer 26x
 - **@fatynabas** - 11 hari · kita 1x, customer 2x
@@ -54,7 +54,7 @@ _Kita balas, dia tak jawab, kita pun berhenti. Ni 43% funnel._
 - **+60 11-6980 9233** - 9 hari · RM20 · kita 8x, customer 15x
 - **+60 11-1195 0435** - 8 hari · RM209 · kita 20x, customer 24x
 - **+60 11-2110 7433** - 7 hari · kita 4x, customer 3x
-- **@AliaMusa21** - 6 hari · kita 2x, customer 2x
+- **@AliaMusa21** - 7 hari · kita 2x, customer 2x
 - **+60 16-701 5485** - 2 hari · RM30 · kita 7x, customer 8x
 - **+60 18-400 4116** - 2 hari · RM240 · kita 10x, customer 10x
 - **+60 12-526 4672** - 1 hari · kita 5x, customer 8x
@@ -130,7 +130,7 @@ _Ni jawapan kepada soalan "kenapa tak close". Kira hanya chat yang TAK jadi deal
 | +60 17-362 0115 | 27 | 2 | 17 | 10 | KITA | 2 | 29h | RM650 | DIKEJAR |
 | +60 17-647 9058 | 11 | 4 | 7 | 4 | KITA | 1 | 29h | - | SENYAP |
 | +60 19-373 5272 | 20 | 10 | 13 | 7 | KITA | 7 | 29h | - | DIKEJAR |
-| Alunara Bella 129 Bukit Baru Done | 50 | 9 | 29 | 21 | KITA | 1 | 28h | RM258 | DEAL |
+| Alunara Bella 129 Bukit Baru Done | 50 | 9 | 29 | 21 | KITA | 1 | 29h | RM258 | DEAL |
 | +60 10-510 8379 | 24 | 3 | 12 | 12 | CUST | 0 | 26h | RM50 | TUTUP_MANIS |
 | @nradhh | 22 | 1 | 13 | 9 | KITA | 1 | 26h | - | SENYAP |
 | +60 16-634 1584 | 37 | 178 | 19 | 18 | KITA | 2 | 25h | RM59 | DIKEJAR |
@@ -140,7 +140,7 @@ _Ni jawapan kepada soalan "kenapa tak close". Kira hanya chat yang TAK jadi deal
 | @daniaaarisya | 47 | 2 | 20 | 27 | CUST | 0 | 22h | RM220 | TUTUP_MANIS |
 | Alunara Fify 269 Durian Tunggal | 60 | 362 | 35 | 25 | KITA | 3 | 21h | RM218 | DEAL |
 | +60 14-254 3265 | 10 | 5 | 6 | 4 | KITA | 3 | 20h | - | DIKEJAR |
-| +60 11-2671 7273 | 19 | 1 | 7 | 12 | KITA | 1 | 17h | - | SENYAP |
+| +60 11-2671 7273 | 19 | 1 | 7 | 12 | KITA | 1 | 18h | - | SENYAP |
 | +60 10-985 2028 | 44 | 0 | 25 | 19 | KITA | 1 | 15h | RM230 | SENYAP |
 | @cinnnnda | 52 | 19 | 26 | 26 | KITA | 1 | 15h | - | SENYAP |
 | @shahirrarozali | 31 | 1 | 20 | 11 | KITA | 2 | 15h | RM399 | DIKEJAR |
@@ -152,21 +152,21 @@ _Ni jawapan kepada soalan "kenapa tak close". Kira hanya chat yang TAK jadi deal
 | +60 11-5409 0984 | 51 | 15 | 20 | 31 | KITA | 1 | 9h | RM50 | SENYAP |
 | +60 11-6980 9233 | 23 | 1 | 8 | 15 | KITA | 1 | 9h | RM20 | SENYAP |
 | +60 17-659 4565 | 8 | 121 | 4 | 4 | KITA | 3 | 9h | RM199 | DIKEJAR |
+| @farahfirah | 17 | 7 | 8 | 9 | CUST | 0 | 9h | - | TUTUP_MANIS |
 | @nanaddyadnan | 8 | 2 | 5 | 3 | KITA | 3 | 9h | - | DIKEJAR |
 | +60 11-1195 0435 | 44 | 2 | 20 | 24 | KITA | 1 | 8h | RM209 | SENYAP |
-| @farahfirah | 17 | 7 | 8 | 9 | CUST | 0 | 8h | - | TUTUP_MANIS |
 | +60 11-2110 7433 | 7 | 54 | 4 | 3 | KITA | 1 | 7h | - | SENYAP |
+| @AliaMusa21 | 4 | 5 | 2 | 2 | KITA | 1 | 7h | - | SENYAP |
 | @tyqanazri | 5 | 1 | 3 | 2 | KITA | 2 | 7h | RM109 | DIKEJAR |
 | +60 13-227 7515 | 4 | 2 | 3 | 1 | KITA | 2 | 6h | - | DIKEJAR |
-| @AliaMusa21 | 4 | 5 | 2 | 2 | KITA | 1 | 6h | - | SENYAP |
 | +60 16-607 4764 | 14 | 4 | 6 | 8 | KITA | 0 | 5h | - | DEAL |
-| Alu - Farisha - Unconfirmed | 58 | 4 | 21 | 37 | KITA | 0 | 3h | RM200 | DEAL |
+| Alu - Farisha - Unconfirmed | 58 | 4 | 21 | 37 | KITA | 0 | 4h | RM200 | DEAL |
+| +60 13-216 0019 | 51 | 0 | 23 | 28 | KITA | 0 | 2h | RM324 | DEAL |
 | +60 16-701 5485 | 15 | 2 | 7 | 8 | KITA | 1 | 2h | RM30 | SENYAP |
 | +60 17-884 2659 | 31 | 150 | 16 | 15 | KITA | 2 | 2h | RM50 | DIKEJAR |
 | +60 18-400 4116 | 20 | 1 | 10 | 10 | KITA | 1 | 2h | RM240 | SENYAP |
 | @hanisuhaila1607 | 24 | 0 | 11 | 13 | KITA | 5 | 2h | - | DIKEJAR |
 | +60 12-526 4672 | 13 | 0 | 5 | 8 | KITA | 1 | 1h | - | SENYAP |
-| +60 13-216 0019 | 51 | 0 | 23 | 28 | KITA | 0 | 1h | RM324 | DEAL |
 | +60 17-544 8267 | 35 | 43 | 20 | 15 | KITA | 0 | 0h | RM498 | DEAL |
 | @Eiyraisme | 26 | 0 | 10 | 16 | KITA | 1 | 0h | - | SENYAP |
 | @qihaa.__ | 13 | 0 | 5 | 8 | KITA | 1 | 0h | RM235 | SENYAP |
