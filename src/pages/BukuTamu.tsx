@@ -20,6 +20,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import QRCode from 'qrcode'
 import {
   STOCKS,
   STOCK_DEFAULT,
@@ -210,6 +211,14 @@ export default function BukuTamu() {
   // slideshow + realtime (polling)
   const [slaid, setSlaid] = useState(false)
   const [slaidIdx, setSlaidIdx] = useState(0)
+  const [slaidQr, setSlaidQr] = useState('')
+  const slaidRef = useRef<HTMLDivElement | null>(null)
+
+  // muat turun tuan rumah (kod unlock = kunci, tiada login)
+  const [hostKod, setHostKod] = useState('')
+  const [hostSibuk, setHostSibuk] = useState(false)
+  const [hostStatus, setHostStatus] = useState('')
+  const [hostRalat, setHostRalat] = useState(false)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const rendererRef = useRef<FilmRenderer | null>(null)
@@ -392,6 +401,80 @@ export default function BukuTamu() {
     }, 3000)
     return () => window.clearInterval(id)
   }, [slaid, media])
+
+  /**
+   * QR di skrin semasa slideshow — untuk TV/projektor dewan.
+   *
+   * KENAPA DI SKRIN, BUKAN CUKUP DI MEJA: tetamu yang duduk jauh atau datang
+   * lewat tak nampak kad meja. Bila gambar kawan dia naik di skrin, dia nak
+   * scan — jadi QR mesti ada di situ, bukan di meja 20 meter jauhnya.
+   * Dijana sekali sahaja (bukan setiap gambar) supaya tak kerja berulang.
+   */
+  useEffect(() => {
+    if (!slaid || slaidQr) return
+    void QRCode.toDataURL(`${window.location.origin}/buku-tamu/${kod}`, {
+      margin: 1,
+      width: 320,
+      color: { dark: '#000000', light: '#ffffff' },
+    })
+      .then(setSlaidQr)
+      .catch(() => {
+        /* QR gagal — slideshow tetap jalan */
+      })
+  }, [slaid, slaidQr, kod])
+
+  /** Skrin penuh untuk TV dewan. Browser kiosk tak sentuh, jadi butang ini perlu. */
+  async function skrinPenuh() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen()
+      else await slaidRef.current?.requestFullscreen()
+    } catch {
+      /* sesetengah pelayar TV tak benarkan — abaikan */
+    }
+  }
+
+  /**
+   * Muat turun ZIP untuk tuan rumah, tanpa login.
+   * Kunci = kod unlock yang terikat pada galeri ini. Server yang semak
+   * padanan kod↔slug; klien tak boleh minta galeri orang lain.
+   */
+  async function muatTurunHost() {
+    const k = hostKod.trim()
+    if (k.length < 4) {
+      setHostRalat(true)
+      setHostStatus('Masukkan kod yang kami hantar melalui WhatsApp.')
+      return
+    }
+    setHostSibuk(true)
+    setHostRalat(false)
+    setHostStatus('Menyediakan ZIP… ini boleh ambil masa sebentar.')
+    try {
+      const res = await fetch('/api/guestbook-zip', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ slug: kod, kod: k }),
+      })
+      if (!res.ok) {
+        const j = (await res.json().catch(() => ({}))) as { ralat?: string }
+        throw new Error(j.ralat || 'Gagal muat turun.')
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `buku-tamu-${kod}.zip`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+      setHostStatus('Siap. Fail ZIP sedang dimuat turun.')
+    } catch (e) {
+      setHostRalat(true)
+      setHostStatus(e instanceof Error ? e.message : 'Gagal muat turun.')
+    } finally {
+      setHostSibuk(false)
+    }
+  }
 
   // ---- renderer WebGL ----
   // Dibuat MALAS, dan diikat pada ELEMEN canvas — bukan pada komponen.
@@ -879,15 +962,29 @@ export default function BukuTamu() {
             <>
               {!imej ? (
                 <>
+                  {/* Dua input, bukan satu: `capture` buka kamera TERUS dan
+                      buang pilihan galeri pada iOS. Tetamu yang dah ambil
+                      gambar awal perlu jalan kedua. */}
                   <input
                     id="bt-fail"
                     className="bt-fail"
                     type="file"
                     accept="image/*"
+                    capture="environment"
                     onChange={(e) => void pilihFail(e.target.files?.[0] ?? null)}
                   />
                   <label htmlFor="bt-fail" className="bt-btn bt-btn--pilih">
-                    Pilih gambar
+                    📷 Ambil gambar
+                  </label>
+                  <input
+                    id="bt-fail-galeri"
+                    className="bt-fail"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => void pilihFail(e.target.files?.[0] ?? null)}
+                  />
+                  <label htmlFor="bt-fail-galeri" className="bt-btn bt-btn--halus bt-btn--pilih">
+                    Pilih dari galeri
                   </label>
                 </>
               ) : (
@@ -936,8 +1033,10 @@ export default function BukuTamu() {
                       onClick={() => {
                         setImej(null)
                         failRef.current = null
-                        const inp = document.getElementById('bt-fail') as HTMLInputElement | null
-                        if (inp) inp.value = ''
+                        for (const id of ['bt-fail', 'bt-fail-galeri']) {
+                          const inp = document.getElementById(id) as HTMLInputElement | null
+                          if (inp) inp.value = ''
+                        }
                       }}
                       disabled={sibuk}
                     >
@@ -1234,9 +1333,12 @@ export default function BukuTamu() {
         const senarai = media.filter((m) => m.media_type === 'photo')
         const aktif = senarai[slaidIdx % (senarai.length || 1)]
         return (
-          <div className="bt-slaid" role="dialog" aria-modal="true" aria-label="Slideshow">
+          <div className="bt-slaid" role="dialog" aria-modal="true" aria-label="Slideshow" ref={slaidRef}>
             <button className="bt-slaid-tutup" aria-label="Tutup" onClick={() => setSlaid(false)}>
               ✕
+            </button>
+            <button className="bt-slaid-penuh" aria-label="Skrin penuh" onClick={() => void skrinPenuh()}>
+              ⛶
             </button>
             {aktif && urlPeta[aktif.storage_path] ? (
               <img src={urlPeta[aktif.storage_path]} alt={`Gambar dari ${aktif.nama_awal}`} className="bt-slaid-img" />
@@ -1249,11 +1351,44 @@ export default function BukuTamu() {
                 {aktif.wish && <span className="bt-ucapan">{aktif.wish}</span>}
               </div>
             )}
+            {slaidQr && (
+              <aside className="bt-slaid-qr">
+                <img src={slaidQr} alt="QR untuk kongsi gambar" />
+                <p>Scan &amp; kongsi gambar</p>
+              </aside>
+            )}
           </div>
         )
       })()}
 
       <footer className="bt-kaki">
+        {/* Muat turun untuk TUAN RUMAH, bukan tetamu — sebab itu kecil dan
+            di bawah. Kunci = kod unlock yang dia dah terima masa bayar;
+            kod itu memang terikat pada galeri ini, jadi tiada login perlu.
+            Disembunyi di galeri demo: tiada host, jadi kotak kod hanya
+            mengelirukan orang yang sedang menilai produk. */}
+        {isV2 && kod.toLowerCase() !== 'demo' && (
+          <details className="bt-host">
+            <summary>Tuan rumah? Muat turun semua gambar</summary>
+            <p className="bt-info bt-info--kecil">
+              Masukkan kod 6 aksara yang kami hantar melalui WhatsApp selepas bayaran.
+            </p>
+            {hostStatus && <p className={hostRalat ? 'bt-ralat' : 'bt-info'}>{hostStatus}</p>}
+            <label className="bt-medan">
+              <span>Kod majlis</span>
+              <input
+                value={hostKod}
+                onChange={(e) => setHostKod(e.target.value.toUpperCase())}
+                placeholder="cth. AB23CD45"
+                maxLength={20}
+                autoComplete="off"
+              />
+            </label>
+            <button className="bt-btn bt-btn--halus" onClick={() => void muatTurunHost()} disabled={hostSibuk}>
+              {hostSibuk ? 'Menyediakan ZIP…' : 'Muat turun semua'}
+            </button>
+          </details>
+        )}
         <p>Buku tamu oleh ALUNARA</p>
       </footer>
     </div>

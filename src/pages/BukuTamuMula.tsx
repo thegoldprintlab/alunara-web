@@ -42,8 +42,13 @@ export default function BukuTamuMula() {
           <a className="bt-btn" href="#harga">
             Lihat harga
           </a>
-          <Link className="bt-btn bt-btn--halus" to="/hubungi">
-            Tanya dulu
+          {/* Demo = galeri SEBENAR, bukan tangkapan skrin. Pesaing (Sedetik
+              /test, povkita /gallery/sample) semua buat ini — tanpa demo,
+              orang kena bayar dulu baru tahu apa dia beli.
+              Slug `demo` dicipta oleh scripts/bina-demo-galeri.mjs — ia
+              galeri berasingan supaya sampah demo tak masuk majlis client. */}
+          <Link className="bt-btn bt-btn--halus" to="/buku-tamu/demo">
+            Lihat contoh galeri
           </Link>
         </div>
       </header>

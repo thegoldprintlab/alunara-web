@@ -38,11 +38,18 @@ function s3() {
 
 const MAX_TOTAL_BYTES = 2 * 1024 * 1024 * 1024 // 2 GB
 
-/** Lazily import archiver (hanya bila endpoint dipanggil). */
-let archiverMod = null
-async function archiver() {
-  if (!archiverMod) archiverMod = await import('archiver')
-  return archiverMod.default
+/**
+ * Lazily import archiver (hanya bila endpoint dipanggil).
+ *
+ * archiver 8.0.0 buang default export: tiada lagi `archiver('zip', ...)`,
+ * ganti dengan kelas `ZipArchive`. Versi lama `arch(...)` menyebabkan
+ * SETIAP muat turun ZIP gagal dengan "arch is not a function" — termasuk
+ * butang di panel /admin, bukan hanya laluan tuan rumah.
+ */
+let ZipArchiveMod = null
+async function zipKelas() {
+  if (!ZipArchiveMod) ZipArchiveMod = (await import('archiver')).ZipArchive
+  return ZipArchiveMod
 }
 
 function sb(path, init = {}) {
@@ -55,6 +62,54 @@ function sb(path, init = {}) {
       ...(init.headers || {}),
     },
   })
+}
+
+/**
+ * Kod unlock → senarai event_id, tapi HANYA kalau kod itu milik galeri
+ * dengan slug yang diminta. Kod 1-guna sudah terikat pada gallery_id sejak
+ * galeri dicipta (lihat alunara_gb_create_gallery), jadi ia berfungsi
+ * sebagai kunci tuan rumah tanpa perlu login atau lajur baharu.
+ *
+ * TIGA QUERY, BUKAN SATU EMBED: PostgREST `!inner` embed pada lajur FK
+ * nullable pulang 400 dalam produksi walaupun SQL yang sama lulus bila
+ * diuji terus. Panggilan ringkas lebih membosankan tapi betul.
+ *
+ * Kod TIDAK ditanda guna di sini — ia kekal sah sebagai kunci host.
+ * Pulangkan {eventIds, sebab}; sebab cuma untuk log, bukan untuk klien.
+ */
+async function kodHostSah(slug, kod) {
+  const gagal = (sebab) => ({ eventIds: [], sebab })
+  if (!slug || !/^[A-Za-z0-9]{4,20}$/.test(kod)) return gagal('format')
+
+  const r1 = await sb(
+    `/rest/v1/alunara_guestbook_unlock_codes?code=eq.${encodeURIComponent(kod.toUpperCase())}` +
+      `&select=gallery_id`
+  )
+  if (!r1.ok) return gagal(`kod_http_${r1.status}`)
+  const kodBaris = await r1.json()
+  if (!Array.isArray(kodBaris) || !kodBaris.length) return gagal('kod_tak_jumpa')
+  const galleryId = kodBaris[0]?.gallery_id
+  if (!galleryId) return gagal('kod_tiada_galeri')
+
+  const r2 = await sb(
+    `/rest/v1/alunara_guestbook_galleries?id=eq.${encodeURIComponent(galleryId)}` +
+      `&select=slug,active`
+  )
+  if (!r2.ok) return gagal(`galeri_http_${r2.status}`)
+  const galeri = await r2.json()
+  if (!Array.isArray(galeri) || !galeri.length) return gagal('galeri_tak_jumpa')
+  const gal = galeri[0]
+  if (!gal.active) return gagal('galeri_tidak_aktif')
+  if (String(gal.slug).toLowerCase() !== slug.toLowerCase()) return gagal('slug_lain')
+
+  const r3 = await sb(
+    `/rest/v1/alunara_guestbook_events?gallery_id=eq.${encodeURIComponent(galleryId)}` +
+      `&select=id`
+  )
+  if (!r3.ok) return gagal(`event_http_${r3.status}`)
+  const event = await r3.json()
+  if (!Array.isArray(event) || !event.length) return gagal('event_kosong')
+  return { eventIds: event.map((e) => e.id), sebab: 'ok' }
 }
 
 async function adminSah(authHeader) {
@@ -85,10 +140,6 @@ export default async function handler(req, res) {
     return res.status(503).json({ ralat: 'Perkhidmatan belum sedia.' })
   }
 
-  if (!(await adminSah(req.headers.authorization))) {
-    return res.status(403).json({ ralat: 'Hanya admin.' })
-  }
-
   let body = {}
   try {
     body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {})
@@ -96,14 +147,38 @@ export default async function handler(req, res) {
     return res.status(400).json({ ralat: 'JSON tak sah.' })
   }
 
+  // Dua jalan masuk:
+  //   * admin  → Bearer token + event_id (panel /admin, satu sub-event)
+  //   * tuan rumah → kod unlock 6 aksara + slug (tiada login, seluruh galeri)
+  // Kod unlock ialah kunci host: ia terikat pada gallery_id sejak galeri
+  // dicipta, jadi tiada lajur atau kod baharu perlu diedar.
   const eventId = String(body?.event_id || '')
-  if (!eventId) return res.status(400).json({ ralat: 'event_id diperlukan.' })
+  let eventIds = []
+  let namaFail = eventId.slice(0, 8)
+
+  if (eventId) {
+    if (!(await adminSah(req.headers.authorization))) {
+      return res.status(403).json({ ralat: 'Hanya admin.' })
+    }
+    eventIds = [eventId]
+  } else {
+    const slug = String(body?.slug || '').trim()
+    const kod = String(body?.kod || '').trim()
+    const hasil = await kodHostSah(slug, kod)
+    eventIds = hasil.eventIds
+    if (!eventIds.length) {
+      console.warn('[guestbook-zip] kod host ditolak:', hasil.sebab)
+      return res.status(403).json({ ralat: 'Kod tak sah untuk majlis ini.' })
+    }
+    namaFail = slug
+  }
 
   // 1. Ambil senarai media dari DB (hidden=false).
   //    Jadual v2 — ia yang menyimpan foto + video + suara. Baca
   //    `alunara_guestbook_photos` (v1) bermakna video/suara hilang dari ZIP.
+  const senaraiEvent = encodeURIComponent(eventIds.map((id) => `"${id}"`).join(','))
   const r1 = await sb(
-    `/rest/v1/alunara_guestbook_media?event_id=eq.${encodeURIComponent(eventId)}` +
+    `/rest/v1/alunara_guestbook_media?event_id=in.(${senaraiEvent})` +
       `&hidden=eq.false&select=storage_path,mime_type,bytes`
   )
   if (!r1.ok) return res.status(502).json({ ralat: 'Gagal baca media.' })
@@ -151,11 +226,11 @@ export default async function handler(req, res) {
   }
 
   // 3. Stream ZIP.
-  const arch = await archiver()
-  const zip = arch('zip', { zlib: { level: 6 } })
+  const ZipArchive = await zipKelas()
+  const zip = new ZipArchive({ zlib: { level: 6 } })
   res.status(200)
   res.setHeader('Content-Type', 'application/zip')
-  res.setHeader('Content-Disposition', `attachment; filename="buku-tamu-${eventId.slice(0, 8)}.zip"`)
+  res.setHeader('Content-Disposition', `attachment; filename="buku-tamu-${namaFail}.zip"`)
 
   zip.pipe(res)
 

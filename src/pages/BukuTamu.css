@@ -1030,6 +1030,45 @@ select.bt-input {
   color: var(--teks-lembut);
 }
 
+.bt-slaid-penuh {
+  position: absolute;
+  top: 16px;
+  right: 72px;
+  background: rgba(200, 161, 101, 0.15);
+  border: 1px solid rgba(200, 161, 101, 0.3);
+  color: var(--teks);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* QR kekal di penjuru supaya tak menutup gambar, tapi cukup besar untuk
+   discan dari jarak dewan (imej 320px, dipaparkan 140px). */
+.bt-slaid-qr {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px;
+  text-align: center;
+}
+
+.bt-slaid-qr img {
+  display: block;
+  width: 140px;
+  height: 140px;
+}
+
+.bt-slaid-qr p {
+  margin: 6px 0 0;
+  font-size: 0.72rem;
+  color: #1a1613;
+  font-weight: 600;
+}
+
 
 
 /* ---------------------------------------------------------------------------
@@ -1150,6 +1189,36 @@ select.bt-input {
 .bt-tema__ui-btn { width: 58%; height: 9px; border-radius: 5px; opacity: 0.9; }
 .bt-tema__nama { font-size: 0.9rem; color: var(--teks); font-weight: 600; }
 .bt-tema__nota { font-size: 0.74rem; color: var(--teks-lembut); }
+
+/* --- muat turun tuan rumah (halaman tetamu, bukan admin) --- */
+.bt-host {
+  margin: 20px 0 8px;
+  border-top: 1px solid rgba(200, 161, 101, 0.18);
+  padding-top: 14px;
+}
+
+.bt-host summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--emas-lembut);
+  list-style: none;
+}
+
+.bt-host summary::-webkit-details-marker {
+  display: none;
+}
+
+.bt-host summary::before {
+  content: '↓ ';
+}
+
+.bt-host[open] summary::before {
+  content: '↑ ';
+}
+
+.bt-host .bt-medan {
+  margin-top: 12px;
+}
 
 /* --- QR hasil (halaman /buku-tamu/buat) --- */
 .bt-qr {
