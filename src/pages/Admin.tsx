@@ -945,8 +945,9 @@ function TabDuit({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
   const [muat, setMuat] = useState(true)
   const [ralat, setRalat] = useState('')
   const [pesan, setPesan] = useState('')
-  const [sub, setSub] = useState<'belanja' | 'bayaran'>('belanja')
-  const [bulan, setBulan] = useState<string>(bulanIniKL())
+  const [sub, setSub] = useState<'belanja' | 'bayaran'>('bayaran')
+  // Lalai SEMUA bulan — bos nak nampak jumlah masuk vs keluar penuh di bawah jadual.
+  const [bulan, setBulan] = useState<string>('semua')
   const [borang, setBorang] = useState<BorangBelanja | null>(null)
   const [sibuk, setSibuk] = useState(false)
 
@@ -1031,13 +1032,13 @@ function TabDuit({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
     })
     setSibuk(false)
     if (!res.ok) return setPesan(res.ralat ?? 'Gagal simpan belanja.')
-    setPesan('Belanja direkod.')
+    setPesan('Duit keluar direkod.')
     setBorang(null)
     await muatSemula()
   }
 
   async function buangBelanja(b: Belanja) {
-    if (!confirm(`Padam belanja ${b.kategori} ${rm(b.jumlah)}?`)) return
+    if (!confirm(`Padam duit keluar ${b.kategori} ${rm(b.jumlah)}?`)) return
     const res = await db.buangBelanja(sesi, b.id)
     if (!res.ok) return setPesan(res.ralat ?? 'Gagal padam.')
     await muatSemula()
@@ -1066,7 +1067,7 @@ function TabDuit({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
         </div>
         <div className="adm__kpi">
           <span className="adm__kpi-angka">{rm(ringkas.keluarOp)}</span>
-          <span className="adm__kpi-label">Belanja Operasi</span>
+          <span className="adm__kpi-label">Duit Keluar (operasi)</span>
         </div>
         <div className="adm__kpi">
           <span className="adm__kpi-angka">{rm(ringkas.keluarCapex)}</span>
@@ -1091,21 +1092,21 @@ function TabDuit({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
         </select>
         <div className="adm__tab adm__tab--kecil">
           <button
-            className={`adm__tab-btn${sub === 'belanja' ? ' adm__tab-btn--aktif' : ''}`}
-            onClick={() => setSub('belanja')}
-          >
-            Belanja ({belanjaBulan.length})
-          </button>
-          <button
             className={`adm__tab-btn${sub === 'bayaran' ? ' adm__tab-btn--aktif' : ''}`}
             onClick={() => setSub('bayaran')}
           >
-            Bayaran Masuk ({bayaranBulan.length})
+            Duit Masuk ({bayaranBulan.length})
+          </button>
+          <button
+            className={`adm__tab-btn${sub === 'belanja' ? ' adm__tab-btn--aktif' : ''}`}
+            onClick={() => setSub('belanja')}
+          >
+            Duit Keluar ({belanjaBulan.length})
           </button>
         </div>
         {sub === 'belanja' && (
           <button className="btn btn--gold btn--sm" onClick={bukaBelanja}>
-            + Belanja
+            + Duit Keluar
           </button>
         )}
       </div>
@@ -1115,7 +1116,7 @@ function TabDuit({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
 
       {borang && (
         <form className="adm__kad" onSubmit={simpanBelanja}>
-          <h3>Belanja Baru</h3>
+          <h3>Duit Keluar Baru</h3>
           <div className="adm__grid">
             <div className="field">
               <label htmlFor="z-jumlah">Jumlah (RM) *</label>
@@ -1212,7 +1213,7 @@ function TabDuit({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
 
           <div className="adm__aksi">
             <button type="submit" className="btn btn--solid btn--sm" disabled={sibuk}>
-              {sibuk ? 'Menyimpan…' : 'Simpan Belanja'}
+              {sibuk ? 'Menyimpan…' : 'Simpan Duit Keluar'}
             </button>
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => setBorang(null)}>
               Batal
@@ -1225,7 +1226,7 @@ function TabDuit({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
         <p className="muted">Memuat…</p>
       ) : sub === 'belanja' ? (
         belanjaBulan.length === 0 ? (
-          <p className="muted">Tiada belanja direkod untuk bulan ini.</p>
+          <p className="muted">Tiada duit keluar direkod.</p>
         ) : (
           <div className="adm__jadual-bungkus">
             <table className="adm__jadual">
@@ -1273,11 +1274,18 @@ function TabDuit({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
                   )
                 })}
               </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={4}>Jumlah Duit Keluar</td>
+                  <td>{rm(ringkas.keluarOp + ringkas.keluarCapex)}</td>
+                  <td />
+                </tr>
+              </tfoot>
             </table>
           </div>
         )
       ) : bayaranBulan.length === 0 ? (
-        <p className="muted">Tiada bayaran direkod untuk bulan ini.</p>
+        <p className="muted">Tiada duit masuk direkod.</p>
       ) : (
         <div className="adm__jadual-bungkus">
           <table className="adm__jadual">
@@ -1328,6 +1336,13 @@ function TabDuit({ sesi }: { sesi: NonNullable<ReturnType<typeof bacaSesi>> }) {
                 )
               })}
             </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={4}>Jumlah Duit Masuk</td>
+                <td>{rm(ringkas.masuk)}</td>
+                <td />
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}

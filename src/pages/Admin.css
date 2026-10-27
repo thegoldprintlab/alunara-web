@@ -200,6 +200,15 @@
 }
 .adm__jadual tbody tr:last-child td { border-bottom: 0; }
 .adm__jadual tbody tr:hover { background: rgba(201, 162, 75, 0.05); }
+/* Baris jumlah di bawah jadual — bos nak nampak total masuk/keluar terus. */
+.adm__jadual tfoot td {
+  font-weight: 700;
+  color: var(--maroon);
+  border-top: 2px solid var(--line);
+  border-bottom: 0;
+  background: var(--cream-warm);
+  white-space: nowrap;
+}
 .adm__baris--mati { opacity: 0.5; }
 .adm__baris--mati .adm__nama { text-decoration: line-through; }
 
