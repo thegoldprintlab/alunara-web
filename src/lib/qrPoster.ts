@@ -116,6 +116,28 @@ function bungkus(teks: string, font: PDFFont, saiz: number, maks: number): strin
   return baris
 }
 
+/**
+ * Bila nama majlis jadi dua baris, pilih titik pecah yang paling seimbang.
+ * Tanpa ini baris pertama diisi penuh dan baris kedua tinggal "& Zakwan".
+ */
+function imbang2(teks: string, font: PDFFont, saiz: number, maks: number): string[] | null {
+  const kata = teks.split(/\s+/).filter(Boolean)
+  let terbaik: string[] | null = null
+  let beza = Infinity
+  for (let i = 1; i < kata.length; i++) {
+    const a = kata.slice(0, i).join(' ')
+    const b = kata.slice(i).join(' ')
+    const wa = font.widthOfTextAtSize(a, saiz)
+    const wb = font.widthOfTextAtSize(b, saiz)
+    if (wa > maks || wb > maks) continue
+    if (Math.abs(wa - wb) < beza) {
+      beza = Math.abs(wa - wb)
+      terbaik = [a, b]
+    }
+  }
+  return terbaik
+}
+
 /** Kecilkan saiz sehingga teks muat dalam `maksBaris` baris. */
 function muat(
   teks: string,
@@ -294,7 +316,9 @@ export async function janaPdfQr(
   const lembut = warna('#6e675c')
 
   // ---------------------------------------------------------------- 1. KEPALA
-  const bandH = Math.max(20, 30 * f)
+  // Jalur dulu 30 mm — terlalu tinggi untuk satu baris monogram, jadi ia
+  // menelan ruang yang sepatutnya jadi jarak antara BUKU TAMU dan nama.
+  const bandH = Math.max(16, 22 * f)
   page.drawRectangle({ x: 0, y: H - bandH * MM, width: W, height: bandH * MM, color: jalur })
   page.drawRectangle({
     x: 0,
@@ -307,7 +331,9 @@ export async function janaPdfQr(
   // Monogram: bukti jenama pada poster, dan ia mengunci tema warna kepala.
   const saizMono = Math.max(8, 10.5 * f)
   const emMono = 0.3
-  const yMono = bandH / 2 + Math.max(2.6, 3.2 * f)
+  // Garis dasar dinaikkan separuh tinggi huruf besar (0.36 em) supaya ALUNARA
+  // betul-betul di tengah jalur. Offset tetap 3.2 mm dulu buat ia nampak rendah.
+  const yMono = bandH / 2 + (saizMono * 0.36) / MM
   teksJarak(page, 'ALUNARA', sansTegas, saizMono, emMono, tengah, Y(yMono), aksen)
   const lebarMono = lebarJarak(sansTegas, 'ALUNARA', saizMono, emMono)
   const yPermataMono = Y(yMono) + saizMono * 0.36
@@ -315,9 +341,12 @@ export async function janaPdfQr(
   permata(page, tengah + lebarMono / 2 + 6.5 * f * MM, yPermataMono, 1.5 * f * MM, bingkai)
 
   // --------------------------------------------------------------- 2. BINGKAI
+  // Bingkai mesti nampak di tengah halaman: jarak atas dan bawah SAMA.
+  // Dulu atas = band+6 mm, bawah = 11 mm — jadi bingkai nampak terangkat.
   const margin = 13 * f
-  const bingkaiAtasMm = bandH + Math.max(5, 6 * f)
-  const bingkaiBawahMm = tinggiMm - 11 * f
+  const bingkaiJurang = Math.max(8, 10 * f)
+  const bingkaiAtasMm = bandH + 1.4 * f + bingkaiJurang
+  const bingkaiBawahMm = tinggiMm - bingkaiJurang
   const mx = margin * MM
   page.drawRectangle({
     x: mx,
@@ -363,18 +392,21 @@ export async function janaPdfQr(
    */
   function susun(k: number, kNama: number) {
     const jarak = (mm: number, skala: number) => Math.max(mm * k, skala * f)
-    const pad = jarak(8, 10)
+    const pad = jarak(7, 8 * f)
     const dalamAtas = bingkaiAtasMm + pad
     const dalamBawah = bingkaiBawahMm - pad
     const lebarTeks = W - 2 * (margin + pad) * MM
 
     const saizEyebrow = 8.6 * f
     const yEyebrow = dalamAtas + jarak(3, 4 * f)
-    const { baris: barisNama, saiz: saizNama } = muat(
+    const { baris: barisMuat, saiz: saizNama } = muat(
       tajuk, serif, Math.max(22 * f, 40 * f * kNama), lebarTeks, 2,
     )
+    const barisNama =
+      barisMuat.length === 2 ? (imbang2(tajuk, serif, saizNama, lebarTeks) ?? barisMuat) : barisMuat
     const tinggiBarisNamaMm = (saizNama * 1.08) / MM
-    const yNama1 = yEyebrow + jarak(8.5, 11 * f)
+    // Jarak BUKU TAMU → nama: dulu 8.5 mm, hampir menempel pada saiz nama 40 pt.
+    const yNama1 = yEyebrow + jarak(14, 17 * f)
     const bawahNama =
       yNama1 + (barisNama.length - 1) * tinggiBarisNamaMm + (saizNama * 0.3) / MM
 
@@ -402,21 +434,25 @@ export async function janaPdfQr(
     const yGarisKaki = yKaki - jarak(7, 9 * f)
     const yPautan = yGarisKaki - jarak(9, 12 * f)
     const yTerima = yPautan - jarak(10, 12.5 * f)
-    const yArahan1 = yTerima - jarak(11, 13.5 * f)
-    const yArahanAtas = yArahan1 - (sArahan * 0.78) / MM
+    // Arahan mesti DI ATAS kod QR. Dulu ia di bawah, jadi ayat "di bawah"
+    // menunjuk ke ruang kosong dan tetamu keliru.
+    const yArahan1 = bawahTeks + jarak(7, 9 * f) + (sArahan * 0.78) / MM
+    const bawahArahanMm =
+      yArahan1 + (bArahan.length - 1) * tinggiBarisArahanMm + (sArahan * 0.3) / MM
 
     const jurang = jarak(7, 9 * f)
-    const ruangTengah = Math.max(0, yArahanAtas - bawahTeks - 2 * jurang)
-    const kadHmm = Math.min(tinggiKadMaks, ruangTengah)
-    const lebih = Math.max(0, ruangTengah - kadHmm)
-    const kadAtasMm = bawahTeks + jurang + lebih * 0.5
+    const kadBawahMaks = yTerima - jarak(10, 12.5 * f)
+    const ruangKad = Math.max(0, kadBawahMaks - bawahArahanMm - 2 * jurang)
+    const kadHmm = Math.min(tinggiKadMaks, ruangKad)
+    const lebih = Math.max(0, ruangKad - kadHmm)
+    const kadAtasMm = bawahArahanMm + jurang + lebih * 0.5
 
     return {
       saizEyebrow, yEyebrow, barisNama, saizNama, yNama1,
       tinggiBarisNamaMm, yHiasan, bSub, sSub, tinggiBarisSubMm, ySub1,
       saizTerima, saizPautan, saizKaki, bArahan, sArahan,
       tinggiBarisArahanMm, yKaki, yGarisKaki, yPautan, yTerima, yArahan1,
-      kadHmm, kadAtasMm, yArahanAtas,
+      kadHmm, kadAtasMm, bawahArahanMm,
     }
   }
 
@@ -520,21 +556,31 @@ export async function janaPdfQr(
     aksen,
   )
 
-  // Garis halus + kaki: nama tema (bukti ia ikut pilihan klien).
+  // Garis halus + kaki: CTA jualan (poster ini juga alat pemasaran) + nama
+  // tema kecil di bawahnya sebagai bukti ia ikut pilihan klien.
   page.drawLine({
     start: { x: (margin + 8) * MM, y: Y(yGarisKaki) },
     end: { x: W - (margin + 8) * MM, y: Y(yGarisKaki) },
     thickness: 0.5,
     color: bingkai,
   })
-  teksJarak(
+  teksTengah(
     page,
-    bersih(`TEMA ${tema.nama.toUpperCase()}  ·  BUKU TAMU  ·  ALUNARA.MY`),
-    sans,
+    bersih('Inginkan buku tamu di majlis anda? Layari alunara.my/buku-tamu'),
+    sansMedium,
     saizKaki,
-    0.12,
     tengah,
     Y(yKaki),
+    aksen,
+  )
+  teksJarak(
+    page,
+    bersih(`TEMA ${tema.nama.toUpperCase()}`),
+    sans,
+    saizKaki * 0.78,
+    0.14,
+    tengah,
+    Y(yKaki + (saizKaki * 1.5) / MM),
     lembut,
   )
 

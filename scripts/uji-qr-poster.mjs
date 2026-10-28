@@ -203,11 +203,23 @@ for (const saiz of SAIZ) {
       `QR tamat pada ${qrBawahMm.toFixed(1)} / ${saiz.mm[1]} mm`,
     )
 
-    // 4. Tiada lubang kosong besar — poster tak nampak "belum siap".
+    // 4. Arahan mesti DI ATAS kod QR — ayatnya berbunyi "di bawah", jadi kalau
+    //    susunan terbalik tetamu disuruh mengimbas ruang kosong.
+    const teksPdf = await (await doc.getPage(1)).getTextContent()
+    const arahan = teksPdf.items.find((i) => String(i.str).startsWith('Imbas'))
+    if (arahan && lokasi) {
+      const arahanMm = ((vp.height - arahan.transform[5]) / vp.height) * saiz.mm[1]
+      const qrAtasMm = (Math.min(lokasi.topLeftCorner.y, lokasi.topRightCorner.y) / px.height) * saiz.mm[1]
+      semak('arahan di atas kod QR', arahanMm < qrAtasMm, `${arahanMm.toFixed(1)} < ${qrAtasMm.toFixed(1)} mm`)
+    } else {
+      semak('arahan di atas kod QR', false, 'teks arahan tak dijumpai')
+    }
+
+    // 5. Tiada lubang kosong besar — poster tak nampak "belum siap".
     const kosong = jalurKosongMm(px, saiz.mm[1])
     semak('tiada jalur kosong > 32 mm', kosong <= 32, `${kosong.toFixed(1)} mm`)
 
-    // 5. Aksen tema mesti hadir dalam kuantiti yang munasabah (bukti tema
+    // 6. Aksen tema mesti hadir dalam kuantiti yang munasabah (bukti tema
     //    betul-betul dicetak, bukan cuma dinyatakan dalam metadata).
     const hex = TEMA_CETAK[tema].aksen
     const { dekat, jumlah } = kiraAksen(px.data, hex)
