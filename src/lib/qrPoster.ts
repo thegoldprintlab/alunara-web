@@ -355,29 +355,27 @@ export async function janaPdfQr(
     const wBt = lebarJarak(sansMedium, 'BUKU TAMU', 5.6, 0.42)
     teksJarak(page, 'BUKU TAMU', sansMedium, 5.6, 0.42, kiriX + wBt / 2, Y(yEyebrow), aksen)
 
-    const { baris: bNama, saiz: sNama } = muat(tajuk, serif, 26, lebarTeks, 2)
-    const barisNama =
-      bNama.length === 2 ? (imbang2(tajuk, serif, sNama, lebarTeks) ?? bNama) : bNama
+    const { baris: barisNama, saiz: sNama } = muat(tajuk, serif, 24, lebarTeks, 2)
     const lhNama = (sNama * 1.02) / MM
-    const yNama1 = yEyebrow + 7.5
+    const yNama1 = yEyebrow + 7
     barisNama.forEach((b, i) => {
       page.drawText(b, { x: kiriX, y: Y(yNama1 + i * lhNama), size: sNama, font: serif, color: gelap })
     })
     const bawahNama = yNama1 + (barisNama.length - 1) * lhNama + (sNama * 0.28) / MM
 
-    const yHiasan = bawahNama + 4.5
+    const yHiasan = bawahNama + 4
     hiasan(page, kiriX + 9 * MM, Y(yHiasan), 5.5 * MM, 1.2 * MM, 1.2 * MM, aksen, bingkai)
 
-    let y = yHiasan + 5.2
+    let y = yHiasan + 4.8
     const jenis = bersih(meta.jenis ?? '')
     if (jenis) {
       const w = lebarJarak(sansMedium, jenis.toUpperCase(), 5.6, 0.3)
       teksJarak(page, jenis.toUpperCase(), sansMedium, 5.6, 0.3, kiriX + w / 2, Y(y), aksen)
-      y += 4.6
+      y += 4.4
     }
     if (meta.tarikh) {
       page.drawText(bersih(meta.tarikh), { x: kiriX, y: Y(y), size: 7.6, font: sansMedium, color: gelap })
-      y += 4.4
+      y += 4.2
     }
     if (meta.venue) {
       const { baris: bVenue, saiz: sVenue } = muat(bersih(meta.venue), sans, 6.4, lebarTeks, 2)
@@ -385,7 +383,7 @@ export async function janaPdfQr(
       bVenue.forEach((b, i) => {
         page.drawText(b, { x: kiriX, y: Y(y + i * lhV), size: sVenue, font: sans, color: lembut })
       })
-      y += (bVenue.length - 1) * lhV + 4.6
+      y += (bVenue.length - 1) * lhV + 4.2
     }
 
     // "di sebelah" — bukan "di bawah" seperti poster menegak.
