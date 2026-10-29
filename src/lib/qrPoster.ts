@@ -256,7 +256,10 @@ function hiasan(
 function cabang(page: PDFPage, cxMm: number, yMm: number, panjangMm: number, color: Warna) {
   const H = page.getHeight()
   const X = (mm: number) => mm * MM
-  const Yp = (mm: number) => H - mm * MM
+  // drawSvgPath: koordinat y laluan dikira dari ATAS (asal di (0, H)), bukan
+  // dari bawah. Guna H - mm*MM di sini buat cabang tercermin ke bawah dan
+  // permata nampak terapung di atasnya.
+  const Yp = (mm: number) => mm * MM
   const daun = (bx: number, by: number, tx: number, ty: number, w: number) => {
     const mx = (bx + tx) / 2
     const my = (by + ty) / 2
@@ -284,13 +287,13 @@ function cabang(page: PDFPage, cxMm: number, yMm: number, panjangMm: number, col
       const a = (i / 5) * Math.PI * 2 - Math.PI / 2
       page.drawCircle({
         x: X(bx + Math.cos(a) * 0.85),
-        y: Yp(by + Math.sin(a) * 0.85),
+        y: H - (by + Math.sin(a) * 0.85) * MM,
         size: 0.62 * MM,
         borderColor: color,
         borderWidth: 0.4,
       })
     }
-    page.drawCircle({ x: X(bx), y: Yp(by), size: 0.45 * MM, color })
+    page.drawCircle({ x: X(bx), y: H - by * MM, size: 0.45 * MM, color })
   }
 }
 
@@ -387,28 +390,25 @@ export async function janaPdfQr(
     const lebarTeks = kadX - 5 * MM - kiriX
     const kadAtas = (bingkaiAtas + bingkaiBawah) / 2 - kadMm / 2
 
-    // ---- lajur kiri
-    const yEyebrow = bingkaiAtas + 12
-    const wBt = lebarJarak(sansMedium, 'BUKU TAMU', 5.4, 0.5)
-    teksJarak(page, 'BUKU TAMU', sansMedium, 5.4, 0.5, kiriX + wBt / 2, Y(yEyebrow), aksen)
-
-    // Isyarat majlis: tanpa baris ini kad nampak macam kad QR biasa.
-    const wWal = lebarJarak(sansMedium, 'WALIMATUL URUS', 4.9, 0.4)
-    teksJarak(page, 'WALIMATUL URUS', sansMedium, 4.9, 0.4, kiriX + wWal / 2, Y(yEyebrow + 6.4), aksen)
+    // WALIMATUL URUS = kepala penuh kad, bukan ikut lajur kiri.
+    const wWal = lebarJarak(sansMedium, 'WALIMATUL URUS', 5.2, 0.44)
+    teksJarak(page, 'WALIMATUL URUS', sansMedium, 5.2, 0.44, W / 2, Y(bingkaiAtas + 13), aksen)
 
     const { baris: barisNama, saiz: sNama } = muat(tajuk, serif, 22, lebarTeks, 2)
     const lhNama = (sNama * 1.04) / MM
-    const yNama1 = yEyebrow + 14.2
+    const yNama1 = bingkaiAtas + 24
     barisNama.forEach((b, i) => {
       page.drawText(b, { x: kiriX, y: Y(yNama1 + i * lhNama), size: sNama, font: serif, color: gelap })
     })
     const bawahNama = yNama1 + (barisNama.length - 1) * lhNama + (sNama * 0.28) / MM
 
     const yHiasan = bawahNama + 4.2
-    cabang(page, 9 + 13, yHiasan, 7.5, warna('#c98ea0'))
-    permata(page, kiriX + 9 * MM, Y(yHiasan), 1.1 * MM, aksen)
+    // Hiasan mesti duduk tepat pada paksi tengah blok tajuk, bukan 9 mm dari tepi.
+    const tengahTeksMm = 13 + lebarTeks / MM / 2
+    cabang(page, tengahTeksMm, yHiasan, 7.5, warna('#c98ea0'))
+    permata(page, kiriX + lebarTeks / 2, Y(yHiasan), 1.1 * MM, aksen)
 
-    let y = yHiasan + 5
+    let y = yHiasan + 6
     const jenis = bersih(meta.jenis ?? '')
     if (jenis) {
       const w = lebarJarak(sansMedium, jenis.toUpperCase(), 5.4, 0.34)
@@ -459,9 +459,9 @@ export async function janaPdfQr(
 
     teksTengah(page, bersih('Terima kasih kerana hadir!'), serifItalik, 7.6, kadX + kadW / 2, Y(kadAtas + kadMm + 5), lembut)
 
-    // Monogram senyap — satu-satunya jenama pada kad.
-    const wMono = lebarJarak(sansTegas, 'ALUNARA', 5.2, 0.42)
-    teksJarak(page, 'ALUNARA', sansTegas, 5.2, 0.42, W / 2, Y(bingkaiBawah - 6), aksen)
+    // Kaki jenama: BUKU TAMU ALUNARA diapit dua permata.
+    const wMono = lebarJarak(sansTegas, 'BUKU TAMU ALUNARA', 5.2, 0.42)
+    teksJarak(page, 'BUKU TAMU ALUNARA', sansTegas, 5.2, 0.42, W / 2, Y(bingkaiBawah - 6), aksen)
     // Permata mesti duduk pada pusat huruf besar, bukan bawah garis dasar —
     // kalau tidak monogram nampak terapung di antara dua permata.
     const pusatMono = bingkaiBawah - 6 + (5.2 * 0.36) / MM
