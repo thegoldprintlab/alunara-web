@@ -247,6 +247,53 @@ function hiasan(
   permata(page, tengahX, y, r, aksen)
 }
 
+
+/**
+ * Cabang bunga halus untuk pemisah — isyarat majlis tanpa gambar.
+ * Dilukis sebagai garis (stroke), bukan bentuk penuh, supaya nampak seperti
+ * ukiran stationery dan bukan clipart. Semua koordinat dalam mm dari atas.
+ */
+function cabang(page: PDFPage, cxMm: number, yMm: number, panjangMm: number, color: Warna) {
+  const H = page.getHeight()
+  const X = (mm: number) => mm * MM
+  const Yp = (mm: number) => H - mm * MM
+  const daun = (bx: number, by: number, tx: number, ty: number, w: number) => {
+    const mx = (bx + tx) / 2
+    const my = (by + ty) / 2
+    const dx = tx - bx
+    const dy = ty - by
+    const len = Math.hypot(dx, dy) || 1
+    const nx = (-dy / len) * w
+    const ny = (dx / len) * w
+    return `M ${X(bx)} ${Yp(by)} Q ${X(mx + nx)} ${Yp(my + ny)} ${X(tx)} ${Yp(ty)} Q ${X(mx - nx)} ${Yp(my - ny)} ${X(bx)} ${Yp(by)} Z`
+  }
+  for (const arah of [-1, 1]) {
+    const x0 = cxMm + arah * 4.2
+    const x1 = cxMm + arah * (4.2 + panjangMm)
+    const d = [
+      `M ${X(x0)} ${Yp(yMm)} C ${X(x0 + arah * 3)} ${Yp(yMm - 1.3)} ${X(x1 - arah * 3)} ${Yp(yMm + 0.9)} ${X(x1)} ${Yp(yMm - 0.3)}`,
+      daun(x0 + arah * 1.4, yMm - 0.5, x0 + arah * 2.3, yMm - 3.3, 0.8),
+      daun(x0 + arah * 3.3, yMm - 1, x0 + arah * 3.1, yMm + 2.1, 0.8),
+      daun(x0 + arah * 5.2, yMm - 1.2, x0 + arah * 6.3, yMm - 3.2, 0.65),
+    ].join(' ')
+    page.drawSvgPath(d, { x: 0, y: H, borderColor: color, borderWidth: 0.45 })
+    // Kuntum kecil di hujung cabang — tanpa ini ia cuma daun, bukan bunga.
+    const bx = x1
+    const by = yMm - 0.3
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2 - Math.PI / 2
+      page.drawCircle({
+        x: X(bx + Math.cos(a) * 0.85),
+        y: Yp(by + Math.sin(a) * 0.85),
+        size: 0.62 * MM,
+        borderColor: color,
+        borderWidth: 0.4,
+      })
+    }
+    page.drawCircle({ x: X(bx), y: Yp(by), size: 0.45 * MM, color })
+  }
+}
+
 export function pautanMajlis(slug: string) {
   return `https://alunara.my/buku-tamu/${slug}`
 }
@@ -358,7 +405,8 @@ export async function janaPdfQr(
     const bawahNama = yNama1 + (barisNama.length - 1) * lhNama + (sNama * 0.28) / MM
 
     const yHiasan = bawahNama + 4.2
-    hiasan(page, kiriX + 9 * MM, Y(yHiasan), 5.5 * MM, 1.2 * MM, 1.1 * MM, aksen, bingkai)
+    cabang(page, 9 + 13, yHiasan, 7.5, warna('#c98ea0'))
+    permata(page, kiriX + 9 * MM, Y(yHiasan), 1.1 * MM, aksen)
 
     let y = yHiasan + 5
     const jenis = bersih(meta.jenis ?? '')
