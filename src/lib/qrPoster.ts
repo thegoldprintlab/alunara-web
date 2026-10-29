@@ -282,8 +282,9 @@ export async function janaPdfQr(
   slug: string,
   saiz: SaizKertas,
   meta: QrMeta,
+  landskap = false,
 ): Promise<Uint8Array> {
-  const [lebarMm, tinggiMm] = saiz.mm
+  const [lebarMm, tinggiMm] = landskap ? [saiz.mm[1], saiz.mm[0]] : saiz.mm
   const f = lebarMm / 210
   const tema = temaCetak(meta.tema)
 
@@ -315,6 +316,128 @@ export async function janaPdfQr(
   const bingkai = warna(tema.bingkai)
   const gelap = warna(tema.teks)
   const lembut = warna('#6e675c')
+
+  // ------------------------------------------------- SUSUN ATUR LANDSKAP 3R
+  // Info kiri, kad QR kanan. Ukuran mm TETAP (bukan skala f = lebar/210):
+  // 3R melintang hanya 89 mm tinggi, skala A4 akan tolak teks keluar bingkai.
+  if (landskap) {
+    const T = tinggiMm
+    const bandH = 12
+    const margin = 5
+    const bingkaiAtas = bandH + 1.2 + 4
+    const bingkaiBawah = T - margin
+
+    page.drawRectangle({ x: 0, y: H - bandH * MM, width: W, height: bandH * MM, color: jalur })
+    page.drawRectangle({
+      x: 0, y: H - (bandH + 1.2) * MM, width: W, height: 1.2 * MM, color: aksen,
+    })
+    teksJarak(page, 'ALUNARA', sansTegas, 7.5, 0.3, W / 2, Y(bandH / 2 + 1.35), aksen)
+
+    page.drawRectangle({
+      x: margin * MM, y: Y(bingkaiBawah),
+      width: W - 2 * margin * MM, height: (bingkaiBawah - bingkaiAtas) * MM,
+      borderColor: aksen, borderWidth: 0.8,
+    })
+    page.drawRectangle({
+      x: (margin + 1.6) * MM, y: Y(bingkaiBawah - 1.6),
+      width: W - 2 * (margin + 1.6) * MM, height: (bingkaiBawah - bingkaiAtas - 3.2) * MM,
+      borderColor: bingkai, borderWidth: 0.4,
+    })
+
+    const kiriX = (margin + 5.5) * MM
+    const kadMm = 46
+    const kadX = W - (margin + 5.5) * MM - kadMm * MM
+    const lebarTeks = kadX - 6 * MM - kiriX
+    const kadAtas = (bingkaiAtas + bingkaiBawah) / 2 - kadMm / 2
+
+    // ---- lajur kiri
+    const yEyebrow = bingkaiAtas + 7
+    const wBt = lebarJarak(sansMedium, 'BUKU TAMU', 5.6, 0.42)
+    teksJarak(page, 'BUKU TAMU', sansMedium, 5.6, 0.42, kiriX + wBt / 2, Y(yEyebrow), aksen)
+
+    const { baris: bNama, saiz: sNama } = muat(tajuk, serif, 26, lebarTeks, 2)
+    const barisNama =
+      bNama.length === 2 ? (imbang2(tajuk, serif, sNama, lebarTeks) ?? bNama) : bNama
+    const lhNama = (sNama * 1.02) / MM
+    const yNama1 = yEyebrow + 7.5
+    barisNama.forEach((b, i) => {
+      page.drawText(b, { x: kiriX, y: Y(yNama1 + i * lhNama), size: sNama, font: serif, color: gelap })
+    })
+    const bawahNama = yNama1 + (barisNama.length - 1) * lhNama + (sNama * 0.28) / MM
+
+    const yHiasan = bawahNama + 4.5
+    hiasan(page, kiriX + 9 * MM, Y(yHiasan), 5.5 * MM, 1.2 * MM, 1.2 * MM, aksen, bingkai)
+
+    let y = yHiasan + 5.2
+    const jenis = bersih(meta.jenis ?? '')
+    if (jenis) {
+      const w = lebarJarak(sansMedium, jenis.toUpperCase(), 5.6, 0.3)
+      teksJarak(page, jenis.toUpperCase(), sansMedium, 5.6, 0.3, kiriX + w / 2, Y(y), aksen)
+      y += 4.6
+    }
+    if (meta.tarikh) {
+      page.drawText(bersih(meta.tarikh), { x: kiriX, y: Y(y), size: 7.6, font: sansMedium, color: gelap })
+      y += 4.4
+    }
+    if (meta.venue) {
+      const { baris: bVenue, saiz: sVenue } = muat(bersih(meta.venue), sans, 6.4, lebarTeks, 2)
+      const lhV = (sVenue * 1.35) / MM
+      bVenue.forEach((b, i) => {
+        page.drawText(b, { x: kiriX, y: Y(y + i * lhV), size: sVenue, font: sans, color: lembut })
+      })
+      y += (bVenue.length - 1) * lhV + 4.6
+    }
+
+    // "di sebelah" — bukan "di bawah" seperti poster menegak.
+    const { baris: bArahan, saiz: sArahan } = muat(
+      'Imbas kod di sebelah untuk kongsi gambar anda di buku tamu majlis kami.',
+      sansMedium, 6.4, lebarTeks, 3,
+    )
+    const lhA = (sArahan * 1.35) / MM
+    bArahan.forEach((b, i) => {
+      page.drawText(b, { x: kiriX, y: Y(y + i * lhA), size: sArahan, font: sansMedium, color: gelap })
+    })
+
+    // CTA jualan — kekal kecil di kaki lajur kiri.
+    page.drawText('Inginkan buku tamu di majlis anda?', {
+      x: kiriX, y: Y(bingkaiBawah - 6.6), size: 4.9, font: sansMedium, color: aksen,
+    })
+    page.drawText('Layari alunara.my/buku-tamu', {
+      x: kiriX, y: Y(bingkaiBawah - 3.6), size: 4.9, font: sans, color: lembut,
+    })
+
+    // ---- kad QR kanan
+    const kadY = Y(kadAtas + kadMm)
+    const kadW = kadMm * MM
+    page.drawRectangle({ x: kadX, y: kadY, width: kadW, height: kadW, color: rgb(1, 1, 1) })
+    page.drawRectangle({ x: kadX, y: kadY, width: kadW, height: kadW, borderColor: aksen, borderWidth: 1 })
+    const insetKad = 2.4 * MM
+    page.drawRectangle({
+      x: kadX + insetKad, y: kadY + insetKad,
+      width: kadW - 2 * insetKad, height: kadW - 2 * insetKad,
+      borderColor: bingkai, borderWidth: 0.5,
+    })
+
+    const qrMm = kadMm - 7
+    const qrPng = await QRCode.toDataURL(pautanMajlis(slug), {
+      margin: 1,
+      width: Math.round(qrMm * 14),
+      errorCorrectionLevel: 'M',
+      color: { dark: '#1a1613', light: '#ffffff' },
+    })
+    const qrImg = await pdf.embedPng(qrPng)
+    page.drawImage(qrImg, {
+      x: kadX + (3.5 * MM),
+      y: kadY + (3.5 * MM),
+      width: qrMm * MM,
+      height: qrMm * MM,
+    })
+
+    teksTengah(page, bersih('Terima kasih kerana hadir!'), serifItalik, 7.4, kadX + kadW / 2, Y(kadAtas + kadMm + 3.6), lembut)
+    teksJarak(page, bersih(`TEMA ${tema.nama.toUpperCase()}`), sans, 4.4, 0.14, kadX + kadW / 2, Y(kadAtas + kadMm + 7.2), lembut)
+
+    return await pdf.save()
+  }
 
   // ---------------------------------------------------------------- 1. KEPALA
   // Jalur dulu 30 mm — terlalu tinggi untuk satu baris monogram, jadi ia
