@@ -37,7 +37,7 @@ const MM = 72 / 25.4 // 1 mm dalam point PDF
 /** Warna rgb pdf-lib (ia tak eksport jenisnya). */
 type Warna = ReturnType<typeof rgb>
 
-export type SaizId = 'a4' | 'a5' | 'a6'
+export type SaizId = 'a4' | 'a5' | 'a6' | '3r'
 
 export type SaizKertas = {
   id: SaizId
@@ -51,6 +51,7 @@ export const SAIZ: SaizKertas[] = [
   { id: 'a4', label: 'A4 — poster meja (210 × 297 mm)', mm: [210, 297], qrMm: 128 },
   { id: 'a5', label: 'A5 — kad sederhana (148 × 210 mm)', mm: [148, 210], qrMm: 84 },
   { id: 'a6', label: 'A6 — kad kecil (105 × 148 mm)', mm: [105, 148], qrMm: 52 },
+  { id: '3r', label: '3R — cetak foto (89 × 127 mm)', mm: [89, 127], qrMm: 42 },
 ]
 
 type TemaCetak = {
