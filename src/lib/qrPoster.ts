@@ -341,13 +341,17 @@ export async function janaPdfQr(
     const kadAtas = (bingkaiAtas + bingkaiBawah) / 2 - kadMm / 2
 
     // ---- lajur kiri
-    const yEyebrow = bingkaiAtas + 13
+    const yEyebrow = bingkaiAtas + 12
     const wBt = lebarJarak(sansMedium, 'BUKU TAMU', 5.4, 0.5)
     teksJarak(page, 'BUKU TAMU', sansMedium, 5.4, 0.5, kiriX + wBt / 2, Y(yEyebrow), aksen)
 
+    // Isyarat majlis: tanpa baris ini kad nampak macam kad QR biasa.
+    const wWal = lebarJarak(sansMedium, 'WALIMATUL URUS', 4.9, 0.4)
+    teksJarak(page, 'WALIMATUL URUS', sansMedium, 4.9, 0.4, kiriX + wWal / 2, Y(yEyebrow + 6.4), aksen)
+
     const { baris: barisNama, saiz: sNama } = muat(tajuk, serif, 22, lebarTeks, 2)
     const lhNama = (sNama * 1.04) / MM
-    const yNama1 = yEyebrow + 7.5
+    const yNama1 = yEyebrow + 14.2
     barisNama.forEach((b, i) => {
       page.drawText(b, { x: kiriX, y: Y(yNama1 + i * lhNama), size: sNama, font: serif, color: gelap })
     })
@@ -410,8 +414,11 @@ export async function janaPdfQr(
     // Monogram senyap — satu-satunya jenama pada kad.
     const wMono = lebarJarak(sansTegas, 'ALUNARA', 5.2, 0.42)
     teksJarak(page, 'ALUNARA', sansTegas, 5.2, 0.42, W / 2, Y(bingkaiBawah - 6), aksen)
-    permata(page, W / 2 - wMono / 2 - 3 * MM, Y(bingkaiBawah - 4.5), 0.7 * MM, bingkai)
-    permata(page, W / 2 + wMono / 2 + 3 * MM, Y(bingkaiBawah - 4.5), 0.7 * MM, bingkai)
+    // Permata mesti duduk pada pusat huruf besar, bukan bawah garis dasar —
+    // kalau tidak monogram nampak terapung di antara dua permata.
+    const pusatMono = bingkaiBawah - 6 + (5.2 * 0.36) / MM
+    permata(page, W / 2 - wMono / 2 - 2.6 * MM, Y(pusatMono), 0.6 * MM, bingkai)
+    permata(page, W / 2 + wMono / 2 + 2.6 * MM, Y(pusatMono), 0.6 * MM, bingkai)
 
     return await pdf.save()
   }
