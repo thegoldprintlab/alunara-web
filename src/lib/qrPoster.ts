@@ -318,7 +318,7 @@ export async function janaPdfQr(
   // ---------------------------------------------------------------- 1. KEPALA
   // Jalur dulu 30 mm — terlalu tinggi untuk satu baris monogram, jadi ia
   // menelan ruang yang sepatutnya jadi jarak antara BUKU TAMU dan nama.
-  const bandH = Math.max(16, 22 * f)
+  const bandH = Math.max(11, 22 * f)
   page.drawRectangle({ x: 0, y: H - bandH * MM, width: W, height: bandH * MM, color: jalur })
   page.drawRectangle({
     x: 0,
@@ -329,7 +329,7 @@ export async function janaPdfQr(
   })
 
   // Monogram: bukti jenama pada poster, dan ia mengunci tema warna kepala.
-  const saizMono = Math.max(8, 10.5 * f)
+  const saizMono = Math.max(6, 10.5 * f)
   const emMono = 0.3
   // Garis dasar dinaikkan separuh tinggi huruf besar (0.36 em) supaya ALUNARA
   // betul-betul di tengah jalur. Offset tetap 3.2 mm dulu buat ia nampak rendah.
@@ -344,7 +344,7 @@ export async function janaPdfQr(
   // Bingkai mesti nampak di tengah halaman: jarak atas dan bawah SAMA.
   // Dulu atas = band+6 mm, bawah = 11 mm — jadi bingkai nampak terangkat.
   const margin = 13 * f
-  const bingkaiJurang = Math.max(8, 10 * f)
+  const bingkaiJurang = Math.max(5, 10 * f)
   const bingkaiAtasMm = bandH + 1.4 * f + bingkaiJurang
   const bingkaiBawahMm = tinggiMm - bingkaiJurang
   const mx = margin * MM
@@ -391,7 +391,10 @@ export async function janaPdfQr(
    * @param kNama faktor saiz nama majlis — lever kedua bila kertas terlalu kecil
    */
   function susun(k: number, kNama: number) {
-    const jarak = (mm: number, skala: number) => Math.max(mm * k, skala * f)
+    // Jurang menegak mesti mengecil bersama kertas. Dulu `mm * k` tak
+    // didarab f, jadi pada A6 setiap jurang kekal saiz A4 — ruang habis di
+    // atas, kaki poster terhimpit ke bingkai bawah. Pada f=1 tiada perubahan.
+    const jarak = (mm: number, skala: number) => Math.max(mm * f * k, skala * f)
     const pad = jarak(7, 8 * f)
     const dalamAtas = bingkaiAtasMm + pad
     const dalamBawah = bingkaiBawahMm - pad
@@ -425,7 +428,7 @@ export async function janaPdfQr(
     const saizArahan = 11 * f
     const saizTerima = 12.5 * f
     const saizPautan = 10.5 * f
-    const saizKaki = Math.max(6.8, 7.8 * f)
+    const saizKaki = Math.max(5.2, 7.8 * f)
     const arahan = bersih('Imbas kod di bawah untuk kongsi gambar anda di buku tamu majlis kami.')
     const { baris: bArahan, saiz: sArahan } = muat(arahan, sansMedium, saizArahan, lebarTeks, 2)
     const tinggiBarisArahanMm = (sArahan * 1.42) / MM
