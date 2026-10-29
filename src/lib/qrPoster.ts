@@ -320,119 +320,98 @@ export async function janaPdfQr(
   // ------------------------------------------------- SUSUN ATUR LANDSKAP 3R
   // Info kiri, kad QR kanan. Ukuran mm TETAP (bukan skala f = lebar/210):
   // 3R melintang hanya 89 mm tinggi, skala A4 akan tolak teks keluar bingkai.
+  // V2: tiada sepanduk atas, tiada CTA jualan, tiada label tema — satu garis
+  // halus + ruang kosong yang banyak. Pink kekal (pilihan klien).
   if (landskap) {
     const T = tinggiMm
-    const bandH = 12
-    const margin = 5
-    const bingkaiAtas = bandH + 1.2 + 4
+    const margin = 6.5
+    const bingkaiAtas = margin
     const bingkaiBawah = T - margin
-
-    page.drawRectangle({ x: 0, y: H - bandH * MM, width: W, height: bandH * MM, color: jalur })
-    page.drawRectangle({
-      x: 0, y: H - (bandH + 1.2) * MM, width: W, height: 1.2 * MM, color: aksen,
-    })
-    teksJarak(page, 'ALUNARA', sansTegas, 7.5, 0.3, W / 2, Y(bandH / 2 + 1.35), aksen)
 
     page.drawRectangle({
       x: margin * MM, y: Y(bingkaiBawah),
       width: W - 2 * margin * MM, height: (bingkaiBawah - bingkaiAtas) * MM,
-      borderColor: aksen, borderWidth: 0.8,
-    })
-    page.drawRectangle({
-      x: (margin + 1.6) * MM, y: Y(bingkaiBawah - 1.6),
-      width: W - 2 * (margin + 1.6) * MM, height: (bingkaiBawah - bingkaiAtas - 3.2) * MM,
-      borderColor: bingkai, borderWidth: 0.4,
+      borderColor: aksen, borderWidth: 0.5,
     })
 
-    const kiriX = (margin + 5.5) * MM
-    const kadMm = 46
-    const kadX = W - (margin + 5.5) * MM - kadMm * MM
-    const lebarTeks = kadX - 6 * MM - kiriX
+    const kiriX = 13 * MM
+    const kadMm = 43
+    const kadX = W - 13 * MM - kadMm * MM
+    const lebarTeks = kadX - 5 * MM - kiriX
     const kadAtas = (bingkaiAtas + bingkaiBawah) / 2 - kadMm / 2
 
     // ---- lajur kiri
-    const yEyebrow = bingkaiAtas + 7
-    const wBt = lebarJarak(sansMedium, 'BUKU TAMU', 5.6, 0.42)
-    teksJarak(page, 'BUKU TAMU', sansMedium, 5.6, 0.42, kiriX + wBt / 2, Y(yEyebrow), aksen)
+    const yEyebrow = bingkaiAtas + 13
+    const wBt = lebarJarak(sansMedium, 'BUKU TAMU', 5.4, 0.5)
+    teksJarak(page, 'BUKU TAMU', sansMedium, 5.4, 0.5, kiriX + wBt / 2, Y(yEyebrow), aksen)
 
-    const { baris: barisNama, saiz: sNama } = muat(tajuk, serif, 24, lebarTeks, 2)
-    const lhNama = (sNama * 1.02) / MM
-    const yNama1 = yEyebrow + 7
+    const { baris: barisNama, saiz: sNama } = muat(tajuk, serif, 22, lebarTeks, 2)
+    const lhNama = (sNama * 1.04) / MM
+    const yNama1 = yEyebrow + 7.5
     barisNama.forEach((b, i) => {
       page.drawText(b, { x: kiriX, y: Y(yNama1 + i * lhNama), size: sNama, font: serif, color: gelap })
     })
     const bawahNama = yNama1 + (barisNama.length - 1) * lhNama + (sNama * 0.28) / MM
 
-    const yHiasan = bawahNama + 4
-    hiasan(page, kiriX + 9 * MM, Y(yHiasan), 5.5 * MM, 1.2 * MM, 1.2 * MM, aksen, bingkai)
+    const yHiasan = bawahNama + 4.2
+    hiasan(page, kiriX + 9 * MM, Y(yHiasan), 5.5 * MM, 1.2 * MM, 1.1 * MM, aksen, bingkai)
 
-    let y = yHiasan + 4.8
+    let y = yHiasan + 5
     const jenis = bersih(meta.jenis ?? '')
     if (jenis) {
-      const w = lebarJarak(sansMedium, jenis.toUpperCase(), 5.6, 0.3)
-      teksJarak(page, jenis.toUpperCase(), sansMedium, 5.6, 0.3, kiriX + w / 2, Y(y), aksen)
-      y += 4.4
+      const w = lebarJarak(sansMedium, jenis.toUpperCase(), 5.4, 0.34)
+      teksJarak(page, jenis.toUpperCase(), sansMedium, 5.4, 0.34, kiriX + w / 2, Y(y), aksen)
+      y += 4.8
     }
     if (meta.tarikh) {
-      page.drawText(bersih(meta.tarikh), { x: kiriX, y: Y(y), size: 7.6, font: sansMedium, color: gelap })
-      y += 4.2
+      page.drawText(bersih(meta.tarikh), { x: kiriX, y: Y(y), size: 7.4, font: sansMedium, color: gelap })
+      y += 4.4
     }
     if (meta.venue) {
-      const { baris: bVenue, saiz: sVenue } = muat(bersih(meta.venue), sans, 6.4, lebarTeks, 2)
+      const { baris: bVenue, saiz: sVenue } = muat(bersih(meta.venue), sans, 6.3, lebarTeks, 2)
       const lhV = (sVenue * 1.35) / MM
       bVenue.forEach((b, i) => {
         page.drawText(b, { x: kiriX, y: Y(y + i * lhV), size: sVenue, font: sans, color: lembut })
       })
-      y += (bVenue.length - 1) * lhV + 4.2
+      y += (bVenue.length - 1) * lhV + 5
     }
 
     // "di sebelah" — bukan "di bawah" seperti poster menegak.
     const { baris: bArahan, saiz: sArahan } = muat(
       'Imbas kod di sebelah untuk kongsi gambar anda di buku tamu majlis kami.',
-      sansMedium, 6.4, lebarTeks, 3,
+      sans, 6.2, lebarTeks, 3,
     )
     const lhA = (sArahan * 1.35) / MM
     bArahan.forEach((b, i) => {
-      page.drawText(b, { x: kiriX, y: Y(y + i * lhA), size: sArahan, font: sansMedium, color: gelap })
+      page.drawText(b, { x: kiriX, y: Y(y + i * lhA), size: sArahan, font: sans, color: lembut })
     })
 
-    // CTA jualan — kekal kecil di kaki lajur kiri.
-    page.drawText('Inginkan buku tamu di majlis anda?', {
-      x: kiriX, y: Y(bingkaiBawah - 6.6), size: 4.9, font: sansMedium, color: aksen,
-    })
-    page.drawText('Layari alunara.my/buku-tamu', {
-      x: kiriX, y: Y(bingkaiBawah - 3.6), size: 4.9, font: sans, color: lembut,
-    })
-
-    // ---- kad QR kanan
+    // ---- kad QR kanan: bingkai halus sahaja, tiada blok putih berat
     const kadY = Y(kadAtas + kadMm)
     const kadW = kadMm * MM
-    page.drawRectangle({ x: kadX, y: kadY, width: kadW, height: kadW, color: rgb(1, 1, 1) })
-    page.drawRectangle({ x: kadX, y: kadY, width: kadW, height: kadW, borderColor: aksen, borderWidth: 1 })
-    const insetKad = 2.4 * MM
-    page.drawRectangle({
-      x: kadX + insetKad, y: kadY + insetKad,
-      width: kadW - 2 * insetKad, height: kadW - 2 * insetKad,
-      borderColor: bingkai, borderWidth: 0.5,
-    })
 
-    const qrMm = kadMm - 7
+    const qrMm = kadMm - 5
     const qrPng = await QRCode.toDataURL(pautanMajlis(slug), {
-      margin: 1,
+      margin: 2,
       width: Math.round(qrMm * 14),
       errorCorrectionLevel: 'M',
       color: { dark: '#1a1613', light: '#ffffff' },
     })
     const qrImg = await pdf.embedPng(qrPng)
     page.drawImage(qrImg, {
-      x: kadX + (3.5 * MM),
-      y: kadY + (3.5 * MM),
+      x: kadX + (2.5 * MM),
+      y: kadY + (2.5 * MM),
       width: qrMm * MM,
       height: qrMm * MM,
     })
 
-    teksTengah(page, bersih('Terima kasih kerana hadir!'), serifItalik, 7.4, kadX + kadW / 2, Y(kadAtas + kadMm + 3.6), lembut)
-    teksJarak(page, bersih(`TEMA ${tema.nama.toUpperCase()}`), sans, 4.4, 0.14, kadX + kadW / 2, Y(kadAtas + kadMm + 7.2), lembut)
+    teksTengah(page, bersih('Terima kasih kerana hadir!'), serifItalik, 7.6, kadX + kadW / 2, Y(kadAtas + kadMm + 5), lembut)
+
+    // Monogram senyap — satu-satunya jenama pada kad.
+    const wMono = lebarJarak(sansTegas, 'ALUNARA', 5.2, 0.42)
+    teksJarak(page, 'ALUNARA', sansTegas, 5.2, 0.42, W / 2, Y(bingkaiBawah - 6), aksen)
+    permata(page, W / 2 - wMono / 2 - 3 * MM, Y(bingkaiBawah - 4.5), 0.7 * MM, bingkai)
+    permata(page, W / 2 + wMono / 2 + 3 * MM, Y(bingkaiBawah - 4.5), 0.7 * MM, bingkai)
 
     return await pdf.save()
   }
